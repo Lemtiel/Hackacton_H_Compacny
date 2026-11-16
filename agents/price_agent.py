@@ -88,7 +88,8 @@ def _usage(status) -> tuple[int, int, int]:
     return i, c, o
 
 
-def run_site(client: Client, site_key: str, product: str, category: str, log=print) -> RunResult:
+def run_site(client: Client, site_key: str, product: str, category: str, log=print, on_step=None) -> RunResult:
+    """on_step(dict) reçoit chaque changement d'étape, pour l'affichage progressif."""
     res = RunResult(site=site_key, product=product)
     t0 = time.monotonic()
     handle = client.start_session(
@@ -108,6 +109,8 @@ def run_site(client: Client, site_key: str, product: str, category: str, log=pri
         if status.steps != last_steps:
             last_steps = status.steps
             log(f"[{site_key}] {elapsed:5.1f}s  {status.status}  étape {status.steps}")
+            if on_step:
+                on_step({"status": status.status, "steps": status.steps, "elapsed_s": round(elapsed, 1)})
         if status.status in TERMINAL:
             break
         if elapsed >= MAX_SECONDS and not res.cancelled:

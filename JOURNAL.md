@@ -106,3 +106,53 @@ Autre mesure : sur Easy Cash, sans recherche, l'agent consomme beaucoup plus (31
 - Premier objet high-tech qui donne des prix sur 3 boutiques. Troc.com répond pour la première fois.
 - Défauts : Cash Converters rend le lien de la recherche au lieu des liens produit, et sans l'état. Easy Cash n'a relevé que 2 prix alors que la page en montrait au moins 6 : le temps manque, pas les annonces. L'unique offre Troc.com est dans un magasin de Bruxelles.
 - Les capacités sont mélangées (64 et 128 Go) : il faudra préciser la capacité dans la consigne ou la demander à l'utilisateur.
+
+### Soir : première version du parcours « photo puis recherche »
+Demandé par Stephen. Branche `photo-et-recherche`.
+
+Ce qui est construit :
+- `backend/main.py` (FastAPI) : `POST /api/identify` (photo) et `GET /api/search` (résultats envoyés site par site).
+- `backend/photo.py` : contrôle de visage puis identification. La photo reste en mémoire, rien n'est écrit sur disque.
+- `backend/pricing.py` : bloc « Revendre en magasin », sans IA. Prix hors de la plage [médiane ÷ 2 ; médiane × 2] écartés, puis médiane × 40 %.
+- `backend/static/index.html` : page de test (photo ou texte, agents en cours, prix par site, estimation). Elle sert à tester le parcours en attendant l'interface v0.
+- Un site qui ne vend pas la catégorie n'ouvre pas d'agent (Gamecash pour un téléphone) : c'est une ligne de configuration, pas du code par site.
+- 3 agents au plus en même temps : le 4e site attend, et l'écran l'indique.
+
+Modèles Hugging Face PROPOSÉS, à valider par Jude avant usage en production :
+| Rôle | Modèle | Pourquoi | Coût et temps |
+|---|---|---|---|
+| Visages | `opencv/face_detection_yunet` (230 Ko) | Tourne sur le serveur : la photo ne part chez aucun tiers | Gratuit, 10 à 300 ms mesurés |
+| Identification | `google/gemma-4-31B-it` par le routeur HF | Modèle vision généraliste, peu cher, plusieurs fournisseurs | 0,14 à 0,20 $ par million de tokens en entrée, non mesuré |
+
+Alternatives pour l'identification, à comparer sur le jeu de 30 objets : `Qwen/Qwen3-VL-30B-A3B-Instruct` (spécialisé vision, 0,15 $) et `Qwen/Qwen3.5-9B` (le moins cher, 0,10 $). Le modèle se change par la variable `HF_VISION_MODEL`.
+
+Testé :
+- photo avec visage refusée, photo d'objet acceptée par le contrôle, fichier illisible refusé ;
+- recherche de bout en bout dans la page, en texte, sur la Nintendo Switch (voir mesures) ;
+- calcul du bloc magasin sur des prix d'exemple.
+
+Non testé :
+- l'identification par le modèle vision : il manque `HF_TOKEN` dans `.env` ;
+- la prise de photo sur un vrai téléphone.
+
+Points à trancher :
+- Contradiction dans les Specs : montrer « les agents en train de naviguer » (comportement 5) revient à montrer les pages des sites, ce que la règle « pas de capture des pages sources » interdit. La page affiche donc seulement les étapes.
+- Le contrôle de visage refusera une jaquette de jeu vidéo qui montre un visage.
+- Le bloc « Vendre seul » (eBay) n'existe pas encore : la page ouvre seulement la recherche sur Vinted, Leboncoin et eBay.
+
+Mesure du test dans la page (Nintendo Switch, 4 sites, 3 agents en parallèle) : Easy Cash 1 prix en 83 s, Gamecash 2 prix en 80 s, Troc.com aucun résultat, Cash Converters 8 prix en 69 s après attente d'un agent libre. Estimation magasin affichée : 56 €.
+Défaut constaté : les 8 prix de Cash Converters sont des Switch Lite, un autre modèle. Ils tirent l'estimation vers le bas. La consigne « même modèle exact » ne suffit pas : il faudra un contrôle des titres dans notre code.
+
+Validation : Stephen valide `google/gemma-4-31B-it` et `opencv/face_detection_yunet` pour les tests (16/11 au soir). La validation de Jude reste nécessaire avant la démo.
+
+### Soir : test de l'identification par la photo (`google/gemma-4-31B-it`)
+| Image de test | Résultat | Temps |
+|---|---|---|
+| Nintendo Switch (photo produit) | Nintendo Switch, console, confiance 1,0 | 4,4 s |
+| Dos d'iPhone 12 (dessin) | « Apple iPhone », sans le numéro, confiance 0,7 | 5,3 s |
+| Tasse de café | Refusée : pas un objet high-tech | 8,3 s |
+| Portrait | Refusée par le contrôle de visage, avant tout appel au modèle | moins de 0,3 s |
+
+- Le modèle ne devine pas le modèle exact d'un iPhone vu de dos : il faudra demander le modèle à l'utilisateur quand la confiance est basse ou le nom trop vague.
+- Bug corrigé : une variable `HF_VISION_MODEL` vide dans `.env` faisait échouer l'appel.
+- Limites : 4 images seulement, des photos propres et non des photos d'utilisateurs. La précision réelle reste à mesurer sur le jeu de 30 objets.

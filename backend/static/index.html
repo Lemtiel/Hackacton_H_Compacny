@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Snap N Cash</title>
+<style>
+  :root { --bg:#f6f5f1; --card:#fff; --ink:#16181d; --muted:#6a6f7a; --line:#e4e2db; --accent:#0b7a53; --accent-ink:#fff; --warn:#a15c00; --bad:#a3262a; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#121417; --card:#1b1e23; --ink:#eef0f3; --muted:#9aa1ad; --line:#2c3038; --accent:#3ecf8e; --accent-ink:#06281b; --warn:#f0b35a; --bad:#ff8a8a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  main { max-width:640px; margin:0 auto; padding:20px 16px 48px; }
+  h1 { font-size:28px; margin:8px 0 2px; letter-spacing:-.02em; }
+  h2 { font-size:18px; margin:0 0 8px; }
+  .tag { color:var(--muted); margin:0 0 18px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; margin:0 0 14px; }
+  .muted { color:var(--muted); font-size:14px; }
+  button, .btn { font:inherit; font-weight:600; border:0; border-radius:10px; padding:12px 16px; background:var(--accent); color:var(--accent-ink); cursor:pointer; display:inline-block; text-align:center; text-decoration:none; }
+  button.ghost, .btn.ghost { background:transparent; color:var(--ink); border:1px solid var(--line); font-weight:500; }
+  button:disabled { opacity:.5; cursor:default; }
+  .full { width:100%; }
+  input[type=text], select { font:inherit; width:100%; padding:11px 12px; border-radius:10px; border:1px solid var(--line); background:var(--bg); color:var(--ink); }
+  label { display:block; font-size:14px; color:var(--muted); margin:10px 0 4px; }
+  #preview { width:100%; max-height:260px; object-fit:contain; border-radius:10px; margin-top:12px; display:none; background:var(--bg); }
+  .msg { margin-top:10px; font-size:15px; }
+  .msg.bad { color:var(--bad); } .msg.warn { color:var(--warn); }
+  .site { border-top:1px solid var(--line); padding:12px 0; }
+  .site:first-of-type { border-top:0; }
+  .site-head { display:flex; justify-content:space-between; gap:12px; align-items:baseline; }
+  .site-name { font-weight:600; }
+  .state { font-size:14px; color:var(--muted); text-align:right; }
+  .state.ok { color:var(--accent); } .state.off { color:var(--warn); }
+  .offers { list-style:none; margin:8px 0 0; padding:0; }
+  .offers li { display:flex; gap:10px; justify-content:space-between; padding:5px 0; font-size:15px; }
+  .offers a { color:inherit; }
+  .price { font-weight:600; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .big { font-size:34px; font-weight:700; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; }
+  .row > * { flex:1 1 140px; }
+  .spin { display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--accent); margin-right:6px; animation:p 1s infinite alternate; }
+  @keyframes p { from { opacity:.25 } to { opacity:1 } }
+  footer { font-size:13px; color:var(--muted); margin-top:20px; }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Snap N Cash</h1>
+  <p class="tag">Ce qui dort chez vous a un prix.</p>
+
+  <section class="card" id="step-photo">
+    <h2>1. Votre objet</h2>
+    <p class="muted">Prenez une photo de l'objet seul, sans personne dans le cadre. High-tech et jeux vidéo uniquement.</p>
+    <input type="file" id="file" accept="image/*" capture="environment" hidden>
+    <button class="full" id="btn-photo">Prendre une photo</button>
+    <img id="preview" alt="Aperçu de votre photo">
+    <div class="msg" id="photo-msg"></div>
+
+    <label for="product">Ou tapez le nom de l'objet</label>
+    <input type="text" id="product" placeholder="Exemple : Nintendo Switch" maxlength="120" autocomplete="off">
+    <label for="category">Catégorie</label>
+    <select id="category">
+      <option value="smartphone">Smartphone</option>
+      <option value="console">Console</option>
+      <option value="jeu_video">Jeu vidéo</option>
+      <option value="tablette">Tablette</option>
+      <option value="informatique">Informatique</option>
+    </select>
+    <p class="muted" id="ident-detail"></p>
+    <button class="full" id="btn-search" disabled>Chercher les prix</button>
+  </section>
+
+  <section class="card" id="step-agents" hidden>
+    <h2>2. Nos agents consultent les boutiques</h2>
+    <p class="muted" id="agents-sub"></p>
+    <div id="sites"></div>
+  </section>
+
+  <section class="card" id="block-shop" hidden>
+    <h2>Revendre en magasin</h2>
+    <div class="big" id="shop-price"></div>
+    <p class="muted" id="shop-detail"></p>
+  </section>
+
+  <section class="card" id="block-solo" hidden>
+    <h2>Vendre seul</h2>
+    <p class="muted">Le prix conseillé à partir d'eBay arrive bientôt. En attendant, ouvrez la recherche de votre objet :</p>
+    <div class="row" id="links"></div>
+  </section>
+
+  <footer>
+    Estimation générée par IA. Prix indicatifs, relevés sur Easy Cash, Gamecash, Troc.com et Cash Converters :
+    la comparaison n'est pas exhaustive. Votre photo n'est pas conservée.
+  </footer>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const euro = n => n.toLocaleString('fr-FR', { style:'currency', currency:'EUR' });
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+let source = null;
+
+function setMsg(text, kind) { const m = $('photo-msg'); m.textContent = text || ''; m.className = 'msg ' + (kind || ''); }
+function refreshSearchBtn() { $('btn-search').disabled = $('product').value.trim().length < 2; }
+$('product').addEventListener('input', refreshSearchBtn);
+$('btn-photo').addEventListener('click', () => $('file').click());
+
+$('file').addEventListener('change', async () => {
+  const f = $('file').files[0];
+  if (!f) return;
+  const img = $('preview');
+  img.src = URL.createObjectURL(f); img.style.display = 'block';
+  $('ident-detail').textContent = '';
+  setMsg('Analyse de la photo…');
+  $('btn-photo').disabled = true;
+  try {
+    const body = new FormData(); body.append('file', f);
+    const r = await fetch('/api/identify', { method:'POST', body });
+    const j = await r.json();
+    if (!r.ok) { setMsg(j.detail || 'La photo n\'a pas pu être analysée.', 'bad'); return; }
+    $('product').value = j.product;
+    if (j.category !== 'autre') $('category').value = j.category;
+    const bits = [j.variant, j.condition].filter(Boolean);
+    $('ident-detail').textContent = bits.length ? 'Vu sur la photo : ' + bits.join(' · ') : '';
+    setMsg(j.confidence < 0.6
+      ? 'Objet reconnu, sans certitude. Vérifiez le nom avant de lancer la recherche.'
+      : 'Objet reconnu. Corrigez le nom si besoin.', j.confidence < 0.6 ? 'warn' : '');
+    refreshSearchBtn();
+  } catch (e) {
+    setMsg('Connexion impossible. Tapez le nom de l\'objet.', 'bad');
+  } finally {
+    $('btn-photo').disabled = false; $('btn-photo').textContent = 'Reprendre une photo'; $('file').value = '';
+  }
+});
+
+function siteRow(s) {
+  const row = el('div', 'site'); row.id = 'site-' + s.key;
+  const head = el('div', 'site-head');
+  head.append(el('span', 'site-name', s.name));
+  const st = el('span', 'state'); st.id = 'state-' + s.key;
+  if (s.active) { st.append(el('span', 'spin'), document.createTextNode('en file d\'attente')); }
+  else { st.textContent = 'aucun résultat : ne vend pas ce type d\'objet'; }
+  head.append(st); row.append(head);
+  return row;
+}
+
+function setState(key, text, cls, spinning) {
+  const st = $('state-' + key); st.className = 'state ' + (cls || ''); st.textContent = '';
+  if (spinning) st.append(el('span', 'spin'));
+  st.append(document.createTextNode(text));
+}
+
+function showResult(ev) {
+  if (ev.state === 'indisponible') return setState(ev.site, 'indisponible', 'off');
+  if (ev.state === 'aucun_resultat') return setState(ev.site, 'aucun résultat');
+  setState(ev.site, ev.offers.length + (ev.offers.length > 1 ? ' prix trouvés en ' : ' prix trouvé en ') + Math.round(ev.duration_s) + ' s', 'ok');
+  const ul = el('ul', 'offers');
+  for (const o of ev.offers) {
+    const li = el('li');
+    const label = o.title + (o.condition ? ' · ' + o.condition : '');
+    if (o.url && /^https:\/\//.test(o.url)) {
+      const a = el('a', null, label); a.href = o.url; a.target = '_blank'; a.rel = 'noopener noreferrer'; li.append(a);
+    } else li.append(el('span', null, label));
+    li.append(el('span', 'price', euro(o.price_eur)));
+    ul.append(li);
+  }
+  $('site-' + ev.site).append(ul);
+}
+
+function showShopBlock(b) {
+  if (!b) return;
+  $('block-shop').hidden = false;
+  $('shop-price').textContent = '≈ ' + euro(b.buyback_estimate);
+  $('shop-detail').textContent =
+    'Estimation basse de ce qu\'un magasin pourrait vous proposer. Calculée sur ' + b.n_kept +
+    ' prix de vente en boutique (de ' + euro(b.shop_low) + ' à ' + euro(b.shop_high) + ', médiane ' + euro(b.shop_median) +
+    '), multipliés par ' + Math.round(b.coef * 100) + ' %. Le magasin fixe son offre après examen de l\'objet.';
+}
+
+function showLinks(product) {
+  const q = encodeURIComponent(product);
+  const links = [
+    ['Vinted', 'https://www.vinted.fr/catalog?search_text=' + q],
+    ['Leboncoin', 'https://www.leboncoin.fr/recherche?text=' + q],
+    ['eBay', 'https://www.ebay.fr/sch/i.html?_nkw=' + q],
+  ];
+  const box = $('links'); box.textContent = '';
+  for (const [name, href] of links) { const a = el('a', 'btn ghost', name); a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer'; box.append(a); }
+  $('block-solo').hidden = false;
+}
+
+$('btn-search').addEventListener('click', () => {
+  const product = $('product').value.trim(), category = $('category').value;
+  if (source) source.close();
+  $('sites').textContent = ''; $('block-shop').hidden = true;
+  $('step-agents').hidden = false; $('btn-search').disabled = true;
+  $('agents-sub').textContent = 'Recherche de « ' + product + ' ». Chaque boutique s\'affiche dès qu\'elle répond, 90 secondes au plus.';
+  showLinks(product);
+  source = new EventSource('/api/search?product=' + encodeURIComponent(product) + '&category=' + category);
+  source.onmessage = m => {
+    const ev = JSON.parse(m.data);
+    if (ev.type === 'start') for (const s of ev.sites) $('sites').append(siteRow(s));
+    else if (ev.type === 'site_step') setState(ev.site, ev.label, '', true);
+    else if (ev.type === 'site_result') showResult(ev);
+    else if (ev.type === 'shop_block') showShopBlock(ev.block);
+    else if (ev.type === 'done') { source.close(); source = null; refreshSearchBtn(); $('agents-sub').textContent = 'Recherche terminée pour « ' + product + ' ».'; }
+  };
+  source.onerror = () => {
+    if (!source) return;
+    source.close(); source = null; refreshSearchBtn();
+    $('agents-sub').textContent = 'La recherche a été interrompue. Relancez-la.';
+  };
+  $('step-agents').scrollIntoView({ behavior:'smooth' });
+});
+</script>
+</body>
+</html>
