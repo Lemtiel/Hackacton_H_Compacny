@@ -95,3 +95,14 @@ Autre mesure : sur Easy Cash, sans recherche, l'agent consomme beaucoup plus (31
 - Le Redmi Note 10S reste le second objet : il montre le cas « aucun résultat en magasin », où seul le bloc eBay s'affiche.
 - Specs.md mis à jour : résultat minimum acceptable, ordre de la démo, prochaines étapes.
 - À revérifier la veille de la démo : les stocks d'occasion changent d'un jour à l'autre.
+
+### Soir : test de l'iPhone 12 (Gamecash exclu, il ne vend pas de téléphones)
+| Site | Résultat | Durée | Étapes | Tokens (entrée + sortie) | Prix relevés |
+|---|---|---|---|---|---|
+| Easy Cash | OK, réponse forcée, pages de catégorie seulement | 83 s | 10 | 155 000 | 2 (médiane 197 €) |
+| Cash Converters | OK, réponse forcée | 80 s | 13 | 210 000 | 4 (médiane 225 €) |
+| Troc.com | OK, terminé seul | 60 s | 10 | 136 000 | 1 (235 €) |
+
+- Premier objet high-tech qui donne des prix sur 3 boutiques. Troc.com répond pour la première fois.
+- Défauts : Cash Converters rend le lien de la recherche au lieu des liens produit, et sans l'état. Easy Cash n'a relevé que 2 prix alors que la page en montrait au moins 6 : le temps manque, pas les annonces. L'unique offre Troc.com est dans un magasin de Bruxelles.
+- Les capacités sont mélangées (64 et 128 Go) : il faudra préciser la capacité dans la consigne ou la demander à l'utilisateur.
