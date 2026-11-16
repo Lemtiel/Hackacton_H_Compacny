@@ -19,6 +19,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from hai_agents import Client
 
@@ -35,6 +36,14 @@ MAX_PARALLEL = int(os.getenv("HAI_MAX_PARALLEL", "3"))
 _slots = threading.Semaphore(MAX_PARALLEL)
 
 app = FastAPI(title="Snap N Cash")
+
+# Interface Next.js (Vercel) sur une autre adresse : origines autorisées dans ALLOWED_ORIGINS, séparées par des virgules.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[o.strip() for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",") if o.strip()],
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")

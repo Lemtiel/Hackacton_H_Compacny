@@ -9,3 +9,4 @@ node_modules/
 .next/
 .vercel/
 backend/models/
+!frontend/.env.local.example
