@@ -42,3 +42,67 @@
 - Jude : créer le compte développeur eBay et la clé API.
 - Tristan : sondage maison (5 à 10 personnes) sur le temps passé à fixer un prix et publier une annonce.
 - Tous : peer review avant 9h.
+
+### Soir : relecture du brief officiel
+- Brief « Build The Future » (28 slides) comparé aux Specs. Le cadrage y répond : agent sur de vrais sites, usage justifié, mesures chiffrées, retours sur l'Agent API.
+- Écarts corrigés dans Specs.md et CONTEXT.md :
+  - section « Modèle économique et coût de run » ajoutée (à trancher par Stephen et Tristan pour le point business du mercredi) ;
+  - plan B de la démo : vidéo enregistrée la veille et replay des sessions d'agent ;
+  - fiche projet dans le README pour vendredi 11h ;
+  - crédits corrigés : Hugging Face 50 €, v0 30 $ ;
+  - rôles du brief rattachés au projet (CAO : orchestration des agents ; CDO : jeu de test et journal des sessions).
+- Le PDF du brief contient des identifiants : il reste hors du dépôt.
+
+### Soir : premiers tests de l'Agent API H
+Script : `agents/test_agents.py`, agent `h/web-surfer-flash`, même consigne pour tous les sites, réponse forcée à 70 s, annulation à 90 s. Mesures brutes dans `mesures/agent_runs.csv`.
+
+| Site | Objet | Résultat | Durée | Étapes | Tokens (entrée + sortie) | Prix relevés |
+|---|---|---|---|---|---|---|
+| Troc.com | Redmi Note 10S | Aucun résultat (le site n'en vend pas) | 35 s | 5 | 62 000 | 0 |
+| Gamecash | Nintendo Switch | OK, réponse forcée | 80 s | 12 | 201 000 | 4 |
+| Easy Cash | Nintendo Switch | OK, réponse forcée, pages de catégorie seulement | 84 s | 10 | 158 000 | 3 |
+| Cash Converters | Nintendo Switch | OK, réponse forcée, pas de blocage Cloudflare | 84 s | 8 | 115 000 | 2 |
+| Troc.com | Nintendo Switch | Jamais démarré : 4e session en file d'attente | 95 s | 0 | 0 | 0 |
+
+Ce qui a marché :
+- Les 3 boutiques testées sur la Switch ont laissé passer l'agent, sans captcha ni blocage.
+- La réponse structurée (titre, prix, état, lien) arrive bien au format demandé.
+- Chaque session a un lien Agent View (direct et replay) : l'affichage de l'agent en direct est possible.
+
+Ce qui a cassé ou surpris :
+- Le compte est limité à 3 sessions simultanées : la 4e attend. Il faut plus de slots (question aux mentors) ou lancer les sites en deux vagues.
+- Aucune session n'a fini seule avant 70 s sur la Switch : toutes ont eu besoin de la réponse forcée. L'objectif de 3 prix par site n'est tenu que sur 2 sites sur 3.
+- L'agent finit en statut `idle` et non `completed` : il faut annuler la session pour libérer le slot.
+- Qualité : une offre Gamecash a un titre tronqué et un lien de recherche au lieu d'un lien produit ; une offre Cash Converters regroupe plusieurs annonces en une ligne.
+- Le coût en dollars n'est pas calculé : le prix par token au-delà du forfait reste à trouver.
+
+Non testé : Redmi Note 10S sur Easy Cash, Gamecash et Cash Converters ; Troc.com sur la Switch ; répétabilité (un seul essai par site).
+
+### Soir : Redmi Note 10S sur les 3 autres boutiques
+| Site | Résultat | Durée | Étapes | Tokens (entrée + sortie) | Prix relevés |
+|---|---|---|---|---|---|
+| Easy Cash | Aucun 10S (4 pages Xiaomi parcourues, réponse forcée) | 85 s | 19 | 313 000 | 0 |
+| Gamecash | Aucun résultat : le site ne vend pas de téléphones | 18 s | 2 | 21 000 | 0 |
+| Cash Converters | Aucun 10S (seulement des Redmi Note 10 Pro) | 29 s | 3 | 35 000 | 0 |
+
+Constat : le 16/11, aucune des 4 boutiques n'a de Redmi Note 10S en vente. Le « résultat minimum acceptable » des Specs (parcours Redmi avec eBay et au moins une boutique) ne peut pas s'afficher avec cet objet. À trancher en équipe : changer l'objet de démo (la Switch donne des prix sur 3 boutiques) ou accepter les modèles proches (Redmi Note 10, 10 Pro) en les signalant comme tels.
+
+Autre mesure : sur Easy Cash, sans recherche, l'agent consomme beaucoup plus (313 000 tokens, 19 étapes) parce qu'il feuillette les pages de catégorie.
+
+### Décision : la démo principale passe sur la Nintendo Switch
+- Décidé par Stephen le 16/11 au soir, après les tests d'agents. À confirmer avec Jude et l'équipe.
+- Pourquoi : la Switch a donné des prix sur 3 boutiques (Gamecash, Easy Cash, Cash Converters), alors qu'aucune des 4 n'avait de Redmi Note 10S en vente.
+- Le Redmi Note 10S reste le second objet : il montre le cas « aucun résultat en magasin », où seul le bloc eBay s'affiche.
+- Specs.md mis à jour : résultat minimum acceptable, ordre de la démo, prochaines étapes.
+- À revérifier la veille de la démo : les stocks d'occasion changent d'un jour à l'autre.
+
+### Soir : test de l'iPhone 12 (Gamecash exclu, il ne vend pas de téléphones)
+| Site | Résultat | Durée | Étapes | Tokens (entrée + sortie) | Prix relevés |
+|---|---|---|---|---|---|
+| Easy Cash | OK, réponse forcée, pages de catégorie seulement | 83 s | 10 | 155 000 | 2 (médiane 197 €) |
+| Cash Converters | OK, réponse forcée | 80 s | 13 | 210 000 | 4 (médiane 225 €) |
+| Troc.com | OK, terminé seul | 60 s | 10 | 136 000 | 1 (235 €) |
+
+- Premier objet high-tech qui donne des prix sur 3 boutiques. Troc.com répond pour la première fois.
+- Défauts : Cash Converters rend le lien de la recherche au lieu des liens produit, et sans l'état. Easy Cash n'a relevé que 2 prix alors que la page en montrait au moins 6 : le temps manque, pas les annonces. L'unique offre Troc.com est dans un magasin de Bruxelles.
+- Les capacités sont mélangées (64 et 128 Go) : il faudra préciser la capacité dans la consigne ou la demander à l'utilisateur.
