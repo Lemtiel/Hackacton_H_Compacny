@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -90,29 +91,59 @@ def _clip(text: str, n: int) -> str:
     return (cut or text[:n]).rstrip(" ,;:-")
 
 
-def generate(req: ListingRequest) -> dict:
-    token = os.getenv("HF_TOKEN")
-    if not token:
-        raise ListingError("Rédaction indisponible : HF_TOKEN manque dans .env.")
-    from openai import OpenAI
+ATTEMPTS = 2
+ATTEMPT_SECONDS = 10  # durée totale d'une tentative, mesurée par nous
 
-    client = OpenAI(base_url="https://router.huggingface.co/v1", api_key=token, timeout=60)
-    resp = client.chat.completions.create(
-        model=(os.getenv("HF_TEXT_MODEL") or DEFAULT_TEXT_MODEL),
+
+def _ask(client, model: str, req: ListingRequest) -> dict:
+    """Une tentative, lue au fil de l'eau pour pouvoir l'arrêter à ATTEMPT_SECONDS."""
+    start = time.monotonic()
+    parts: list[str] = []
+    stream = client.chat.completions.create(
+        model=model,
         messages=[
             {"role": "system", "content": SYSTEM},
             {"role": "user", "content": f"<fiche>\n{_facts(req)}\n</fiche>"},
         ],
         max_tokens=1400,
         temperature=0.4,
+        stream=True,
     )
-    text = resp.choices[0].message.content or ""
-    m = re.search(r"\{.*\}", text, re.S)
     try:
-        raw = json.loads(m.group(0)) if m else {}
-        ads = {k: Ad(**raw[k]) for k in FORMATS}
-    except Exception as e:
-        raise ListingError("Le modèle n'a pas rendu d'annonce exploitable. Réessayez.") from e
+        for chunk in stream:
+            if chunk.choices and chunk.choices[0].delta.content:
+                parts.append(chunk.choices[0].delta.content)
+            if time.monotonic() - start > ATTEMPT_SECONDS:
+                raise TimeoutError("fournisseur trop lent")
+    finally:
+        stream.close()
+    m = re.search(r"\{.*\}", "".join(parts), re.S)
+    raw = json.loads(m.group(0))
+    return {k: Ad(**raw[k]) for k in FORMATS}
+
+
+def generate(req: ListingRequest) -> dict:
+    token = os.getenv("HF_TOKEN")
+    if not token:
+        raise ListingError("Rédaction indisponible : HF_TOKEN manque dans .env.")
+    from openai import OpenAI
+
+    # Le routeur répartit les appels entre plusieurs fournisseurs, de vitesse très inégale
+    # (3 s d'ordinaire, 30 s parfois, avec une réponse inexploitable). On demande le plus rapide,
+    # on arrête une tentative à 10 s et on retente une fois.
+    model = os.getenv("HF_TEXT_MODEL") or DEFAULT_TEXT_MODEL
+    if ":" not in model:
+        model += ":fastest"
+    client = OpenAI(base_url="https://router.huggingface.co/v1", api_key=token, timeout=8, max_retries=0)
+    ads = None
+    for _ in range(ATTEMPTS):
+        try:
+            ads = _ask(client, model, req)
+            break
+        except Exception:
+            continue
+    if ads is None:
+        raise ListingError("La rédaction n'a pas abouti. Réessayez dans un instant.")
 
     return {
         "formats": [

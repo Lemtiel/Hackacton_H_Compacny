@@ -281,7 +281,7 @@ $('copy-desc').addEventListener('click', e => copy(e.target, $('l-desc').value))
 
 $('btn-listing').addEventListener('click', async () => {
   const msg = $('listing-msg'), box = $('l-box').value;
-  msg.className = 'msg'; msg.textContent = 'Rédaction en cours, environ 30 secondes…';
+  msg.className = 'msg'; msg.textContent = 'Rédaction en cours, quelques secondes…';
   $('btn-listing').disabled = true;
   try {
     const r = await fetch('/api/listing', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({
