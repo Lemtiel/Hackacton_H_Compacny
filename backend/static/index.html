@@ -160,9 +160,10 @@ $('file').addEventListener('change', async () => {
     const bits = [j.variant, j.condition].filter(Boolean);
     $('ident-detail').textContent = bits.length ? 'Vu sur la photo : ' + bits.join(' · ') : '';
     $('l-details').value = bits.join(', ');
-    setMsg(j.confidence < 0.6
-      ? 'Objet reconnu, sans certitude. Vérifiez le nom avant de lancer la recherche.'
-      : 'Objet reconnu. Corrigez le nom si besoin.', j.confidence < 0.6 ? 'warn' : '');
+    setMsg(j.needs_model
+      ? 'Modèle exact non reconnu. Complétez le nom (exemple : iPhone 12) avant de lancer la recherche.'
+      : 'Objet reconnu. Corrigez le nom si besoin.', j.needs_model ? 'warn' : '');
+    if (j.needs_model) $('product').focus();
     refreshSearchBtn();
   } catch (e) {
     setMsg('Connexion impossible. Tapez le nom de l\'objet.', 'bad');
@@ -190,8 +191,11 @@ function setState(key, text, cls, spinning) {
 
 function showResult(ev) {
   if (ev.state === 'indisponible') return setState(ev.site, 'indisponible', 'off');
-  if (ev.state === 'aucun_resultat') return setState(ev.site, 'aucun résultat');
+  const n = ev.n_rejected || 0;
+  const other = n ? n + (n > 1 ? ' annonces écartées (autre modèle ou accessoire)' : ' annonce écartée (autre modèle ou accessoire)') : '';
+  if (ev.state === 'aucun_resultat') return setState(ev.site, 'aucun résultat' + (other ? ' : ' + other : ''));
   setState(ev.site, ev.offers.length + (ev.offers.length > 1 ? ' prix trouvés en ' : ' prix trouvé en ') + Math.round(ev.duration_s) + ' s', 'ok');
+  if (other) $('site-' + ev.site).append(el('div', 'muted', other));
   const ul = el('ul', 'offers');
   for (const o of ev.offers) {
     const li = el('li');

@@ -24,7 +24,7 @@ from hai_agents import Client
 
 from agents.price_agent import MAX_SECONDS, run_site
 from agents.sites import CATEGORIES, SITES, sites_for
-from backend import listing, photo, pricing
+from backend import listing, matching, photo, pricing
 
 ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env")
@@ -67,7 +67,11 @@ async def identify(file: UploadFile = File(...)):
         raise HTTPException(502, "L'identification a échoué. Tapez le nom de l'objet.")
     if not ident.is_object or not ident.product:
         raise HTTPException(422, "Objet non reconnu. Reprenez la photo ou tapez le nom de l'objet.")
-    return ident
+    # Marque seule, ou téléphone sans numéro de modèle (« Apple iPhone ») : on demande le modèle exact.
+    vague = not ident.model or (
+        ident.category in ("smartphone", "tablette") and not any(c.isdigit() for c in ident.product)
+    )
+    return {**ident.model_dump(), "needs_model": vague or ident.confidence < 0.6}
 
 
 @app.post("/api/listing")
@@ -82,17 +86,20 @@ async def make_listing(req: listing.ListingRequest):
         raise HTTPException(502, "La rédaction a échoué. Réessayez dans un instant.")
 
 
-def _site_payload(site: str, r) -> dict:
+def _site_payload(site: str, r, product: str, category: str) -> dict:
+    # Seules les annonces du même modèle comptent : les autres sont écartées par notre code.
+    kept, rejected = matching.filter_offers(product, category, r.offers)
     if r.cancelled or r.status in ("failed", "timed_out", "interrupted", "error"):
         state = "indisponible"
-    elif r.offers:
+    elif kept:
         state = "ok"
     else:
         state = "aucun_resultat"
     return {
         "type": "site_result", "site": site, "state": state,
         "duration_s": r.duration_s, "steps": r.steps,
-        "offers": [o.model_dump() for o in r.offers] if state == "ok" else [],
+        "offers": [o.model_dump() for o in kept] if state == "ok" else [],
+        "n_rejected": rejected if state != "indisponible" else 0,
     }
 
 
@@ -126,7 +133,7 @@ async def search(
                         "label": "démarrage du navigateur" if s["steps"] == 0 else f"navigue, étape {s['steps']}",
                     }),
                 )
-                emit(_site_payload(site, r))
+                emit(_site_payload(site, r, product, category))
             except Exception:
                 emit({"type": "site_result", "site": site, "state": "indisponible", "offers": []})
 

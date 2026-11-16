@@ -175,3 +175,24 @@ Limites :
 - 28 s, c'est long. Pistes : un modèle de texte plus petit, ou un appel par format affiché au fur et à mesure.
 - 2 objets testés seulement. Pas de test avec un texte hostile dans le champ « détails ».
 - Copie dans le presse-papiers non testée sur téléphone.
+
+### Soir : tri des annonces par modèle (défaut « Switch Lite » corrigé)
+Fait : `backend/matching.py` (notre code, sans IA), branché dans `/api/search`. Cas types dans `tests/test_matching.py`.
+
+Une annonce est écartée si son titre : ne contient pas tous les mots du modèle cherché (la marque est facultative) ; contient un mot de déclinaison absent de la recherche (Lite, OLED, Pro, Max, Mini, Slim...) ; porte un numéro collé au nom (« Switch 2 ») ; désigne un accessoire (« Coque... », « Manette... », « ... pour ... »). Si l'utilisateur écrit la capacité (« iPhone 12 64 Go »), seules les annonces de cette capacité restent. La page affiche le nombre d'annonces écartées par boutique.
+
+Aussi : quand la photo ne donne pas le modèle exact (marque seule, téléphone sans numéro, confiance sous 0,6), la page demande de compléter le nom avant la recherche.
+
+| Test | Résultat |
+|---|---|
+| 25 cas types (Switch, iPhone 12, Redmi Note 10S, PlayStation 4, un jeu) | 25 corrects |
+| Recherche réelle « Nintendo Switch », 4 boutiques | Gamecash 3 prix, Easy Cash 3 prix, Troc.com aucun résultat, Cash Converters 1 prix gardé et 4 écartés |
+
+Effet : la médiane en boutique passe à 166 € sur 7 prix (de 145 à 200 €), et l'estimation magasin de 56 € à 66 €.
+
+Limites :
+- Sans capacité saisie, toutes les capacités sont mélangées dans la médiane.
+- Un jeu dont le titre ne commence pas par « Jeu » (« Zelda Switch ») passe encore pour une console ; le retrait des valeurs aberrantes le rattrape en partie.
+- La liste des mots de déclinaison est tenue à la main. Une faute ou une abréviation dans un titre écarte une bonne annonce.
+- La demande du modèle exact n'a pas été retestée avec une photo.
+- 1 seul objet testé en réel.
