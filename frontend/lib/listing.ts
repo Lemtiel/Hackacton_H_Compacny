@@ -1,41 +1,32 @@
-// Brouillon d'annonce généré par gabarit, en attendant l'appel au modèle de texte Hugging Face.
-export type Platform = "vinted" | "leboncoin" | "ebay" | "libre";
+// Annonce : générée par le serveur (POST /api/listing, modèle de texte Hugging Face).
+// Le gabarit ci-dessous ne sert que de secours quand la rédaction par IA est indisponible.
 
-export const PLATFORM_LABELS: Record<Platform, string> = {
-  vinted: "Vinted",
-  leboncoin: "Leboncoin",
-  ebay: "eBay",
-  libre: "Texte libre",
-};
+// Mêmes états que backend/listing.py (CONDITIONS).
+export const CONDITIONS = ["Comme neuf", "Très bon état", "Bon état", "État correct", "Pour pièces"] as const;
+export type Condition = (typeof CONDITIONS)[number];
 
-export type Condition = "comme_neuf" | "bon_etat" | "use";
+export type Platform = "vinted" | "leboncoin" | "ebay" | "generique";
 
-export const CONDITION_LABELS: Record<Condition, string> = {
-  comme_neuf: "Comme neuf",
-  bon_etat: "Bon état",
-  use: "Usé",
-};
+export type ListingFormat = { key: Platform; name: string; title_max: number; title: string; description: string };
 
-export function draftListing(
-  platform: Platform,
-  product: string,
-  condition: Condition,
-  withBox: boolean,
-  price?: number,
-): string {
-  const etat = CONDITION_LABELS[condition].toLowerCase();
-  const boite = withBox ? "Vendu avec sa boîte d'origine." : "Vendu sans boîte d'origine.";
-  const prix = price ? `${Math.round(price)} €` : "à fixer";
-  switch (platform) {
-    case "vinted":
-      return `${product}, ${etat}\n\n${product} en ${etat}, testé et fonctionnel. ${boite}\nEnvoi soigné sous 48 h.\n\nPrix : ${prix}`;
-    case "leboncoin":
-      return `${product} – ${CONDITION_LABELS[condition]}\n\nJe vends mon ${product}, en ${etat}. Il fonctionne parfaitement. ${boite}\nRemise en main propre ou envoi possible.\n\nPrix : ${prix}`;
-    case "ebay":
-      return `${product} ${CONDITION_LABELS[condition]}${withBox ? " avec boîte" : ""}\n\nÉtat : ${CONDITION_LABELS[condition]}\nFonctionnement : testé, entièrement fonctionnel\nContenu : ${withBox ? "boîte d'origine incluse" : "sans boîte d'origine"}\n\nPrix : ${prix}`;
-    default:
-      return `${product}, ${etat}. ${boite} Prix : ${prix}.`;
-  }
+const FORMATS: { key: Platform; name: string; title_max: number }[] = [
+  { key: "vinted", name: "Vinted", title_max: 60 },
+  { key: "leboncoin", name: "Leboncoin", title_max: 50 },
+  { key: "ebay", name: "eBay", title_max: 80 },
+  { key: "generique", name: "Texte générique", title_max: 80 },
+];
+
+// Secours sans IA, sans prix : le prix se saisit à part sur chaque site.
+export function fallbackListing(product: string, condition: Condition, box: boolean, accessories: string, details: string): ListingFormat[] {
+  const boite = box ? "Vendu avec sa boîte d'origine." : "Vendu sans boîte d'origine.";
+  const acc = accessories.trim() ? ` Fourni avec : ${accessories.trim()}.` : "";
+  const det = details.trim() ? ` ${details.trim().replace(/\.?$/, ".")}` : "";
+  const body = `${product}, ${condition.toLowerCase()}. ${boite}${acc}${det}`;
+  return FORMATS.map((f) => ({
+    ...f,
+    title: `${product} ${condition.toLowerCase()}`.slice(0, f.title_max),
+    description: body,
+  }));
 }
 
 // Historique : gardé uniquement dans ce navigateur (rien sur notre serveur).

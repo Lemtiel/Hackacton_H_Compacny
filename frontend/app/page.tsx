@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CATEGORY_LABELS,
   type Category,
@@ -8,17 +8,18 @@ import {
   type ShopBlock,
   type SiteRow,
   euros,
+  generateListing,
   identifyPhoto,
   marketplaceLinks,
   searchPrices,
 } from "@/lib/api";
 import {
-  CONDITION_LABELS,
+  CONDITIONS,
   type Condition,
   type HistoryItem,
-  PLATFORM_LABELS,
+  type ListingFormat,
   type Platform,
-  draftListing,
+  fallbackListing,
   pushHistory,
   readHistory,
 } from "@/lib/listing";
@@ -34,8 +35,10 @@ export default function Home() {
   const [product, setProduct] = useState("");
   const [category, setCategory] = useState<Category>("console");
   const [lowConfidence, setLowConfidence] = useState(false);
-  const [condition, setCondition] = useState<Condition>("bon_etat");
+  const [condition, setCondition] = useState<Condition>("Bon état");
   const [withBox, setWithBox] = useState(true);
+  const [accessories, setAccessories] = useState("");
+  const [details, setDetails] = useState("");
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
   useEffect(() => setHistory(readHistory()), []);
@@ -114,10 +117,10 @@ export default function Home() {
           </div>
 
           <span className="label">État</span>
-          <div className="seg" role="group" aria-label="État">
-            {(Object.keys(CONDITION_LABELS) as Condition[]).map((c) => (
-              <button key={c} type="button" aria-pressed={condition === c} onClick={() => setCondition(c)}>
-                {CONDITION_LABELS[c]}
+          <div className="chips" role="group" aria-label="État">
+            {CONDITIONS.map((c) => (
+              <button key={c} type="button" className="chip" aria-pressed={condition === c} onClick={() => setCondition(c)}>
+                {c}
               </button>
             ))}
           </div>
@@ -127,6 +130,13 @@ export default function Home() {
             <button type="button" aria-pressed={withBox} onClick={() => setWithBox(true)}>Avec</button>
             <button type="button" aria-pressed={!withBox} onClick={() => setWithBox(false)}>Sans</button>
           </div>
+
+          <label className="label" htmlFor="accessories">Accessoires fournis <span className="small">(facultatif)</span></label>
+          <input id="accessories" className="field" value={accessories} maxLength={200} onChange={(e) => setAccessories(e.target.value)} placeholder="Ex. 2 Joy-Con, dock, chargeur" autoComplete="off" />
+
+          <label className="label" htmlFor="details">Détails <span className="small">(facultatif)</span></label>
+          <textarea id="details" className="field" rows={2} value={details} maxLength={400} onChange={(e) => setDetails(e.target.value)} placeholder="Capacité, couleur, défauts visibles" />
+          <p className="small" style={{ marginTop: "0.4rem" }}>Ces informations servent à rédiger votre annonce. Rien n&apos;est inventé.</p>
 
           <div className="stack" style={{ marginTop: "2rem" }}>
             <button
@@ -147,6 +157,8 @@ export default function Home() {
           category={category}
           condition={condition}
           withBox={withBox}
+          accessories={accessories}
+          details={details}
           onDone={(item) => pushHistory(item)}
           onRestart={startOver}
         />
@@ -224,6 +236,8 @@ function SearchScreen({
   category,
   condition,
   withBox,
+  accessories,
+  details,
   onDone,
   onRestart,
 }: {
@@ -231,6 +245,8 @@ function SearchScreen({
   category: Category;
   condition: Condition;
   withBox: boolean;
+  accessories: string;
+  details: string;
   onDone: (item: HistoryItem) => void;
   onRestart: () => void;
 }) {
@@ -239,6 +255,9 @@ function SearchScreen({
   const [done, setDone] = useState(false);
   const [failed, setFailed] = useState(false);
   const [platform, setPlatform] = useState<Platform>("vinted");
+  const [ads, setAds] = useState<ListingFormat[] | null>(null);
+  const [adState, setAdState] = useState<"loading" | "ok" | "fallback">("loading");
+  const [adError, setAdError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const shopRef = useRef<ShopBlock | null>(null);
 
@@ -275,16 +294,30 @@ function SearchScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product, category]);
 
-  const draft = useMemo(
-    () => draftListing(platform, product, condition, withBox, shop?.shop_median),
-    [platform, product, condition, withBox, shop],
-  );
-  const [listing, setListing] = useState(draft);
-  useEffect(() => setListing(draft), [draft]);
+  // L'annonce se rédige en parallèle des agents : elle est prête quand les prix arrivent.
+  function writeListing() {
+    setAdState("loading");
+    setAdError(null);
+    generateListing({ product, category, condition, box: withBox, accessories, details })
+      .then((formats) => { setAds(formats); setAdState("ok"); })
+      .catch((e: Error) => {
+        setAds(fallbackListing(product, condition, withBox, accessories, details));
+        setAdError(e.message);
+        setAdState("fallback");
+      });
+  }
+  useEffect(writeListing, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const ad = ads?.find((a) => a.key === platform) ?? null;
+
+  function editAd(field: "title" | "description", value: string) {
+    setAds((list) => list?.map((a) => (a.key === platform ? { ...a, [field]: value } : a)) ?? null);
+  }
 
   async function copy() {
+    if (!ad) return;
     try {
-      await navigator.clipboard.writeText(listing);
+      await navigator.clipboard.writeText(`${ad.title}\n\n${ad.description}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -297,7 +330,7 @@ function SearchScreen({
 
   return (
     <section className="screen">
-      <p className="muted" style={{ margin: "0.5rem 0 0" }}>{CATEGORY_LABELS[category]}, {CONDITION_LABELS[condition].toLowerCase()}</p>
+      <p className="muted" style={{ margin: "0.5rem 0 0" }}>{CATEGORY_LABELS[category]}, {condition.toLowerCase()}</p>
       <h1 className="display" style={{ marginTop: "0.25rem" }}>{product}</h1>
 
       {failed && (
@@ -368,16 +401,42 @@ function SearchScreen({
       <div className="panel">
         <h3>Votre annonce</h3>
         <div className="seg" role="group" aria-label="Plateforme" style={{ marginTop: "0.5rem" }}>
-          {(Object.keys(PLATFORM_LABELS) as Platform[]).map((p) => (
-            <button key={p} type="button" aria-pressed={platform === p} onClick={() => setPlatform(p)}>
-              {PLATFORM_LABELS[p]}
+          {(ads ?? fallbackListing(product, condition, withBox, accessories, details)).map((a) => (
+            <button key={a.key} type="button" aria-pressed={platform === a.key} onClick={() => setPlatform(a.key)}>
+              {a.key === "generique" ? "Autre" : a.name}
             </button>
           ))}
         </div>
-        <label htmlFor="listing" className="sr-only">Texte de l&apos;annonce</label>
-        <textarea id="listing" className="listing" value={listing} onChange={(e) => setListing(e.target.value)} />
-        <button className="btn btn-primary" onClick={copy}>{copied ? "Annonce copiée" : "Copier l'annonce"}</button>
-        <p className="small" style={{ marginTop: "0.6rem" }}>Ajustez le texte et le prix, puis collez l&apos;annonce sur le site de votre choix et publiez-la vous-même.</p>
+
+        {adState === "loading" && (
+          <p className="muted" aria-live="polite" style={{ margin: "1rem 0 0.25rem" }}>On rédige votre annonce dans les 4 formats. Une trentaine de secondes.</p>
+        )}
+
+        {adState === "fallback" && (
+          <p className="notice warn" style={{ marginTop: "0.75rem" }}>
+            {adError} Voici un brouillon simple à compléter.{" "}
+            <button className="link-btn" onClick={writeListing}>Réessayer la rédaction</button>
+          </p>
+        )}
+
+        {ad && adState !== "loading" && (
+          <>
+            <label htmlFor="ad-title" className="label" style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>Titre</span>
+              <span className="small num" style={{ color: ad.title.length > ad.title_max ? "#991b1b" : undefined }}>
+                {ad.title.length}/{ad.title_max}
+              </span>
+            </label>
+            <input id="ad-title" className="field" style={{ background: "#fff", border: "1px solid var(--line)" }} value={ad.title} onChange={(e) => editAd("title", e.target.value)} />
+            <label htmlFor="ad-desc" className="label">Description</label>
+            <textarea id="ad-desc" className="listing" style={{ marginTop: 0 }} value={ad.description} onChange={(e) => editAd("description", e.target.value)} />
+            <button className="btn btn-primary" onClick={copy}>{copied ? "Annonce copiée" : "Copier l'annonce"}</button>
+            <p className="small" style={{ marginTop: "0.6rem" }}>
+              {adState === "ok" ? "Annonce générée par IA. Relisez-la avant de publier. " : ""}
+              Ajoutez votre prix sur le site, puis publiez l&apos;annonce vous-même.
+            </p>
+          </>
+        )}
       </div>
 
       <div className="stack" style={{ marginTop: "2rem" }}>

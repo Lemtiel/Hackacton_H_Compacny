@@ -90,3 +90,24 @@ export function marketplaceLinks(product: string) {
 
 export const euros = (n: number) =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
+
+export type ListingRequest = {
+  product: string;
+  category: string;
+  condition: string;
+  box: boolean | null;
+  accessories: string;
+  details: string;
+};
+
+// Rédaction de l'annonce en 4 formats par le serveur (environ 30 s).
+export async function generateListing(req: ListingRequest): Promise<import("./listing").ListingFormat[]> {
+  const res = await fetch(`${API_URL}/api/listing`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(typeof data.detail === "string" ? data.detail : "La rédaction a échoué. Réessayez dans un instant.");
+  return data.formats;
+}

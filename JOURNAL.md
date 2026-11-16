@@ -223,4 +223,6 @@ Branche `interface`, partie de `photo-et-recherche`. Dossier `frontend/` (Next.j
 - Serveur : CORS ajouté (`ALLOWED_ORIGINS`) pour que la page Vercel appelle le serveur.
 - Testé en local : parcours texte « Nintendo Switch OLED » de bout en bout. Rachat estimé 92 €, revente en boutique de 180 à 312 €.
 - Non testé : la photo (il manque `HF_TOKEN`), l'affichage sur un vrai téléphone, le déploiement Vercel.
-- Provisoire : l'annonce vient d'un gabarit, pas encore du modèle de texte Hugging Face. Le bloc eBay attend la clé API.
+- Annonce : branchée sur la route `POST /api/listing` de Stephen (5 états, accessoires, détails, 4 formats, titre et description modifiables, compteur de caractères, mention IA). Elle se rédige en parallèle des agents. Si la rédaction échoue, un brouillon simple sans prix s'affiche avec un bouton pour réessayer.
+- Testé : la route répond depuis la page (CORS OK) ; sans `HF_TOKEN`, le brouillon de secours prend le relais.
+- Non testé : la rédaction par IA dans l'interface (il manque `HF_TOKEN`). Le bloc eBay attend la clé API.
