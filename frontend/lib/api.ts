@@ -59,7 +59,7 @@ export async function identifyPhoto(file: File): Promise<Identification> {
 export type SearchEvent =
   | { type: "start"; product: string; category: string; sites: { key: string; name: string; active: boolean }[] }
   | { type: "site_step"; site: string; label?: string; elapsed_s?: number; steps?: number }
-  | { type: "site_result"; site: string; state: "ok" | "aucun_resultat" | "indisponible"; duration_s?: number; offers: Offer[] }
+  | { type: "site_result"; site: string; state: "ok" | "aucun_resultat" | "indisponible"; duration_s?: number; offers: Offer[]; n_rejected?: number }
   | { type: "shop_block"; block: ShopBlock | null }
   | { type: "done" };
 

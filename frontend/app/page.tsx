@@ -277,7 +277,9 @@ function SearchScreen({
         } else if (ev.type === "site_step") {
           setRows((r) => r.map((s) => s.key === ev.site ? { ...s, state: "en_cours", label: ev.label ? ev.label.charAt(0).toUpperCase() + ev.label.slice(1) : s.label, elapsed_s: ev.elapsed_s ?? s.elapsed_s } : s));
         } else if (ev.type === "site_result") {
-          const label = ev.state === "ok" ? `${ev.offers.length} prix relevés` : ev.state === "aucun_resultat" ? "Aucune offre trouvée" : "Site indisponible";
+          const base = ev.state === "ok" ? `${ev.offers.length} prix relevés` : ev.state === "aucun_resultat" ? "Aucune offre de ce modèle" : "Site indisponible";
+          const rejected = ev.n_rejected ? `, ${ev.n_rejected} écartée${ev.n_rejected > 1 ? "s" : ""} (autre modèle)` : "";
+          const label = base + rejected;
           setRows((r) => r.map((s) => s.key === ev.site ? { ...s, state: ev.state, label, elapsed_s: ev.duration_s, offers: ev.offers } : s));
         } else if (ev.type === "shop_block") {
           setShop(ev.block);
