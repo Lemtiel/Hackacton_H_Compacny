@@ -103,14 +103,26 @@ Mesurés sur un jeu de 30 objets high-tech et jeux vidéo. Le prix de référenc
 | Coût par estimation | < 0,25 $ |
 | Temps gagné (3 testeurs, à la main contre avec l'app) | Chiffre mesuré, cité dans le pitch seulement s'il est prouvé |
 
-**Résultat minimum acceptable :** le parcours Redmi Note 10S tourne en live de bout en bout, avec eBay et au moins une boutique, pour que les deux blocs s'affichent. Les mesures sont présentées avec leurs cas d'échec.
+**Résultat minimum acceptable :** le parcours Nintendo Switch tourne en live de bout en bout, avec eBay et au moins une boutique, pour que les deux blocs s'affichent. Les mesures sont présentées avec leurs cas d'échec.
+
+## Modèle économique et coût de run
+Le brief exige de dire qui paie, combien et pourquoi, ainsi que le coût de run (slide dédiée du pitch deck).
+
+- **MVP :** gratuit et anonyme, sans compte ni paiement.
+- **Pistes déjà notées (roadmap) :** packs d'estimations payants, offre revendeurs.
+- **Coût de run :** objectif < 0,25 $ par estimation. Il se calcule à partir des mesures réelles : sessions d'agent H (tokens, durée), appels Hugging Face (vision, texte, visages), hébergement (Vercel, Space).
+- **À trancher :** qui paie (particulier, revendeur, enseigne), le prix, et la marge par rapport au coût de run. Dépend aussi de la réponse des mentors sur l'usage commercial de l'API H (§9.4).
+
+Responsables : Stephen (CEO) et Tristan (CPO). Présenté au point business du mercredi.
 
 ## Contraintes
 - **Temps :** livrables lundi 16/11 17h, mercredi 18/11 17h, vendredi 20/11 11h (prototype, repo, vidéo) et 15h (pitch deck).
-- **Budget :** crédits du hackathon (H Company, Hugging Face 50 $, v0 35 $), rien de payant en plus.
+- **Budget :** crédits du hackathon (H Company, Hugging Face 50 €, v0 30 $), rien de payant en plus.
 - **Stack imposée :** H Company, Hugging Face, GitHub.
 - **Équipe :** Stephen (CEO), Jude (CTO, pilote du projet), Josia (CAO), Sebastian (CAIO), Kevin (CDO), Tristan (CPO).
-- **Démo :** Redmi Note 10S d'abord, puis Nintendo Switch. Objet préparé à l'avance et recherche en direct, avec adaptation si besoin.
+- **Démo :** Nintendo Switch d'abord (prix relevés sur 3 boutiques au test du 16/11). Le Redmi Note 10S passe en second : aucune boutique n'en avait en vente au test, il sert donc à montrer le cas « aucun résultat en magasin », avec le seul bloc eBay. Objet préparé à l'avance et recherche en direct, avec adaptation si besoin.
+- **Plan B de la démo (exigé du CTO par le brief) :** une vidéo du parcours complet enregistrée la veille, plus le replay des sessions d'agent H. Si un site bloque ou dépasse 90 s en live, on bascule dessus sans improviser.
+- **Fiche projet sur GitHub (vendredi 11h) :** le README contient le problème, la solution, la stack, l'architecture, le lien du proto et « comment tester ». Tous les liens sont vérifiés en navigation privée avant le dépôt.
 
 ## Actions avant démarrage
 | # | Action | Responsable | Échéance |
@@ -124,12 +136,15 @@ Mesurés sur un jeu de 30 objets high-tech et jeux vidéo. Le prix de référenc
 | 7 | Relever 5 offres de rachat réelles pour caler le coefficient | Kevin | Jeudi 19/11 midi |
 | 8 | Lire la licence de l'API eBay en entier | Jude | Mercredi 18/11 |
 | 9 | Mesure avec 3 testeurs, à la main puis avec l'app | Tristan | Jeudi 19/11 |
+| 10 | Proposer le modèle économique et le calcul du coût de run | Stephen et Tristan | Mercredi 18/11 (point business) |
+| 11 | Enregistrer la vidéo plan B et garder les replays des sessions | Jude | Jeudi 19/11 au soir |
+| 12 | Rédiger la fiche projet dans le README et vérifier les liens | Jude | Vendredi 20/11 11h |
 
 ## Prochaines étapes
 1. Déposer la validation de l'idée (livrable de lundi 17h).
 2. Lancer le garde-fou de conformité en mode rapide avant d'écrire du code.
 3. Créer la clé API H Company et la clé eBay.
 4. Tester les agents sur les 4 sites (mardi matin).
-5. Construire le parcours de bout en bout sur le Redmi Note 10S.
+5. Construire le parcours de bout en bout sur la Nintendo Switch.
 6. Mesurer sur 10 objets (mercredi), puis sur 30 (jeudi).
 7. Préparer la démo, la vidéo de 5 min et le pitch deck.
