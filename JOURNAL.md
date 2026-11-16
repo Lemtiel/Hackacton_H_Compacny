@@ -156,3 +156,22 @@ Validation : Stephen valide `google/gemma-4-31B-it` et `opencv/face_detection_yu
 - Le modèle ne devine pas le modèle exact d'un iPhone vu de dos : il faudra demander le modèle à l'utilisateur quand la confiance est basse ou le nom trop vague.
 - Bug corrigé : une variable `HF_VISION_MODEL` vide dans `.env` faisait échouer l'appel.
 - Limites : 4 images seulement, des photos propres et non des photos d'utilisateurs. La précision réelle reste à mesurer sur le jeu de 30 objets.
+
+### Soir : annonce générée en 4 formats (Vinted, Leboncoin, eBay, texte générique)
+Fait : `backend/listing.py`, route `POST /api/listing`, bloc « 3. Votre annonce » dans la page de test (état, boîte, accessoires, détails, 4 onglets, titre et description modifiables, boutons de copie).
+
+Choix :
+- **Modèle de texte PROPOSÉ : `google/gemma-4-31B-it`**, le même que pour l'identification, changeable par `HF_TEXT_MODEL`. Justification : déjà en place, un seul modèle à valider et à payer, français correct sur les essais. Stephen a donné le feu vert pour coder ; la validation de Jude reste nécessaire.
+- Le modèle ne reçoit que ce que l'utilisateur a saisi (nom, état, boîte, accessoires, détails). **Aucun prix et aucune annonce relevée n'y passent**, donc aucune donnée eBay (règle 4). L'annonce ne contient pas de prix : il se saisit à part sur chaque site.
+- Un seul appel rend les 4 formats. Notre code coupe les titres à la longueur de chaque site (Vinted 60, Leboncoin 50, eBay 80). Ces longueurs sont à vérifier sur les sites.
+- Mention « Annonce générée par IA. Relisez-la avant de publier » sous l'annonce.
+
+| Test | Résultat | Temps |
+|---|---|---|
+| Nintendo Switch, bon état, sans boîte, 2 Joy-Con + dock + chargeur, rayures au dos | 4 annonces fidèles, rien d'inventé, défaut cité | 28 s |
+| iPhone 12, 64 Go noir, micro-rayure, câble (dans la page) | 4 annonces fidèles, boîte « non précisé » non mentionnée | environ 30 s |
+
+Limites :
+- 28 s, c'est long. Pistes : un modèle de texte plus petit, ou un appel par format affiché au fur et à mesure.
+- 2 objets testés seulement. Pas de test avec un texte hostile dans le champ « détails ».
+- Copie dans le presse-papiers non testée sur téléphone.

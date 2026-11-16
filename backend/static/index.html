@@ -42,6 +42,10 @@
   .spin { display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--accent); margin-right:6px; animation:p 1s infinite alternate; }
   @keyframes p { from { opacity:.25 } to { opacity:1 } }
   footer { font-size:13px; color:var(--muted); margin-top:20px; }
+  textarea { font:inherit; width:100%; min-height:150px; padding:11px 12px; border-radius:10px; border:1px solid var(--line); background:var(--bg); color:var(--ink); resize:vertical; }
+  .tabs { display:flex; gap:6px; flex-wrap:wrap; margin:14px 0 4px; }
+  .tabs button { padding:8px 12px; font-size:14px; }
+  .count { float:right; font-variant-numeric:tabular-nums; }
   [hidden] { display:none !important; }
 </style>
 </head>
@@ -90,8 +94,39 @@
     <div class="row" id="links"></div>
   </section>
 
+  <section class="card" id="step-listing">
+    <h2>3. Votre annonce</h2>
+    <p class="muted">Précisez l'état : l'annonce ne dira que ce que vous indiquez ici. Vous la copiez et la publiez vous-même.</p>
+    <label for="l-condition">État</label>
+    <select id="l-condition">
+      <option>Comme neuf</option><option>Très bon état</option><option selected>Bon état</option><option>État correct</option><option>Pour pièces</option>
+    </select>
+    <label for="l-box">Boîte d'origine</label>
+    <select id="l-box"><option value="">Non précisé</option><option value="1">Oui</option><option value="0">Non</option></select>
+    <label for="l-acc">Accessoires fournis</label>
+    <input type="text" id="l-acc" placeholder="Exemple : chargeur, 2 manettes" maxlength="200" autocomplete="off">
+    <label for="l-details">Détails (capacité, couleur, défauts)</label>
+    <input type="text" id="l-details" placeholder="Exemple : 128 Go, noir, rayure au dos" maxlength="400" autocomplete="off">
+    <p></p>
+    <button class="full" id="btn-listing" disabled>Rédiger l'annonce</button>
+    <div class="msg" id="listing-msg"></div>
+    <div id="listing-out" hidden>
+      <div class="tabs" id="l-tabs"></div>
+      <label for="l-title">Titre <span class="count" id="l-count"></span></label>
+      <input type="text" id="l-title">
+      <label for="l-desc">Description</label>
+      <textarea id="l-desc"></textarea>
+      <p></p>
+      <div class="row">
+        <button class="ghost" id="copy-title">Copier le titre</button>
+        <button id="copy-desc">Copier la description</button>
+      </div>
+      <p class="muted">Annonce générée par IA. Relisez-la avant de publier : vous restez responsable de son contenu.</p>
+    </div>
+  </section>
+
   <footer>
-    Estimation générée par IA. Prix indicatifs, relevés sur Easy Cash, Gamecash, Troc.com et Cash Converters :
+    Estimation et annonce générées par IA. Prix indicatifs, relevés sur Easy Cash, Gamecash, Troc.com et Cash Converters :
     la comparaison n'est pas exhaustive. Votre photo n'est pas conservée.
   </footer>
 </main>
@@ -103,7 +138,7 @@ const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls)
 let source = null;
 
 function setMsg(text, kind) { const m = $('photo-msg'); m.textContent = text || ''; m.className = 'msg ' + (kind || ''); }
-function refreshSearchBtn() { $('btn-search').disabled = $('product').value.trim().length < 2; }
+function refreshSearchBtn() { const off = $('product').value.trim().length < 2; $('btn-search').disabled = off; $('btn-listing').disabled = off; }
 $('product').addEventListener('input', refreshSearchBtn);
 $('btn-photo').addEventListener('click', () => $('file').click());
 
@@ -124,6 +159,7 @@ $('file').addEventListener('change', async () => {
     if (j.category !== 'autre') $('category').value = j.category;
     const bits = [j.variant, j.condition].filter(Boolean);
     $('ident-detail').textContent = bits.length ? 'Vu sur la photo : ' + bits.join(' · ') : '';
+    $('l-details').value = bits.join(', ');
     setMsg(j.confidence < 0.6
       ? 'Objet reconnu, sans certitude. Vérifiez le nom avant de lancer la recherche.'
       : 'Objet reconnu. Corrigez le nom si besoin.', j.confidence < 0.6 ? 'warn' : '');
@@ -213,6 +249,51 @@ $('btn-search').addEventListener('click', () => {
     $('agents-sub').textContent = 'La recherche a été interrompue. Relancez-la.';
   };
   $('step-agents').scrollIntoView({ behavior:'smooth' });
+});
+
+let ads = [], current = 0;
+function saveAd() { if (ads[current]) { ads[current].title = $('l-title').value; ads[current].description = $('l-desc').value; } }
+function countTitle() {
+  const a = ads[current]; if (!a) return;
+  const n = $('l-title').value.length;
+  $('l-count').textContent = n + ' / ' + a.title_max;
+  $('l-count').style.color = n > a.title_max ? 'var(--bad)' : '';
+}
+function showAd(i) {
+  saveAd(); current = i;
+  $('l-title').value = ads[i].title; $('l-desc').value = ads[i].description; countTitle();
+  [...$('l-tabs').children].forEach((b, k) => b.className = k === i ? '' : 'ghost');
+}
+$('l-title').addEventListener('input', countTitle);
+
+async function copy(btn, text) {
+  const old = btn.textContent;
+  try { await navigator.clipboard.writeText(text); btn.textContent = 'Copié'; }
+  catch (e) { btn.textContent = 'Copie impossible'; }
+  setTimeout(() => btn.textContent = old, 1500);
+}
+$('copy-title').addEventListener('click', e => copy(e.target, $('l-title').value));
+$('copy-desc').addEventListener('click', e => copy(e.target, $('l-desc').value));
+
+$('btn-listing').addEventListener('click', async () => {
+  const msg = $('listing-msg'), box = $('l-box').value;
+  msg.className = 'msg'; msg.textContent = 'Rédaction en cours, environ 30 secondes…';
+  $('btn-listing').disabled = true;
+  try {
+    const r = await fetch('/api/listing', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({
+      product: $('product').value.trim(), category: $('category').value, condition: $('l-condition').value,
+      box: box === '' ? null : box === '1', accessories: $('l-acc').value, details: $('l-details').value,
+    }) });
+    const j = await r.json();
+    if (!r.ok) { msg.className = 'msg bad'; msg.textContent = typeof j.detail === 'string' ? j.detail : 'La rédaction a échoué. Vérifiez les champs.'; return; }
+    ads = []; current = 0; ads = j.formats;
+    const tabs = $('l-tabs'); tabs.textContent = '';
+    ads.forEach((a, i) => { const b = el('button', 'ghost', a.name); b.addEventListener('click', () => showAd(i)); tabs.append(b); });
+    $('listing-out').hidden = false; showAd(0); msg.textContent = '';
+    $('btn-listing').textContent = 'Rédiger à nouveau';
+  } catch (e) {
+    msg.className = 'msg bad'; msg.textContent = 'Connexion impossible. Réessayez.';
+  } finally { refreshSearchBtn(); }
 });
 </script>
 </body>

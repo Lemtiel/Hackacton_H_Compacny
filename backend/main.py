@@ -2,6 +2,7 @@
 
   POST /api/identify   photo -> contrôle visage -> identification (marque, modèle, état)
   GET  /api/search     recherche des prix en boutique, résultats envoyés site par site (SSE)
+  POST /api/listing    annonce rédigée en 4 formats (Vinted, Leboncoin, eBay, générique)
 
 Rien n'est conservé : ni photo, ni annonce relevée. Les résultats ne vivent que le temps de la requête.
 
@@ -23,7 +24,7 @@ from hai_agents import Client
 
 from agents.price_agent import MAX_SECONDS, run_site
 from agents.sites import CATEGORIES, SITES, sites_for
-from backend import photo, pricing
+from backend import listing, photo, pricing
 
 ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env")
@@ -49,6 +50,7 @@ def config():
         "max_seconds": MAX_SECONDS,
         "vision_model": (os.getenv("HF_VISION_MODEL") or photo.DEFAULT_VISION_MODEL),
         "identify_ready": bool(os.getenv("HF_TOKEN")),
+        "conditions": listing.CONDITIONS,
     }
 
 
@@ -66,6 +68,18 @@ async def identify(file: UploadFile = File(...)):
     if not ident.is_object or not ident.product:
         raise HTTPException(422, "Objet non reconnu. Reprenez la photo ou tapez le nom de l'objet.")
     return ident
+
+
+@app.post("/api/listing")
+async def make_listing(req: listing.ListingRequest):
+    if req.condition not in listing.CONDITIONS:
+        raise HTTPException(422, "État inconnu.")
+    try:
+        return await asyncio.to_thread(listing.generate, req)
+    except listing.ListingError as e:
+        raise HTTPException(422, str(e))
+    except Exception:
+        raise HTTPException(502, "La rédaction a échoué. Réessayez dans un instant.")
 
 
 def _site_payload(site: str, r) -> dict:
