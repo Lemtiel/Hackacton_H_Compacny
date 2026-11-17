@@ -421,3 +421,16 @@ Décision de Jude : la partie revendeurs passe à Tristan, en dehors du parcours
 - `docs/revendeurs.md` : cahier des charges, règles du calcul, tâches par priorité, règles à respecter ;
 - `frontend/app/pro/page.tsx` : version de départ (recherche existante, médiane des boutiques sans les prix aberrants, annonces classées par marge après 10 % de frais, étiquette « Bonne affaire » à 15 % sous la médiane).
 Testé : le code compile. Non testé : la page dans le navigateur avec une vraie recherche.
+### Soir : test complémentaire de Jude (Nintendo Switch OLED, 4 sites)
+Lancé en parallèle du test de Stephen, avec un réglage différent : départ sur la page d'accueil, sans réponse forcée, 150 s maximum par site. Les 4 sessions sont ajoutées à `mesures/agent_runs.csv`.
+
+| Site | Résultat | Durée | Étapes | Tokens (entrée + sortie) | Prix relevés |
+|---|---|---|---|---|---|
+| Easy Cash | OK, terminé seul, navigation par les menus | 167 s | 22 | 365 000 | 8 |
+| Gamecash | OK, terminé seul | 76 s | 13 | 185 000 | 4 |
+| Cash Converters | OK, pas de blocage Cloudflare | 124 s | 8 | 107 000 | 8 |
+| Troc.com | Accès OK, aucune Switch OLED | 86 s | 15 | 212 000 | 0 |
+
+- Sans réponse forcée, Easy Cash relève 8 prix au lieu de 3, mais met plus de 2 min 30 : partir de l'URL de catégorie (comme dans `agents/sites.py`) reste indispensable.
+- Les 4 sessions lancées en même temps ont toutes abouti, sans rester bloquées en file d'attente. La limite de 3 sessions simultanées reste à clarifier avec les mentors.
+- Estimation complète sur 4 sites : environ 870 000 tokens.
