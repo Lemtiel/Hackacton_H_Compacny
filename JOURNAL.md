@@ -120,3 +120,27 @@ Lancé en parallèle du test de Stephen, avec un réglage différent : départ s
 - Sans réponse forcée, Easy Cash relève 8 prix au lieu de 3, mais met plus de 2 min 30 : partir de l'URL de catégorie (comme dans `agents/sites.py`) reste indispensable.
 - Les 4 sessions lancées en même temps ont toutes abouti, sans rester bloquées en file d'attente. La limite de 3 sessions simultanées reste à clarifier avec les mentors.
 - Estimation complète sur 4 sites : environ 870 000 tokens.
+
+## Mardi 17 novembre 2026
+
+### Business model
+Préparé par Claude pour Tristan (CPO) et Stephen (CEO). Fichiers : `docs/business-model/business-model-snap-n-cash.md` et `docs/business-model/snap-n-cash-projections.xlsx`.
+
+Décisions de l'équipe (17/11, transmises par Tristan) :
+- 3 premières photos gratuites, puis abonnements Bronze 4,99 € TTC, Silver 14,99 € TTC, Entreprise 149 € HT par mois.
+- Cible Entreprise : dépôts-vente et brocanteurs d'abord. Horizon des projections : 3 ans. Fondateurs non payés en an 1.
+- Partenariat Vinted et Leboncoin : 0,30 € par annonce publiée pendant 12 mois, pour que les plateformes mesurent l'efficacité de l'outil, puis licence (4 000 € HT par mois et par plateforme, hypothèse).
+- Pourquoi : le partenariat donne un accès officiel à leurs prix, ce qui règle l'interdiction actuelle des CGU (règle 1).
+
+Chiffres clés (scénario central, hypothèses) :
+- Coût d'une estimation : 0,17 € dans le pire cas (mesures du 16/11, modèle Holo le plus cher, agents payés à l'usage), environ 0,02 € dans le forfait H Builder.
+- Marge brute par abonné, pire cas : 70 à 76 % du prix HT. Aucun abonnement ne perd d'argent tant que le coût par estimation reste sous 0,58 €.
+- Chiffre d'affaires : 22 100 € en an 1, 149 500 € en an 2, 375 200 € en an 3. Résultat : +1 200 €, −23 300 €, +14 700 €. Besoin de financement : environ 37 000 €.
+
+Points d'attention :
+- Compter les 3 photos gratuites impose un compte (e-mail) : politique de confidentialité RGPD à prévoir.
+- Dès qu'une plateforme nous rémunère, la page « Comment ça marche » doit le dire (elle affirme aujourd'hui qu'aucun site ne nous paie).
+- Licence non exclusive : l'application Snap N Cash garde la comparaison neutre de toutes les sources.
+
+Non vérifié : le modèle derrière `web-surfer-flash`, l'usage commercial de l'API H, le prix réaliste d'une licence, le coût d'acquisition (3 € par inscrit retenus).
+
