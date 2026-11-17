@@ -32,6 +32,10 @@ export default function HowItWorks() {
         Une intelligence artificielle reconnaît l&apos;objet sur votre photo. Une photo où apparaît un visage est refusée. Nous ne gardons ni la
         photo, ni vos recherches : votre historique reste dans votre navigateur.
       </p>
+      <p className="muted">
+        Si vous créez une photo studio, votre photo est envoyée au modèle de détourage Bria, hébergé par fal.ai et appelé via Hugging Face.
+        Seul le fond change : l&apos;objet n&apos;est pas modifié. La photo n&apos;est pas conservée par Snap N Cash.
+      </p>
 
       <p style={{ marginTop: "2.5rem" }}>
         <Link href="/" className="btn btn-quiet">

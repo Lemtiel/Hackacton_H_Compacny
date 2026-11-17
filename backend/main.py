@@ -4,6 +4,7 @@
   GET  /api/search     recherche des prix en boutique, résultats envoyés site par site (SSE)
   POST /api/listing    annonce rédigée en 4 formats (Vinted, Leboncoin, eBay, générique)
   GET  /api/ebay       bloc « Vendre seul » : annonces eBay en cours (API Browse), séparées des boutiques
+  POST /api/studio     photo studio : objet détouré sur fond clair, objet non modifié
   GET  /api/shot/{id}  mode démo : dernière capture d'écran d'un agent, relayée sans être enregistrée
 
 Rien n'est conservé : ni photo, ni annonce relevée. Les résultats ne vivent que le temps de la requête.
@@ -30,7 +31,7 @@ from hai_agents import Client
 
 from agents.price_agent import MAX_SECONDS, run_site
 from agents.sites import CATEGORIES, SITES, sites_for
-from backend import ebay, listing, matching, photo, pricing
+from backend import ebay, listing, matching, photo, pricing, studio
 
 ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env")
@@ -116,6 +117,32 @@ async def identify(files: list[UploadFile] = File(None), file: UploadFile = File
         ident.category in ("smartphone", "tablette") and not any(c.isdigit() for c in ident.product)
     )
     return {**ident.model_dump(), "needs_model": vague or ident.confidence < 0.6}
+
+
+# Le détourage occupe le processeur plusieurs secondes : une seule photo studio à la fois.
+_studio_slot = threading.Semaphore(1)
+
+
+@app.post("/api/studio")
+async def make_studio(file: UploadFile = File(...)):
+    data = await file.read(MAX_UPLOAD + 1)
+    if len(data) > MAX_UPLOAD:
+        raise HTTPException(413, "Photo trop lourde (8 Mo maximum).")
+
+    def work() -> bytes:
+        img = photo.load_image(data)
+        if photo.count_faces(img) > 0:  # règle 6 : aucune photo avec un visage
+            raise photo.PhotoError("Un visage apparaît sur la photo. Reprenez une photo de l'objet seul.")
+        with _studio_slot:
+            return studio.make_studio(img)
+
+    try:
+        jpeg = await asyncio.to_thread(work)
+    except (photo.PhotoError, studio.StudioError) as e:
+        raise HTTPException(422, str(e))
+    except Exception:
+        raise HTTPException(502, "La photo studio a échoué. Réessayez dans un instant.")
+    return Response(jpeg, media_type="image/jpeg", headers={"Cache-Control": "no-store"})
 
 
 @app.post("/api/listing")

@@ -158,3 +158,15 @@ export async function fetchEbay(product: string, category: string, signal?: Abor
     return { state: "indisponible", block: null, items: [] };
   }
 }
+
+// Studio photo : l'objet détouré, posé sur un fond clair. L'objet n'est pas modifié.
+export async function makeStudio(photo: Blob): Promise<Blob> {
+  const body = new FormData();
+  body.append("file", photo, "photo.jpg");
+  const res = await fetch(`${API_URL}/api/studio`, { method: "POST", body });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(typeof data.detail === "string" ? data.detail : "La photo studio a échoué. Réessayez dans un instant.");
+  }
+  return res.blob();
+}

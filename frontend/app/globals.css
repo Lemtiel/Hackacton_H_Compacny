@@ -450,6 +450,14 @@ details.site-detail summary::-webkit-details-marker { display: none; }
 .shot-title { font-weight: 600; }
 .small-link { font-size: 0.8125rem; justify-self: start; }
 
+/* Photos studio pour l'annonce */
+.studio-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr)); gap: 0.6rem; }
+.studio-item { margin: 0; display: grid; gap: 0.4rem; min-width: 0; }
+.studio-item img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: var(--radius-s); background: var(--bg); display: block; }
+.studio-item figcaption { display: grid; gap: 0.3rem; justify-items: center; }
+.studio-item .seg { width: 100%; }
+.studio-item .seg button { font-size: 0.8125rem; padding: 0.35rem 0.3rem; }
+
 /* Photos */
 .thumbs { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: flex-end; }
 .thumbs .photo { flex: 1 1 100%; }

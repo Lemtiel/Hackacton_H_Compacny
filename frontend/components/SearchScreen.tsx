@@ -12,6 +12,7 @@ import {
   fetchEbay,
   generateListing,
   isDemo,
+  makeStudio,
   marketplaceLinks,
   searchPrices,
   shotUrl,
@@ -234,15 +235,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
         </div>
       )}
 
-      {photos.length > 0 && (
-        <div className="panel">
-          <h3>Vos photos pour l&apos;annonce</h3>
-          <p className="small" style={{ margin: "0 0 0.75rem" }}>Elles restent sur votre téléphone : ajoutez-les vous-même sur le site.</p>
-          <div className="thumbs">
-            {photos.map((p, i) => <img key={i} src={p} alt={`Photo ${i + 1}`} className="thumb" />)}
-          </div>
-        </div>
-      )}
+      {photos.length > 0 && <StudioPhotos photos={photos} />}
 
       <div className="stack" style={{ marginTop: "2rem" }}>
         {done && !failed && <a href="/grenier" className="btn btn-quiet">Voir Mon grenier</a>}
@@ -541,6 +534,74 @@ function EbayPanel({ result }: { result: EbayResult | null }) {
         </details>
       )}
       <p className="small" style={{ margin: "0.5rem 0 0" }}>Source : API officielle d&apos;eBay, annonces d&apos;occasion en France. Prix demandés, pas des ventes conclues.</p>
+    </div>
+  );
+}
+
+// Photos pour l'annonce, avec leur version studio (objet détouré sur fond clair, objet non modifié).
+function StudioPhotos({ photos }: { photos: string[] }) {
+  const [studio, setStudio] = useState<(string | null)[]>(photos.map(() => null));
+  const [show, setShow] = useState<("studio" | "original")[]>(photos.map(() => "studio"));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => () => studio.forEach((u) => u && URL.revokeObjectURL(u)), []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function run() {
+    setBusy(true);
+    setError(null);
+    for (let i = 0; i < photos.length; i++) {
+      if (studio[i]) continue;
+      try {
+        const src = await fetch(photos[i]).then((r) => r.blob());
+        const out = await makeStudio(src);
+        const url = URL.createObjectURL(out);
+        setStudio((s) => s.map((v, j) => (j === i ? url : v)));
+      } catch (e) {
+        setError((e as Error).message);
+      }
+    }
+    setBusy(false);
+  }
+
+  const done = studio.some(Boolean);
+  return (
+    <div className="panel">
+      <h3>Vos photos pour l&apos;annonce</h3>
+      <p className="small" style={{ margin: "0 0 0.75rem" }}>
+        {done
+          ? "Version studio : fond retouché, objet non modifié. Enregistrez celles que vous voulez publier."
+          : "Créez une version studio : l'objet détouré sur un fond clair, comme sur les sites de seconde main haut de gamme."}
+      </p>
+      <div className="studio-grid">
+        {photos.map((p, i) => {
+          const url = show[i] === "studio" && studio[i] ? studio[i]! : p;
+          return (
+            <figure key={i} className="studio-item">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={url} alt={`Photo ${i + 1}${studio[i] && show[i] === "studio" ? ", version studio" : ""}`} />
+              {studio[i] && (
+                <figcaption>
+                  <div className="seg" role="group" aria-label={`Photo ${i + 1}`}>
+                    <button type="button" aria-pressed={show[i] === "studio"} onClick={() => setShow((s) => s.map((v, j) => (j === i ? "studio" : v)))}>Studio</button>
+                    <button type="button" aria-pressed={show[i] === "original"} onClick={() => setShow((s) => s.map((v, j) => (j === i ? "original" : v)))}>Originale</button>
+                  </div>
+                  <a className="small" href={url} download={`snapncash-photo-${i + 1}${show[i] === "studio" ? "-studio" : ""}.jpg`}>Enregistrer</a>
+                </figcaption>
+              )}
+            </figure>
+          );
+        })}
+      </div>
+      {error && <p className="notice error" style={{ marginTop: "0.75rem" }}>{error}</p>}
+      {studio.some((s) => !s) && (
+        <button className="btn btn-quiet" style={{ marginTop: "0.75rem", background: "var(--bg)" }} onClick={run} disabled={busy}>
+          {busy ? "Création des photos studio…" : done ? "Réessayer les photos manquantes" : `Créer ${photos.length > 1 ? "les photos" : "la photo"} studio`}
+        </button>
+      )}
+      <p className="small" style={{ margin: "0.6rem 0 0" }}>
+        Détourage par un modèle d&apos;IA (Bria, via Hugging Face). Vos photos ne sont pas conservées.
+      </p>
     </div>
   );
 }

@@ -395,3 +395,14 @@ Testé avec 2 images de synthèse (dos d'iPhone dessiné, étiquette « iPhone 1
 | Après la parade, 5 appels | 5 corrects | 1,0 à 3,0 s |
 Non testé : de vraies photos d'objets, le choix appareil photo ou galerie sur iPhone, une photo réelle avec un visage.
 Décisions de Jude (17/11, fin d'après-midi) : conseils de vente abandonnés (les consignes de prise de vue suffisent). Studio photo validé avec `ZhengPeng7/BiRefNet_lite` (licence MIT), de préférence à `briaai/RMBG-2.0` (licence non commerciale, accès sur demande). Principe retenu : détourage de la vraie photo sur fond clair, objet jamais redessiné, mention « fond retouché, objet non modifié ».
+
+### Mardi 17/11, soir : studio photo (Jude)
+Principe : la vraie photo, détourée et posée sur un fond blanc cassé, recadrée au carré (1 200 px), avec une ombre douce. L'objet n'est jamais redessiné : l'interface affiche « fond retouché, objet non modifié ».
+Modèle :
+- BiRefNet_lite (MIT), validé d'abord, testé sur notre serveur (ONNX, onnxruntime) : rendu propre, mais 35 s de chargement puis 57 à 85 s par photo sur le Mac (M1 8 Go, mémoire saturée). Essai avec le Neural Engine (CoreML) bloqué faute de mémoire. Gardé en secours (`STUDIO_LOCAL=1`, ou si le fournisseur ne répond pas).
+- **Bria RMBG-2.0 via Hugging Face chez fal.ai**, validé par Jude ensuite : 1,1 à 1,8 s par photo, détourage compris. Payé à l'image sur les crédits HF (prix exact à relever). La photo part chez fal.ai : visages refusés avant l'envoi, photo réencodée en JPEG (aucune métadonnée GPS ni appareil). Mention ajoutée dans « Comment ça marche ».
+Fait : `backend/studio.py`, route `POST /api/studio` (contrôle de visage, une photo studio à la fois), `onnxruntime` dans `requirements.txt`. Interface : bloc « Vos photos pour l'annonce » avec « Créer les photos studio », bascule Studio / Originale et lien « Enregistrer » par photo, mention « Détourage par un modèle d'IA (Bria, via Hugging Face) ».
+Testé : 2 images de synthèse via le module (1,4 et 1,8 s), la route (200, JPEG, 1,8 s), le parcours complet dans Chrome (2 photos, identification « iPhone 13 128 GB », 2 photos studio affichées).
+Non testé : de vraies photos d'objets (contours, reflets), l'enregistrement sur iPhone, le coût réel par image, la bascule automatique vers BiRefNet en cas de panne de fal.ai.
+Garde-fou : nouveau sous-traitant (fal.ai, États-Unis) qui reçoit les photos. À reprendre dans le garde-fou complet de vendredi.
+Test de Jude sur téléphone (réseau 10.40.5.83) : le parcours et le studio photo marchent.

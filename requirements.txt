@@ -8,3 +8,4 @@ openai
 httpx
 opencv-python-headless
 pillow
+onnxruntime
