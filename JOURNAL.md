@@ -127,7 +127,7 @@ Lancé en parallèle du test de Stephen, avec un réglage différent : départ s
 Préparé par Claude pour Tristan (CPO) et Stephen (CEO). Fichiers : `docs/business-model/business-model-snap-n-cash.md` et `docs/business-model/snap-n-cash-projections.xlsx`.
 
 Décisions de l'équipe (17/11, transmises par Tristan) :
-- 3 premières photos gratuites, puis abonnements Bronze 4,99 € TTC, Silver 14,99 € TTC, Entreprise 149 € HT par mois.
+- 3 premières estimations gratuites, puis abonnements Bronze 4,99 € TTC, Silver 14,99 € TTC, Entreprise 149 € HT par mois.
 - Cible Entreprise : dépôts-vente et brocanteurs d'abord. Horizon des projections : 3 ans. Fondateurs non payés en an 1.
 - Partenariat Vinted et Leboncoin : 0,30 € par annonce publiée pendant 12 mois, pour que les plateformes mesurent l'efficacité de l'outil, puis licence (4 000 € HT par mois et par plateforme, hypothèse).
 - Pourquoi : le partenariat donne un accès officiel à leurs prix, ce qui règle l'interdiction actuelle des CGU (règle 1).
@@ -138,9 +138,20 @@ Chiffres clés (scénario central, hypothèses) :
 - Chiffre d'affaires : 22 100 € en an 1, 149 500 € en an 2, 375 200 € en an 3. Résultat : +1 200 €, −23 300 €, +14 700 €. Besoin de financement : environ 37 000 €.
 
 Points d'attention :
-- Compter les 3 photos gratuites impose un compte (e-mail) : politique de confidentialité RGPD à prévoir.
+- Compter les 3 estimations gratuites impose un compte (e-mail) : politique de confidentialité RGPD à prévoir.
 - Dès qu'une plateforme nous rémunère, la page « Comment ça marche » doit le dire (elle affirme aujourd'hui qu'aucun site ne nous paie).
 - Licence non exclusive : l'application Snap N Cash garde la comparaison neutre de toutes les sources.
 
 Non vérifié : le modèle derrière `web-surfer-flash`, l'usage commercial de l'API H, le prix réaliste d'une licence, le coût d'acquisition (3 € par inscrit retenus).
 
+
+### Mardi 17/11, soir : business model corrigé pour 6 boutiques (relecture de Jude)
+Corrections apportées à la PR n°16 de Tristan, à la demande de Jude :
+- Offre gratuite : « 3 premières estimations » (et non « 3 photos » : une estimation peut maintenant utiliser 3 photos).
+- Coûts recalculés pour les 6 boutiques actuelles (1 140 000 tokens par estimation au lieu de 760 000) dans le tableur (Hypothèses B9 et B10), puis tout le classeur recalculé :
+  - coût d'une estimation, pire cas : 0,17 € → **0,25 €** (au-dessus de l'objectif des Specs de 0,25 $) ; forfait H : 0,02 € ;
+  - marge brute à l'usage moyen, pire cas : Bronze 68 %, Silver 57 %, Entreprise 56 % ; **Silver, quota épuisé : −0,37 € par mois** (parade : quota à 45, ou forfait H) ;
+  - scénario central : résultat an 2 −34 700 €, an 3 −8 000 € (au lieu de +14 700 €) ; besoin de financement 58 000 € (au lieu de 37 000 €), au mois 30.
+- Risque ajouté : les CGU « usage privé » des boutiques (Gamecash, Cash Converters...) imposent un accord écrit avant tout lancement payant.
+- Mesure : 10 objets (au lieu de 30). Lien vers le cahier des charges des revendeurs corrigé.
+Reste à Tristan : décider du quota Silver, et relire la synthèse « En bref » avec ces chiffres.

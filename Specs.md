@@ -109,8 +109,8 @@ Mesurés sur un jeu de 30 objets high-tech et jeux vidéo. Le prix de référenc
 Le brief exige de dire qui paie, combien et pourquoi, ainsi que le coût de run (slide dédiée du pitch deck).
 
 - **MVP (hackathon) :** gratuit et anonyme, sans compte ni paiement.
-- **Après le hackathon (validé par l'équipe le 17/11) :** 3 premières photos gratuites, puis abonnements Bronze (4,99 € TTC/mois, 10 estimations), Silver (14,99 € TTC/mois, 50 estimations) et Entreprise (149 € HT/mois, 500 estimations ; dépôts-vente et brocanteurs d'abord). Partenariat Vinted et Leboncoin : 0,30 € par annonce publiée pendant 12 mois, puis licence non exclusive.
-- **Coût de run :** objectif < 0,25 $ par estimation. Calculé sur les mesures du 16/11 : 0,17 € par estimation dans le pire cas (agents H payés à l'usage), environ 0,02 € dans un forfait H.
+- **Après le hackathon (validé par l'équipe le 17/11) :** 3 premières estimations gratuites, puis abonnements Bronze (4,99 € TTC/mois, 10 estimations), Silver (14,99 € TTC/mois, 50 estimations) et Entreprise (149 € HT/mois, 500 estimations ; dépôts-vente et brocanteurs d'abord). Partenariat Vinted et Leboncoin : 0,30 € par annonce publiée pendant 12 mois, puis licence non exclusive.
+- **Coût de run :** objectif < 0,25 $ par estimation. Recalculé le 17/11 au soir pour les 6 boutiques : 0,25 € (environ 0,29 $) par estimation dans le pire cas (agents H payés à l'usage), donc au-dessus de l'objectif ; environ 0,02 € dans un forfait H Builder, largement en dessous.
 - **Détail, hypothèses et projections sur 3 ans :** [docs/business-model/](docs/business-model/business-model-snap-n-cash.md) (document et tableur).
 - **Reste ouvert :** l'usage commercial de l'API H (§9.4, question aux mentors).
 
