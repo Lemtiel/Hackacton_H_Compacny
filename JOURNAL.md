@@ -395,3 +395,9 @@ Testé avec 2 images de synthèse (dos d'iPhone dessiné, étiquette « iPhone 1
 | Après la parade, 5 appels | 5 corrects | 1,0 à 3,0 s |
 Non testé : de vraies photos d'objets, le choix appareil photo ou galerie sur iPhone, une photo réelle avec un visage.
 Décisions de Jude (17/11, fin d'après-midi) : conseils de vente abandonnés (les consignes de prise de vue suffisent). Studio photo validé avec `ZhengPeng7/BiRefNet_lite` (licence MIT), de préférence à `briaai/RMBG-2.0` (licence non commerciale, accès sur demande). Principe retenu : détourage de la vraie photo sur fond clair, objet jamais redessiné, mention « fond retouché, objet non modifié ».
+
+### Mardi 17/11, fin d'après-midi : espace revendeurs confié à Tristan
+Décision de Jude : la partie revendeurs passe à Tristan, en dehors du parcours principal (Specs : « offre revendeurs » en roadmap ; Jude maintient, sans commercialisation). Branche `revendeurs` créée depuis `interface`, avec :
+- `docs/revendeurs.md` : cahier des charges, règles du calcul, tâches par priorité, règles à respecter ;
+- `frontend/app/pro/page.tsx` : version de départ (recherche existante, médiane des boutiques sans les prix aberrants, annonces classées par marge après 10 % de frais, étiquette « Bonne affaire » à 15 % sous la médiane).
+Testé : le code compile. Non testé : la page dans le navigateur avec une vraie recherche.
