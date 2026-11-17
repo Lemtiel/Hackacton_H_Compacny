@@ -25,6 +25,8 @@ BRANDS = {
 VARIANTS = {
     "lite", "oled", "pro", "max", "plus", "mini", "ultra", "slim", "fe", "se", "xl", "air",
     "note", "digital", "digitale", "fold", "flip", "neo", "edge",
+    # Éditions limitées et collector : autre référence, vendue plus cher (test DualSense du 17/11)
+    "limitee", "limited", "collector", "collectors",
 }
 
 # Un titre qui commence par l'un de ces mots vend un accessoire, pas l'objet.
@@ -34,6 +36,10 @@ ACCESSORY_START = {
     "ecran", "vitre", "casque", "volant", "boite", "notice", "stylet", "clavier", "telecommande",
 }
 GAME_START = {"jeu", "jeux"}
+
+# Mots qui désignent une manette. Quand l'objet cherché est lui-même une manette (« Sony DualSense »,
+# « Joy-Con »), un titre qui commence par « Manette » est le bon objet, pas un accessoire (test du 17/11).
+CONTROLLER_WORDS = {"manette", "manettes", "controller", "joy", "joycon", "dualsense", "dualshock"}
 
 UNITS = {"go", "to", "mo", "pouces", "pouce"}
 STOP = {"de", "du", "la", "le", "les", "des", "et", "avec", "en", "a", "d", "l"}
@@ -77,6 +83,12 @@ def reject_reason(product: str, category: str, title: str) -> str | None:
             return "autre modèle"
 
     starts = ACCESSORY_START if category == "jeu_video" else ACCESSORY_START | GAME_START
+    if wanted & CONTROLLER_WORDS:
+        # Manette cherchée : « Manette ... pour PS5 » est le bon objet ; « Coque pour manette » ou
+        # « Station de charge pour DualSense » restent des accessoires (premier mot).
+        if have[0] in starts and have[0] not in wanted and have[0] not in CONTROLLER_WORDS:
+            return "accessoire"
+        return None
     if (have[0] in starts and have[0] not in wanted) or ("pour" in have and "pour" not in wanted):
         return "accessoire"
     return None

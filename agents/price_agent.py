@@ -46,7 +46,8 @@ def build_task(site_key: str, product: str) -> str:
     return (
         f"You are on {site['name']}, a French second-hand retailer. "
         f'Find used items for sale matching this product: "{product}". {nav} '
-        "Collect up to 8 listings of the exact same model (ignore accessories, cases and other models). "
+        "Collect up to 8 listings of the exact same model. Ignore items that are not this product: "
+        "accessories made for it, cases and other models. "
         "For each listing give the title, the price in euros, the condition or grade if shown, and the product page URL. "
         "Do not log in, do not add to cart, do not fill any form. "
         "If a cookie consent banner appears, choose the option that refuses or continues without accepting; never accept cookies. "

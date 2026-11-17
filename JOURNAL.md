@@ -324,3 +324,21 @@ Testé :
 
 Non testé : l'affichage des vignettes dans le navigateur, le comportement de l'agent face au bandeau de cookies avec la nouvelle consigne, le mode démo sur téléphone.
 À noter pour la question 10 de Josia : le SDK de H propose `delete_screenshot_after_min`, qui fixe au bout de combien de minutes les captures sont effacées chez H.
+
+### Mardi 17/11, midi : manettes écartées par erreur (test de Jude au téléphone)
+Constat de Jude, photo d'une manette PS5 identifiée en « Sony DualSense » : Easy Cash indisponible, Gamecash sans résultat, Cash Converters 4 annonces.
+Cause trouvée : `backend/matching.py` écartait comme « accessoire » tout titre commençant par « Manette » ou contenant « pour », même quand l'objet cherché est une manette. La consigne de l'agent disait aussi « ignore accessories ».
+Correctifs :
+- tri : si l'objet cherché est une manette (DualSense, DualShock, Joy-Con, « manette »), un titre « Manette … pour PS5 » est gardé ; « Coque pour manette », « Station de charge », « Chargeur » restent écartés. Pour une console cherchée, la manette reste un accessoire.
+- consigne de l'agent : « Ignore items that are not this product: accessories made for it, cases and other models ».
+Tests : `tests/test_matching.py` passe de 25 à 37 cas, 37/37 corrects.
+Recherche réelle « Sony DualSense » (console), après correctif :
+| Site | Résultat | Durée |
+|---|---|---|
+| Gamecash | 1 prix (109,95 €, édition limitée God of War) | 62,5 s |
+| Troc.com | aucun résultat | 74,7 s |
+| Easy Cash | 2 prix (59,99 €) | 81,3 s |
+| Cash Converters | 4 prix (39,99 à 59,99 €) | 24,1 s |
+Médiane boutique 59,99 € sur 7 prix, rachat estimé 24 €. Aucune annonce écartée par le tri sur ce test : le peu de prix vient maintenant de l'agent (Gamecash, Cash Converters).
+Limites : Easy Cash part de la page « Consoles » et pas du rayon accessoires, ce qui le place près des 90 s. Les éditions limitées passent encore le tri. 1 seul essai réel, et le test avant correctif n'a pas de trace détaillée.
+Suite : « limitée », « limited », « collector » ajoutés aux mots de déclinaison. Une édition limitée ou collector est écartée sauf si l'utilisateur la cherche. Tests : 39/39 (tri), 14/14 (eBay).

@@ -34,6 +34,22 @@ CASES = [
     ("Sony PlayStation 4", "console", "PlayStation 4 Pro 1 To", False),
     ("Sony PlayStation 4", "console", "PlayStation 4 Slim 500 Go", False),
     ("Zelda Breath of the Wild", "jeu_video", "Jeu Zelda Breath of the Wild Switch", True),
+    # Manette cherchée (test réel du 17/11 : les manettes étaient écartées comme « accessoire »)
+    ("Sony DualSense", "console", "Manette PS5 DualSense blanche", True),
+    ("Sony DualSense", "console", "Manette Sony DualSense PS5", True),
+    ("Sony DualSense", "console", "Manette sans fil DualSense pour PS5", True),
+    ("Sony DualSense", "console", "Manette Playstation 5 Dualsense", True),
+    ("Sony DualSense", "console", "Sony DualSense Midnight Black", True),
+    ("Sony DualSense", "console", "DualSense Edge", False),
+    ("Sony DualSense", "console", "Manette sans fil Sony DualSense Édition limitée God of War", False),
+    ("Nintendo Switch OLED", "console", "Nintendo Switch OLED édition collector Zelda", False),
+    ("Sony DualSense", "console", "Coque silicone pour manette DualSense", False),
+    ("Sony DualSense", "console", "Station de charge pour DualSense", False),
+    ("Sony DualSense", "console", "Chargeur manette DualSense", False),
+    ("Nintendo Joy-Con", "console", "Manette Joy-Con gauche et droite Nintendo Switch", True),
+    ("Nintendo Joy-Con", "console", "Joy-Con Nintendo Switch néon", True),
+    # Console cherchée : la manette reste un accessoire
+    ("Sony PlayStation 5", "console", "Manette DualSense pour PlayStation 5", False),
 ]
 
 failed = 0
