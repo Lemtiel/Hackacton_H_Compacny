@@ -1,19 +1,22 @@
-# Snap N Cash
+# Livrables CPO (Tristan)
 
-**Ce qui dort chez vous a un prix.** Une photo. Le bon prix. L'annonce prête.
+Trois livrables de cadrage produit, rédigés le 16/11/2026 à partir de Specs.md, CLAUDE.md et du JOURNAL. Ce sont des documents de travail : rien n'est encore généré dans v0 ni testé.
 
-Projet de la Team 13 au hackathon Eugenia School × H Company × Vercel × Hugging Face (16 au 20 novembre 2026).
+| Livrable | Fichier | Contenu |
+| --- | --- | --- |
+| Parcours et écrans v0 | [parcours-ecrans-v0.md](parcours-ecrans-v0.md) | Parcours utilisateur, charte, prompt de base v0 (types TypeScript du flux), 8 écrans avec leur prompt, table de conformité, questions ouvertes |
+| Page « Comment ça marche » et mentions | [comment-ca-marche-mentions.md](comment-ca-marche-mentions.md) | Texte final de la page, mentions écran par écran, fondements juridiques, décisions à prendre, checklist d'intégration |
+| Sondage maison (action 5) | [sondage/sondage_maison.md](sondage/sondage_maison.md) et [sondage/sondage_reponses.xlsx](sondage/sondage_reponses.xlsx) | Questionnaire (WhatsApp ou Google Forms), méthode de calcul, tableau de saisie anonyme avec synthèse automatique |
 
-Vous photographiez un objet high-tech ou un jeu vidéo. Nos agents IA comparent les offres sur des sites d'occasion à votre place et vous donnent le bon prix, le meilleur endroit pour vendre (seul ou en magasin) et une annonce prête à publier.
+## Points à trancher en équipe
 
-## Documents
-- [Specs.md](Specs.md) : spécifications du MVP
-- [CONTEXT.md](CONTEXT.md) : le hackathon, l'équipe, le cadre légal
-- [JOURNAL.md](JOURNAL.md) : journal de bord et décisions
-- [CLAUDE.md](CLAUDE.md) : règles de travail pour l'assistant de code
+- Vue Agent View de H et règle 9 (pas de capture des sites sources).
+- Prix eBay inséré par notre code, pas par le modèle de texte (règle 4).
+- Critère de classement des offres (article L111-7).
+- Éditeur légal et adresse de contact des mentions légales.
+- Tutoiement ou vouvoiement : le doc des écrans tutoie, la page « Comment ça marche » vouvoie.
+- Valeurs entre crochets (décote eBay 10 %, coefficient magasin 40 %) à remplacer par les valeurs mesurées.
 
-## Stack
-Agent API de H Company, Hugging Face, API eBay, v0 et Vercel, GitHub.
+## Ce qui a été testé
 
-## Statut
-Cadrage terminé le 16/11. Le code arrive à partir du 17/11.
+Rien. Le tableau du sondage est vide (aucune réponse saisie) et ne contient aucune donnée personnelle.
