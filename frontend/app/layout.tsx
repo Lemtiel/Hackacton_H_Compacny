@@ -17,7 +17,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <header className="topbar">
           <Link href="/" className="wordmark">
-            Snap N <span>Cash</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-icon.png" alt="" width={34} height={24} className="wordmark-icon" />
+            Snap <span>N</span> Cash
           </Link>
           <Link href="/comment-ca-marche" className="small">
             Comment ça marche
