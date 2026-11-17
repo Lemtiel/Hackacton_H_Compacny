@@ -37,6 +37,14 @@ export default function HowItWorks() {
         Seul le fond change : l&apos;objet n&apos;est pas modifié. La photo n&apos;est pas conservée par Snap N Cash.
       </p>
 
+      <section className="panel" style={{ marginTop: "2rem" }}>
+        <h2>Pour les revendeurs</h2>
+        <p className="muted">
+          Un espace dédié classe les annonces selon leur marge potentielle. Les calculs restent indicatifs et rien n&apos;est stocké côté serveur.
+        </p>
+        <Link href="/pro" className="link-btn">Vous êtes revendeur ?</Link>
+      </section>
+
       <p style={{ marginTop: "2.5rem" }}>
         <Link href="/" className="btn btn-quiet">
           Estimer un objet

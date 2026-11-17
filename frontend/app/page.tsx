@@ -244,6 +244,10 @@ function HomeScreen({ onPhoto, onText }: { onPhoto: (f?: File) => void; onText: 
         <button className="btn btn-quiet" type="submit" disabled={text.trim().length < 2}>Continuer</button>
       </form>
 
+      <p className="pro-entry">
+        <Link href="/pro">Vous êtes revendeur ?</Link>
+      </p>
+
       {summary && (
         <Link href="/grenier" className="grenier-teaser">
           <span>

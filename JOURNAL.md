@@ -416,3 +416,8 @@ Test de Jude sur téléphone (réseau 10.40.5.83) : le parcours et le studio pho
 - Livrables de vendredi (README, vidéo de 5 min, pitch deck) : **vendredi**.
 - Conformité finale (garde-fou complet, puis revue hostile) : **Jude, avant vendredi**.
 - Déploiement Vercel et Space : pas jeudi (échéance à préciser).
+### Mardi 17/11, fin d'après-midi : espace revendeurs confié à Tristan
+Décision de Jude : la partie revendeurs passe à Tristan, en dehors du parcours principal (Specs : « offre revendeurs » en roadmap ; Jude maintient, sans commercialisation). Branche `revendeurs` créée depuis `interface`, avec :
+- `docs/revendeurs.md` : cahier des charges, règles du calcul, tâches par priorité, règles à respecter ;
+- `frontend/app/pro/page.tsx` : version de départ (recherche existante, médiane des boutiques sans les prix aberrants, annonces classées par marge après 10 % de frais, étiquette « Bonne affaire » à 15 % sous la médiane).
+Testé : le code compile. Non testé : la page dans le navigateur avec une vraie recherche.
