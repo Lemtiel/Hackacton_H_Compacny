@@ -2,22 +2,29 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { CATEGORY_LABELS, type Category, euros, identifyPhoto } from "@/lib/api";
+import { CATEGORY_LABELS, type Category, euros, identifyPhotos } from "@/lib/api";
 import { onGrenierChange, readGrenier, totals } from "@/lib/grenier";
 import { CONDITIONS, type Condition } from "@/lib/listing";
 import { applyVariant, guessCategory, variantSuggestion } from "@/lib/variants";
 import SearchScreen, { type SearchInput } from "@/components/SearchScreen";
 
-type Step = "home" | "identifying" | "confirm" | "search";
+type Step = "home" | "capture" | "identifying" | "confirm" | "search";
+
+// Prise de vue guidée : chaque photo a un rôle. Les 3 servent à reconnaître l'objet, puis à l'annonce.
+const SHOTS = [
+  { title: "L'objet de face", tip: "En entier, sur un fond uni, face à une fenêtre. Écran éteint pour éviter les reflets.", required: true },
+  { title: "Le dos ou l'étiquette", tip: "Là où sont écrits le modèle et la capacité : dos du téléphone, dessous de la console, tranche du jeu.", required: false },
+  { title: "Un détail", tip: "Une rayure, la boîte, les manettes ou le chargeur. Utile pour l'état et pour l'annonce.", required: false },
+];
 
 const CATEGORIES = Object.keys(CATEGORY_LABELS) as Category[];
-const MAX_PHOTOS = 3;
-const CAPACITY = /\b\d{2,4}\s?go\b/i;
+const CAPACITY = /\b\d{2,4}\s?(go|gb|to|tb)\b/i; // « 128 GB » rendu en anglais par le modèle compte aussi
 
 export default function Home() {
   const [step, setStep] = useState<Step>("home");
   const [error, setError] = useState<string | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [shots, setShots] = useState<(File | null)[]>([null, null, null]);
   const [product, setProduct] = useState("");
   const [category, setCategory] = useState<Category>("console");
   const [lowConfidence, setLowConfidence] = useState(false);
@@ -28,13 +35,27 @@ export default function Home() {
   const [details, setDetails] = useState("");
   const [search, setSearch] = useState<SearchInput | null>(null);
 
-  async function onPhoto(file?: File) {
+  // Première photo prise depuis l'accueil : on ouvre la prise de vue guidée avec la case 1 remplie.
+  function onPhoto(file?: File) {
     if (!file) return;
     reset();
-    setPhotos([URL.createObjectURL(file)]);
+    setShots([file, null, null]);
+    setStep("capture");
+    window.scrollTo({ top: 0 });
+  }
+
+  function setShot(i: number, file: File | null) {
+    setShots((cur) => cur.map((f, j) => (j === i ? file : f)));
+  }
+
+  async function identify() {
+    const files = shots.filter((f): f is File => !!f);
+    if (files.length === 0) return;
+    setError(null);
+    setPhotos(files.map((f) => URL.createObjectURL(f)));
     setStep("identifying");
     try {
-      const ident = await identifyPhoto(file);
+      const ident = await identifyPhotos(files);
       // Seule la capacité aide la recherche. La couleur (souvent en anglais : « Midnight ») ferait
       // écarter les annonces des boutiques : elle va dans les détails, pour l'annonce.
       const variant = ident.variant?.trim() || "";
@@ -52,13 +73,10 @@ export default function Home() {
     setStep("confirm");
   }
 
-  function addPhoto(file?: File) {
-    if (file && photos.length < MAX_PHOTOS) setPhotos((p) => [...p, URL.createObjectURL(file)]);
-  }
-
   function reset() {
     setError(null);
     setPhotos([]);
+    setShots([null, null, null]);
     setProduct("");
     setAccessories("");
     setDetails("");
@@ -90,11 +108,22 @@ export default function Home() {
         />
       )}
 
+      {step === "capture" && (
+        <CaptureScreen
+          shots={shots}
+          onShot={setShot}
+          onIdentify={identify}
+          onText={() => { reset(); setStep("home"); }}
+        />
+      )}
+
       {step === "identifying" && (
         <section className="screen" aria-live="polite">
           {photos[0] && <img src={photos[0]} alt="Votre photo" className="photo photo-scan" />}
           <h2 style={{ marginTop: "1.5rem" }}>On reconnaît votre objet…</h2>
-          <p className="muted">Quelques secondes. La photo n&apos;est pas conservée.</p>
+          <p className="muted">
+            Quelques secondes, à partir de {photos.length > 1 ? `vos ${photos.length} photos` : "votre photo"}. Rien n&apos;est conservé sur nos serveurs.
+          </p>
         </section>
       )}
 
@@ -103,10 +132,9 @@ export default function Home() {
           {photos.length > 0 && (
             <div className="thumbs" style={{ marginBottom: "0.5rem" }}>
               {photos.map((p, i) => <img key={i} src={p} alt={`Photo ${i + 1}`} className={i === 0 ? "photo" : "thumb"} />)}
-              {photos.length < MAX_PHOTOS && <AddPhoto onFile={addPhoto} />}
             </div>
           )}
-          {photos.length > 0 && <p className="small">Ajoutez jusqu&apos;à {MAX_PHOTOS} photos pour votre annonce. Seule la première sert à reconnaître l&apos;objet.</p>}
+          {photos.length > 0 && <p className="small">Vos photos ont servi à reconnaître l&apos;objet. Elles restent sur votre téléphone pour l&apos;annonce.</p>}
 
           {error && <p className="notice error" style={{ marginTop: "1rem" }}>{error}</p>}
 
@@ -229,13 +257,61 @@ function HomeScreen({ onPhoto, onText }: { onPhoto: (f?: File) => void; onText: 
   );
 }
 
-function AddPhoto({ onFile }: { onFile: (f?: File) => void }) {
-  const ref = useRef<HTMLInputElement>(null);
+function CaptureScreen({ shots, onShot, onIdentify, onText }: {
+  shots: (File | null)[];
+  onShot: (i: number, f: File | null) => void;
+  onIdentify: () => void;
+  onText: () => void;
+}) {
+  const count = shots.filter(Boolean).length;
   return (
-    <>
-      <button type="button" className="thumb thumb-add" onClick={() => ref.current?.click()} aria-label="Ajouter une photo">+</button>
-      <input ref={ref} type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => onFile(e.target.files?.[0])} />
-    </>
+    <section className="screen">
+      <h1 className="display search-title">Trois photos, un prix plus juste.</h1>
+      <p className="lede" style={{ marginBottom: "1.25rem" }}>
+        Chaque photo aide à reconnaître le modèle exact. Seule la première est obligatoire.
+      </p>
+      <p className="notice" style={{ marginBottom: "1rem" }}>L&apos;objet seul, sans personne : une photo avec un visage est refusée.</p>
+      <ol className="shots">
+        {SHOTS.map((s, i) => (
+          <ShotSlot key={s.title} index={i} title={s.title} tip={s.tip} required={s.required} file={shots[i]} onFile={(f) => onShot(i, f)} />
+        ))}
+      </ol>
+      <div className="stack" style={{ marginTop: "1.5rem" }}>
+        <button className="btn btn-primary" disabled={count === 0} onClick={onIdentify}>
+          Reconnaître mon objet{count > 1 ? ` (${count} photos)` : ""}
+        </button>
+        <button className="link-btn" onClick={onText}>Taper le nom à la place</button>
+      </div>
+    </section>
+  );
+}
+
+function ShotSlot({ index, title, tip, required, file, onFile }: {
+  index: number; title: string; tip: string; required: boolean; file: File | null; onFile: (f: File | null) => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!file) { setUrl(null); return; }
+    const u = URL.createObjectURL(file);
+    setUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [file]);
+  const id = `shot-${index}`;
+  return (
+    <li className="shot" data-filled={!!file}>
+      <button type="button" className="shot-pic" onClick={() => ref.current?.click()} aria-label={file ? `Changer la photo : ${title}` : `Ajouter la photo : ${title}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {url ? <img src={url} alt="" /> : <span aria-hidden>+</span>}
+      </button>
+      <div className="shot-text">
+        <span className="shot-title">{index + 1}. {title} {!required && <span className="small">(facultatif)</span>}</span>
+        <span className="small">{tip}</span>
+        {file && <button type="button" className="link-btn small-link" onClick={() => onFile(null)}>Retirer</button>}
+      </div>
+      {/* Sans « capture » : le téléphone propose l'appareil photo ou la galerie. */}
+      <input id={id} ref={ref} type="file" accept="image/*" className="sr-only" onChange={(e) => { onFile(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+    </li>
   );
 }
 

@@ -439,6 +439,17 @@ details.site-detail summary::-webkit-details-marker { display: none; }
 .grenier-teaser > span:first-child { display: grid; }
 .grenier-teaser-value { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
 
+/* Prise de vue guidée en 3 photos */
+.shots { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
+.shot { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 0.9rem; align-items: center; padding: 0.75rem; border-radius: var(--radius-m); background: var(--surface); }
+.shot-pic { appearance: none; width: 5.5rem; height: 5.5rem; border-radius: var(--radius-s); border: 1.5px dashed var(--action); background: var(--bg); color: var(--action); font-size: 1.8rem; display: grid; place-items: center; cursor: pointer; overflow: hidden; padding: 0; }
+.shot[data-filled="true"] .shot-pic { border: 0; }
+.shot-pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.shot-pic:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
+.shot-text { display: grid; gap: 0.2rem; min-width: 0; }
+.shot-title { font-weight: 600; }
+.small-link { font-size: 0.8125rem; justify-self: start; }
+
 /* Photos */
 .thumbs { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: flex-end; }
 .thumbs .photo { flex: 1 1 100%; }

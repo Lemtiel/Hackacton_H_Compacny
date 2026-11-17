@@ -48,9 +48,10 @@ export type ShopBlock = {
   buyback_high: number;
 };
 
-export async function identifyPhoto(file: File): Promise<Identification> {
+// Jusqu'à 3 photos du même objet (face, dos ou étiquette, détail), envoyées ensemble.
+export async function identifyPhotos(files: File[]): Promise<Identification> {
   const body = new FormData();
-  body.append("file", file);
+  files.slice(0, 3).forEach((f) => body.append("files", f));
   const res = await fetch(`${API_URL}/api/identify`, { method: "POST", body });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.detail || "L'identification a échoué. Tapez le nom de l'objet.");

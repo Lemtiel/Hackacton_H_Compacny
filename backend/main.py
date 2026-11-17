@@ -90,12 +90,21 @@ def config():
 
 
 @app.post("/api/identify")
-async def identify(file: UploadFile = File(...)):
-    data = await file.read(MAX_UPLOAD + 1)
-    if len(data) > MAX_UPLOAD:
-        raise HTTPException(413, "Photo trop lourde (8 Mo maximum).")
+async def identify(files: list[UploadFile] = File(None), file: UploadFile = File(None)):
+    # Jusqu'à 3 photos du même objet (« files ») ; « file » seul reste accepté par la page de test.
+    uploads = [u for u in (files or []) if u] + ([file] if file else [])
+    if not uploads:
+        raise HTTPException(422, "Aucune photo reçue.")
+    if len(uploads) > photo.MAX_PHOTOS:
+        raise HTTPException(422, f"{photo.MAX_PHOTOS} photos au maximum.")
+    datas = []
+    for u in uploads:
+        data = await u.read(MAX_UPLOAD + 1)
+        if len(data) > MAX_UPLOAD:
+            raise HTTPException(413, "Photo trop lourde (8 Mo maximum).")
+        datas.append(data)
     try:
-        ident = await asyncio.to_thread(photo.check_and_identify, data)
+        ident = await asyncio.to_thread(photo.check_and_identify, datas)
     except photo.PhotoError as e:
         raise HTTPException(422, str(e))
     except Exception:

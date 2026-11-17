@@ -27,6 +27,8 @@ from pydantic import BaseModel
 from agents.sites import CATEGORIES
 
 MAX_SIDE = 1024
+MAX_PHOTOS = 3  # face, dos ou étiquette, détail
+IDENTIFY_SECONDS = 15  # par tentative, 2 tentatives au plus
 FACE_SCORE = 0.8
 DEFAULT_VISION_MODEL = "google/gemma-4-31B-it"
 
@@ -82,7 +84,8 @@ def count_faces(img: Image.Image) -> int:
 
 
 PROMPT = (
-    "You identify second-hand consumer electronics and video games from a photo. "
+    "You identify second-hand consumer electronics and video games from photos. "
+    "You may receive up to 3 photos of the SAME object (front, back or label, a detail): combine what they show. "
     "Answer with ONE JSON object and nothing else, with these keys: "
     '"is_object" (boolean: false if the photo does not show a tech product or a video game), '
     '"brand" (string or null), "model" (string or null, the exact commercial model name), '
@@ -105,25 +108,44 @@ def _parse_json(text: str) -> dict:
     return json.loads(m.group(0))
 
 
-def identify(img: Image.Image) -> Identification:
+def identify(imgs: "Image.Image | list[Image.Image]") -> Identification:
     token = os.getenv("HF_TOKEN")
     if not token:
         raise PhotoError("Identification indisponible : HF_TOKEN manque dans .env. Tapez le nom de l'objet.")
     from openai import OpenAI
 
-    buf = io.BytesIO()
-    img.save(buf, "JPEG", quality=85)
-    url = "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
-    client = OpenAI(base_url="https://router.huggingface.co/v1", api_key=token, timeout=40)
-    resp = client.chat.completions.create(
-        model=(os.getenv("HF_VISION_MODEL") or DEFAULT_VISION_MODEL),
-        messages=[{"role": "user", "content": [
-            {"type": "text", "text": PROMPT},
-            {"type": "image_url", "image_url": {"url": url}},
-        ]}],
-        max_tokens=300,
-        temperature=0,
-    )
+    if not isinstance(imgs, list):
+        imgs = [imgs]
+    images = []
+    for img in imgs[:MAX_PHOTOS]:
+        buf = io.BytesIO()
+        img.save(buf, "JPEG", quality=85)
+        url = "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
+        images.append({"type": "image_url", "image_url": {"url": url}})
+    # Même parade que pour l'annonce (listing.py) : le routeur répartit les appels entre fournisseurs de vitesse
+    # très inégale (2 s d'ordinaire, 40 s mesurées le 17/11 avec 2 photos). On demande le plus rapide,
+    # on coupe une tentative à IDENTIFY_SECONDS et on retente une fois.
+    model = os.getenv("HF_VISION_MODEL") or DEFAULT_VISION_MODEL
+    if ":" not in model:
+        model += ":fastest"
+    client = OpenAI(base_url="https://router.huggingface.co/v1", api_key=token, timeout=IDENTIFY_SECONDS, max_retries=0)
+    resp = None
+    for _ in range(2):
+        try:
+            resp = client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": [
+                    {"type": "text", "text": PROMPT},
+                    *images,
+                ]}],
+                max_tokens=300,
+                temperature=0,
+            )
+            break
+        except Exception:
+            continue
+    if resp is None:
+        raise PhotoError("L'identification n'a pas abouti. Réessayez dans un instant, ou tapez le nom de l'objet.")
     try:
         raw = _parse_json(resp.choices[0].message.content or "")
         ident = Identification(**{k: v for k, v in raw.items() if k in Identification.model_fields})
@@ -147,8 +169,14 @@ def clean_hint(text: Optional[str]) -> Optional[str]:
     return out or None
 
 
-def check_and_identify(data: bytes) -> Identification:
-    img = load_image(data)
-    if count_faces(img) > 0:
-        raise PhotoError("Un visage apparaît sur la photo. Reprenez une photo de l'objet seul.")
-    return identify(img)
+def check_and_identify(data: "bytes | list[bytes]") -> Identification:
+    """Jusqu'à 3 photos du même objet. Chacune passe le contrôle de visage avant tout appel au modèle."""
+    datas = data if isinstance(data, list) else [data]
+    imgs = []
+    for i, d in enumerate(datas[:MAX_PHOTOS], start=1):
+        img = load_image(d)
+        if count_faces(img) > 0:
+            which = "la photo" if len(datas) == 1 else f"la photo {i}"
+            raise PhotoError(f"Un visage apparaît sur {which}. Reprenez une photo de l'objet seul.")
+        imgs.append(img)
+    return identify(imgs)

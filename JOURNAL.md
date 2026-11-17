@@ -378,3 +378,20 @@ Fait :
 Testé dans Chrome (localhost) : les 3 écrans de découverte, puis « Nintendo Switch » : pendant l'attente, barre puis annonce, sans liens externes ; à 3 boutiques sur 4, verdict, échelle, curseur, annonce, offres ; liens externes absents avant la fin.
 Non testé : l'état final avec les liens externes, et l'affichage sur téléphone (le Mac a perdu le Wi-Fi, l'interface pointe maintenant sur localhost).
 Reste de la revue (jaune) : accueil à 5 actions, écran de précisions trop long. Après : 3 photos envoyées à l'identification et conseils de vente.
+
+### Mardi 17/11, fin d'après-midi : 3 photos pour l'identification (Jude)
+Fait :
+- Prise de vue guidée : après la première photo, un écran à 3 cases, chacune avec sa consigne : « L'objet de face » (obligatoire), « Le dos ou l'étiquette », « Un détail » (facultatives). Rappel « objet seul, sans visage ». Bouton « Reconnaître mon objet (2 photos) ». Le téléphone propose l'appareil photo ou la galerie.
+- Serveur : `/api/identify` accepte jusqu'à 3 photos (« files » ; « file » reste accepté par la page de test). Chaque photo passe le contrôle de visage, avec un message qui dit laquelle (« la photo 2 »). Les photos partent ensemble dans un seul appel au même modèle vision : pas de nouveau modèle. Rien n'est stocké.
+- Identification : préférence « fournisseur le plus rapide », 15 s par tentative, 2 tentatives (même parade que l'annonce).
+- Capacité : « 128 GB » (anglais) est maintenant reconnue comme « 128 Go », elle restait dans les détails auparavant.
+Testé avec 2 images de synthèse (dos d'iPhone dessiné, étiquette « iPhone 13, 128 GB ») :
+| Cas | Résultat | Temps |
+|---|---|---|
+| Dos seul | « Apple », confiance 0,5 | 3,4 s |
+| Dos et étiquette | « Apple iPhone 13 », 128 GB, confiance 1,0 | 1,8 s |
+| Visage sur la photo 2 (contrôle simulé) | refusée : « Un visage apparaît sur la photo 2 » | — |
+| Parcours complet dans Chrome, 2 photos | « Apple iPhone 13 128 GB » à l'écran de confirmation | ≈ 40 s (fournisseur lent, avant la parade) |
+| Après la parade, 5 appels | 5 corrects | 1,0 à 3,0 s |
+Non testé : de vraies photos d'objets, le choix appareil photo ou galerie sur iPhone, une photo réelle avec un visage.
+Décisions de Jude (17/11, fin d'après-midi) : conseils de vente abandonnés (les consignes de prise de vue suffisent). Studio photo validé avec `ZhengPeng7/BiRefNet_lite` (licence MIT), de préférence à `briaai/RMBG-2.0` (licence non commerciale, accès sur demande). Principe retenu : détourage de la vraie photo sur fond clair, objet jamais redessiné, mention « fond retouché, objet non modifié ».
