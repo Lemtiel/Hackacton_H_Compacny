@@ -42,6 +42,7 @@ export type SearchInput = {
   accessories: string;
   details: string;
   photos: string[];
+  hint?: string; // description générique tirée de la photo (« manette PS5 »)
 };
 
 export default function SearchScreen({ input, onRestart }: { input: SearchInput; onRestart: () => void }) {
@@ -105,6 +106,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
       },
       () => { setFailed(true); setDone(true); },
       isDemo(),
+      input.hint ?? "",
     );
     return stop;
   }, [product, category]);

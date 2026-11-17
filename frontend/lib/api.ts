@@ -20,6 +20,7 @@ export type Identification = {
   condition?: string | null;
   confidence: number;
   product: string;
+  kind?: string | null; // description générique pour élargir la recherche : « manette PS5 »
 };
 
 export type Offer = { title: string; price_eur: number; condition?: string | null; url?: string | null };
@@ -75,8 +76,8 @@ export function isDemo(): boolean {
 
 export const shotUrl = (token: string) => `${API_URL}/api/shot/${encodeURIComponent(token)}`;
 
-export function searchPrices(product: string, category: string, onEvent: (e: SearchEvent) => void, onError: () => void, demo = false) {
-  const url = `${API_URL}/api/search?product=${encodeURIComponent(product)}&category=${encodeURIComponent(category)}${demo ? "&demo=1" : ""}`;
+export function searchPrices(product: string, category: string, onEvent: (e: SearchEvent) => void, onError: () => void, demo = false, hint = "") {
+  const url = `${API_URL}/api/search?product=${encodeURIComponent(product)}&category=${encodeURIComponent(category)}${demo ? "&demo=1" : ""}${hint ? `&hint=${encodeURIComponent(hint)}` : ""}`;
   const source = new EventSource(url);
   source.onmessage = (msg) => {
     const ev = JSON.parse(msg.data) as SearchEvent;

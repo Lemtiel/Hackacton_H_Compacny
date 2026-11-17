@@ -342,3 +342,22 @@ Recherche réelle « Sony DualSense » (console), après correctif :
 Médiane boutique 59,99 € sur 7 prix, rachat estimé 24 €. Aucune annonce écartée par le tri sur ce test : le peu de prix vient maintenant de l'agent (Gamecash, Cash Converters).
 Limites : Easy Cash part de la page « Consoles » et pas du rayon accessoires, ce qui le place près des 90 s. Les éditions limitées passent encore le tri. 1 seul essai réel, et le test avant correctif n'a pas de trace détaillée.
 Suite : « limitée », « limited », « collector » ajoutés aux mots de déclinaison. Une édition limitée ou collector est écartée sauf si l'utilisateur la cherche. Tests : 39/39 (tri), 14/14 (eBay).
+
+### Mardi 17/11, après-midi : recherche élargie (demande de Jude)
+Fait :
+- Identification : le modèle vision rend en plus `kind`, une description générique en français (« manette PS5 »). Même modèle, consigne enrichie. Description réduite à 4 mots simples (`clean_hint`) avant de partir dans la consigne de l'agent.
+- Consigne de l'agent : il reçoit le nom exact et la description. Avec recherche permise : « si le nom exact ne donne rien, essaie "manette PS5" ». Sans recherche (Easy Cash, Certideal, Swappie) : « choisis la catégorie qui correspond (manette PS5) ».
+- Tri par modèle : table d'équivalences tenue à la main (DualSense ↔ manette PS5 ou PlayStation 5, DualShock 4 ↔ manette PS4, PlayStation 5 ↔ PS5, PlayStation 4 ↔ PS4, Joy-Con ↔ Joycon). Les règles de déclinaison et d'accessoire s'appliquent ensuite.
+- Interface : l'écran de confirmation affiche « Si le nom exact ne donne rien, nos agents chercheront aussi "manette PS5" ».
+- eBay inchangé : sa recherche exige tous les mots.
+- `agents/test_agents.py` : option `--hint`.
+Tests : tri 52/52 (13 nouveaux cas), eBay 14/14, TypeScript compile.
+Recherche réelle « Sony DualSense » avec « manette PS5 » :
+| Site | Midi (sans description) | Après |
+|---|---|---|
+| Gamecash | 1 prix (édition limitée, 109,95 €) | 2 prix (52,98 et 54,95 €), 1 écarté |
+| Easy Cash | 2 prix | 1 prix, 79,8 s |
+| Cash Converters | 4 prix | 4 prix |
+| Troc.com | aucun résultat | aucun résultat |
+Total : 7 prix dans les deux cas, mais tous du bon modèle maintenant. Fourchette 39,99 à 59,99 €, médiane 52,98 €, rachat estimé 21 €.
+Constat : la limite vient maintenant des agents, qui rendent 1 à 4 annonces avant la réponse forcée à 70 s, et pas du tri. Non testé : la description générique rendue par une vraie photo (le test a passé « manette PS5 » à la main).

@@ -34,18 +34,23 @@ class Offers(BaseModel):
     note: Optional[str] = Field(default=None, description="Short note: why few or no results, blocking, etc.")
 
 
-def build_task(site_key: str, product: str) -> str:
+def build_task(site_key: str, product: str, hint: Optional[str] = None) -> str:
     site = SITES[site_key]
     if site["search_allowed"]:
         nav = "You may use the site's own search bar."
+        if hint:
+            nav += f' If searching the exact name finds nothing, try a broader query such as "{hint}".'
     else:
         nav = (
             "Do NOT use the site's search bar or any search URL. Navigate only by clicking "
             "category menus, category pages and pagination links. Do not apply filters or sorting."
         )
+        if hint:
+            nav += f' Pick the category that fits this kind of product ({hint}).'
+    what = f'"{product}" ({hint})' if hint else f'"{product}"'
     return (
         f"You are on {site['name']}, a French second-hand retailer. "
-        f'Find used items for sale matching this product: "{product}". {nav} '
+        f"Find used items for sale matching this product: {what}. {nav} "
         "Collect up to 8 listings of the exact same model. Ignore items that are not this product: "
         "accessories made for it, cases and other models. "
         "For each listing give the title, the price in euros, the condition or grade if shown, and the product page URL. "
@@ -113,7 +118,8 @@ def _last_image_url(events) -> Optional[str]:
     return found
 
 
-def run_site(client: Client, site_key: str, product: str, category: str, log=print, on_step=None, on_shot=None) -> RunResult:
+def run_site(client: Client, site_key: str, product: str, category: str, log=print, on_step=None, on_shot=None,
+             hint: Optional[str] = None) -> RunResult:
     """on_step(dict) reçoit chaque changement d'étape, pour l'affichage progressif.
     on_shot(url) reçoit l'adresse de chaque nouvelle capture d'écran (mode démo). L'adresse n'est lisible
     qu'avec la clé API : elle ne doit jamais partir telle quelle vers le navigateur."""
@@ -121,7 +127,7 @@ def run_site(client: Client, site_key: str, product: str, category: str, log=pri
     t0 = time.monotonic()
     handle = client.start_session(
         agent=AGENT,
-        messages=build_task(site_key, product),
+        messages=build_task(site_key, product, hint),
         overrides={"agent.environments[kind=web].start_url": start_url(site_key, category)},
         answer_schema=Offers,
     )

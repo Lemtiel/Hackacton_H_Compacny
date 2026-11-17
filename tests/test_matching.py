@@ -48,6 +48,20 @@ CASES = [
     ("Sony DualSense", "console", "Chargeur manette DualSense", False),
     ("Nintendo Joy-Con", "console", "Manette Joy-Con gauche et droite Nintendo Switch", True),
     ("Nintendo Joy-Con", "console", "Joy-Con Nintendo Switch néon", True),
+    # Équivalences (17/11) : l'annonce nomme l'objet autrement
+    ("Sony DualSense", "console", "Manette PS5 sans fil blanche", True),
+    ("Sony DualSense", "console", "Manette PlayStation 5 Midnight Black", True),
+    ("Sony DualSense", "console", "Coque manette PS5", False),
+    ("Sony DualSense", "console", "Chargeur double manette PS5", False),
+    ("Sony DualSense", "console", "Manette PS4 sans fil", False),
+    ("Sony DualSense", "console", "Volant PS5 Logitech", False),
+    ("Sony DualShock 4", "console", "Manette PS4 noire V2", True),
+    ("Sony PlayStation 5", "console", "Console PS5 825 Go lecteur", True),
+    ("Sony PlayStation 5", "console", "Console PS5 Slim", False),
+    ("Sony PlayStation 5", "console", "PS5 Digital Edition", False),
+    ("Sony PlayStation 5", "console", "Manette PS5 DualSense", False),
+    ("Sony PlayStation 4", "console", "PS4 500 Go noire", True),
+    ("Nintendo Joy-Con", "console", "Paire de Joycon Nintendo Switch", True),
     # Console cherchée : la manette reste un accessoire
     ("Sony PlayStation 5", "console", "Manette DualSense pour PlayStation 5", False),
 ]

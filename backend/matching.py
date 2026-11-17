@@ -41,6 +41,17 @@ GAME_START = {"jeu", "jeux"}
 # « Joy-Con »), un titre qui commence par « Manette » est le bon objet, pas un accessoire (test du 17/11).
 CONTROLLER_WORDS = {"manette", "manettes", "controller", "joy", "joycon", "dualsense", "dualshock"}
 
+# Équivalences tenues à la main : une annonce peut nommer l'objet autrement (« Manette PS5 » pour une
+# DualSense, « PS5 » pour une PlayStation 5). Si les mots du modèle contiennent la clé, l'une des
+# variantes suffit à leur place. Les autres règles (déclinaisons, accessoires) s'appliquent ensuite.
+ALIASES: list[tuple[tuple[str, ...], list[tuple[str, ...]]]] = [
+    (("dualsense",), [("manette", "ps5"), ("manette", "playstation", "5")]),
+    (("dualshock", "4"), [("manette", "ps4"), ("manette", "playstation", "4")]),
+    (("playstation", "5"), [("ps5",)]),
+    (("playstation", "4"), [("ps4",)]),
+    (("joy", "con"), [("joycon",)]),
+]
+
 UNITS = {"go", "to", "mo", "pouces", "pouce"}
 STOP = {"de", "du", "la", "le", "les", "des", "et", "avec", "en", "a", "d", "l"}
 
@@ -66,8 +77,7 @@ def reject_reason(product: str, category: str, title: str) -> str | None:
     if not need or not have:
         return "titre vide"
 
-    missing = [t for t in need if t not in have]
-    if missing:
+    if not _has_model(need, have):
         return "autre modèle"
 
     wanted = set(tokens(product))
@@ -75,7 +85,7 @@ def reject_reason(product: str, category: str, title: str) -> str | None:
         return "autre modèle"
 
     # « Nintendo Switch 2 » pour « Nintendo Switch » : un petit nombre collé au nom, sans unité.
-    if not need[-1].isdigit():
+    if not need[-1].isdigit() and need[-1] in have:
         i = have.index(need[-1])
         nxt = have[i + 1] if i + 1 < len(have) else ""
         after = have[i + 2] if i + 2 < len(have) else ""
@@ -92,6 +102,20 @@ def reject_reason(product: str, category: str, title: str) -> str | None:
     if (have[0] in starts and have[0] not in wanted) or ("pour" in have and "pour" not in wanted):
         return "accessoire"
     return None
+
+
+def _has_model(need: list[str], have: list[str]) -> bool:
+    """Tous les mots du modèle sont dans le titre, directement ou par une équivalence connue."""
+    have_set = set(have)
+    if all(t in have_set for t in need):
+        return True
+    for key, alts in ALIASES:
+        if all(k in need for k in key):
+            rest = [t for t in need if t not in key]
+            for alt in alts:
+                if all(t in have_set for t in rest) and all(t in have_set for t in alt):
+                    return True
+    return False
 
 
 def filter_offers(product: str, category: str, offers: list) -> tuple[list, int]:

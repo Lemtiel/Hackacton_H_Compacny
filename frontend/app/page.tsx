@@ -21,6 +21,7 @@ export default function Home() {
   const [product, setProduct] = useState("");
   const [category, setCategory] = useState<Category>("console");
   const [lowConfidence, setLowConfidence] = useState(false);
+  const [hint, setHint] = useState("");
   const [condition, setCondition] = useState<Condition>("Bon état");
   const [withBox, setWithBox] = useState(true);
   const [accessories, setAccessories] = useState("");
@@ -39,6 +40,7 @@ export default function Home() {
       const variant = ident.variant?.trim() || "";
       const capacity = variant.match(CAPACITY)?.[0];
       setProduct([ident.product, capacity].filter(Boolean).join(" "));
+      setHint(ident.kind?.trim() || "");
       const rest = capacity ? variant.replace(capacity, "").replace(/^[\s,]+|[\s,]+$/g, "") : variant;
       if (rest) setDetails(`Couleur ou édition : ${rest}`);
       if (CATEGORIES.includes(ident.category as Category)) setCategory(ident.category as Category);
@@ -61,6 +63,7 @@ export default function Home() {
     setAccessories("");
     setDetails("");
     setLowConfidence(false);
+    setHint("");
     setSearch(null);
   }
 
@@ -71,7 +74,7 @@ export default function Home() {
   }
 
   function launch() {
-    setSearch({ product: product.trim(), category, condition, withBox, accessories, details, photos });
+    setSearch({ product: product.trim(), category, condition, withBox, accessories, details, photos, hint });
     setStep("search");
     window.scrollTo({ top: 0 });
   }
@@ -111,6 +114,9 @@ export default function Home() {
           <input id="product" className="field" value={product} onChange={(e) => setProduct(e.target.value)} placeholder="Ex. Nintendo Switch OLED" autoComplete="off" />
           {lowConfidence && !error && (
             <p className="small" style={{ marginTop: "0.5rem" }}>Vérifiez le modèle exact : le prix en dépend.</p>
+          )}
+          {hint && (
+            <p className="small" style={{ marginTop: "0.5rem" }}>Si le nom exact ne donne rien, nos agents chercheront aussi « {hint} ».</p>
           )}
 
           {suggestion && (

@@ -44,6 +44,7 @@ class Identification(BaseModel):
     condition: Optional[str] = None
     confidence: float = 0.0
     product: str = ""  # texte de recherche : marque + modèle
+    kind: Optional[str] = None  # description générique pour élargir la recherche : « manette PS5 »
 
 
 def load_image(data: bytes) -> Image.Image:
@@ -88,7 +89,10 @@ PROMPT = (
     '"variant" (string or null: storage capacity, colour or edition, only if visible), '
     f'"category" (one of: {", ".join(CATEGORIES)}, autre), '
     '"condition" (string or null, in French: visible wear such as "rayures sur l\'écran", or "bon état apparent"), '
-    '"confidence" (number from 0 to 1 for brand and model). '
+    '"confidence" (number from 0 to 1 for brand and model), '
+    '"kind" (string or null, in French, 2 to 4 words: the generic product type plus its platform or brand, '
+    'as a shopper would type it in a search bar, e.g. "manette PS5", "console Nintendo Switch", '
+    '"smartphone Apple", "jeu PS4", "casque Sony"). '
     "Read any text printed on the product. Do not guess a model you cannot see evidence for: "
     "use null and a low confidence instead."
 )
@@ -130,7 +134,17 @@ def identify(img: Image.Image) -> Identification:
     if ident.category not in CATEGORIES:
         ident.category = "autre"
     ident.product = " ".join(x for x in (ident.brand, ident.model) if x).strip()
+    ident.kind = clean_hint(ident.kind)
     return ident
+
+
+def clean_hint(text: Optional[str]) -> Optional[str]:
+    """Description générique réduite à des mots simples : elle part dans la consigne de l'agent."""
+    if not text:
+        return None
+    words = re.findall(r"[0-9A-Za-zÀ-ÿ+-]+", text)[:4]
+    out = " ".join(words)[:40].strip()
+    return out or None
 
 
 def check_and_identify(data: bytes) -> Identification:

@@ -179,10 +179,12 @@ async def search(
     product: str = Query(..., min_length=2, max_length=120),
     category: str = Query("smartphone"),
     demo: bool = Query(False),
+    hint: str = Query("", max_length=60),
 ):
     if category not in CATEGORIES:
         raise HTTPException(422, "Catégorie inconnue.")
     shots = demo and DEMO_SHOTS
+    hint = photo.clean_hint(hint)  # description générique (« manette PS5 ») pour élargir la recherche de l'agent
     if not os.getenv("HAI_API_KEY"):
         raise HTTPException(503, "HAI_API_KEY manque dans .env.")
 
@@ -200,7 +202,7 @@ async def search(
             emit({"type": "site_step", "site": site, "label": f"ouvre {SITES[site]['name']}"})
             try:
                 r = run_site(
-                    client, site, product, category, log=lambda _m: None,
+                    client, site, product, category, log=lambda _m: None, hint=hint,
                     on_step=lambda s: emit({
                         "type": "site_step", "site": site, "elapsed_s": s["elapsed_s"],
                         "label": "démarrage du navigateur" if s["steps"] == 0 else f"navigue, étape {s['steps']}",
