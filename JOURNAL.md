@@ -226,3 +226,20 @@ Branche `interface`, partie de `photo-et-recherche`. Dossier `frontend/` (Next.j
 - Annonce : branchée sur la route `POST /api/listing` de Stephen (5 états, accessoires, détails, 4 formats, titre et description modifiables, compteur de caractères, mention IA). Elle se rédige en parallèle des agents. Si la rédaction échoue, un brouillon simple sans prix s'affiche avec un bouton pour réessayer.
 - Testé : la route répond depuis la page (CORS OK) ; sans `HF_TOKEN`, le brouillon de secours prend le relais.
 - Non testé : la rédaction par IA dans l'interface (il manque `HF_TOKEN`). Le bloc eBay attend la clé API.
+
+### Mardi 17/11, matin : parcours complet dans l'interface (Jude)
+Les 8 fonctionnalités validées sont construites, toutes côté interface (aucun changement serveur) :
+1. **Mon grenier** (`/grenier`) : objets estimés, valeur totale de ce qui reste à vendre, gains réalisés, statut à vendre / en vente / vendu, prix de vente saisi. Gardé dans le navigateur.
+2. **Verdict « Où vendre ? »** : vendre seul ou en magasin, avec le gain en euros. Conseille de vendre seul seulement si le gain dépasse 30 € et 25 % du rachat.
+3. **Curseur « Fixer mon prix »** : zones vente rapide, prix juste, ambitieux. Le prix choisi suit l'objet dans Mon grenier.
+4. **Photo guidée** : conseils sur l'accueil, jusqu'à 3 photos (seule la première part au serveur pour l'identification, les autres restent sur l'appareil pour l'annonce).
+5. **Précisions** : variantes en un toucher (modèle de Switch, version de PlayStation ou Xbox, capacité), catégorie devinée depuis le nom tapé.
+6. **Découverte** : 3 écrans au premier lancement, balayables.
+7. **Publication** : bouton qui ouvre la page de dépôt de Vinted, Leboncoin ou eBay ; l'objet passe « en vente ».
+8. **Agents en direct** : barre de progression et étapes successives de chaque agent.
+
+Bug corrigé : la couleur rendue par l'identification (« Midnight ») partait dans la recherche et faisait écarter toutes les annonces (« iPhone 13 Noir »). La couleur va maintenant dans les détails de l'annonce ; seule la capacité reste dans la recherche.
+
+Hypothèse à remplacer : sans bloc eBay, le prix « vendre seul » est estimé à 15 % sous le prix boutique (`frontend/lib/verdict.ts`). À recalibrer avec le jeu de 30 objets, puis à remplacer par la médiane eBay.
+
+Testé en local : iPhone 13 128 Go, Easy Cash 7 prix, Cash Converters 3 prix, Troc.com aucun ; verdict « vendez-le vous-même » (+113 €) ; ajout automatique dans Mon grenier. Non testé : téléphone réel, découverte au doigt sur écran tactile.

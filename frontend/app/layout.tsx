@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import "./globals.css";
+import TabBar from "@/components/TabBar";
+import Onboarding from "@/components/Onboarding";
 
 export const metadata: Metadata = {
   title: "Snap N Cash",
@@ -22,6 +24,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </Link>
         </header>
         {children}
+        <TabBar />
+        <Onboarding />
       </body>
     </html>
   );

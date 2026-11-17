@@ -1,37 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  CATEGORY_LABELS,
-  type Category,
-  type SearchEvent,
-  type ShopBlock,
-  type SiteRow,
-  euros,
-  generateListing,
-  identifyPhoto,
-  marketplaceLinks,
-  searchPrices,
-} from "@/lib/api";
-import {
-  CONDITIONS,
-  type Condition,
-  type HistoryItem,
-  type ListingFormat,
-  type Platform,
-  fallbackListing,
-  pushHistory,
-  readHistory,
-} from "@/lib/listing";
+import Link from "next/link";
+import { CATEGORY_LABELS, type Category, euros, identifyPhoto } from "@/lib/api";
+import { onGrenierChange, readGrenier, totals } from "@/lib/grenier";
+import { CONDITIONS, type Condition } from "@/lib/listing";
+import { applyVariant, guessCategory, variantSuggestion } from "@/lib/variants";
+import SearchScreen, { type SearchInput } from "@/components/SearchScreen";
 
 type Step = "home" | "identifying" | "confirm" | "search";
 
 const CATEGORIES = Object.keys(CATEGORY_LABELS) as Category[];
+const MAX_PHOTOS = 3;
+const CAPACITY = /\b\d{2,4}\s?go\b/i;
 
 export default function Home() {
   const [step, setStep] = useState<Step>("home");
   const [error, setError] = useState<string | null>(null);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<string[]>([]);
   const [product, setProduct] = useState("");
   const [category, setCategory] = useState<Category>("console");
   const [lowConfidence, setLowConfidence] = useState(false);
@@ -39,50 +25,71 @@ export default function Home() {
   const [withBox, setWithBox] = useState(true);
   const [accessories, setAccessories] = useState("");
   const [details, setDetails] = useState("");
-  const [history, setHistory] = useState<HistoryItem[]>([]);
-
-  useEffect(() => setHistory(readHistory()), []);
-  useEffect(() => () => { if (photoUrl) URL.revokeObjectURL(photoUrl); }, [photoUrl]);
+  const [search, setSearch] = useState<SearchInput | null>(null);
 
   async function onPhoto(file?: File) {
     if (!file) return;
-    setError(null);
-    setPhotoUrl(URL.createObjectURL(file));
+    reset();
+    setPhotos([URL.createObjectURL(file)]);
     setStep("identifying");
     try {
       const ident = await identifyPhoto(file);
-      setProduct([ident.product, ident.variant].filter(Boolean).join(" "));
+      // Seule la capacité aide la recherche. La couleur (souvent en anglais : « Midnight ») ferait
+      // écarter les annonces des boutiques : elle va dans les détails, pour l'annonce.
+      const variant = ident.variant?.trim() || "";
+      const capacity = variant.match(CAPACITY)?.[0];
+      setProduct([ident.product, capacity].filter(Boolean).join(" "));
+      const rest = capacity ? variant.replace(capacity, "").replace(/^[\s,]+|[\s,]+$/g, "") : variant;
+      if (rest) setDetails(`Couleur ou édition : ${rest}`);
       if (CATEGORIES.includes(ident.category as Category)) setCategory(ident.category as Category);
       setLowConfidence(ident.confidence < 0.7 || !ident.model);
-      setStep("confirm");
     } catch (e) {
       setError((e as Error).message);
-      setStep("confirm");
       setLowConfidence(true);
     }
+    setStep("confirm");
+  }
+
+  function addPhoto(file?: File) {
+    if (file && photos.length < MAX_PHOTOS) setPhotos((p) => [...p, URL.createObjectURL(file)]);
+  }
+
+  function reset() {
+    setError(null);
+    setPhotos([]);
+    setProduct("");
+    setAccessories("");
+    setDetails("");
+    setLowConfidence(false);
+    setSearch(null);
   }
 
   function startOver() {
+    reset();
     setStep("home");
-    setError(null);
-    setPhotoUrl(null);
-    setProduct("");
-    setHistory(readHistory());
+    window.scrollTo({ top: 0 });
   }
+
+  function launch() {
+    setSearch({ product: product.trim(), category, condition, withBox, accessories, details, photos });
+    setStep("search");
+    window.scrollTo({ top: 0 });
+  }
+
+  const suggestion = variantSuggestion(product, category);
 
   return (
     <main className="page">
       {step === "home" && (
         <HomeScreen
           onPhoto={onPhoto}
-          onText={(p, c) => { setProduct(p); setCategory(c); setPhotoUrl(null); setStep("confirm"); }}
-          history={history}
+          onText={(p) => { reset(); setProduct(p); setCategory(guessCategory(p) ?? "console"); setStep("confirm"); }}
         />
       )}
 
       {step === "identifying" && (
         <section className="screen" aria-live="polite">
-          {photoUrl && <img src={photoUrl} alt="Votre photo" className="photo" />}
+          {photos[0] && <img src={photos[0]} alt="Votre photo" className="photo photo-scan" />}
           <h2 style={{ marginTop: "1.5rem" }}>On reconnaît votre objet…</h2>
           <p className="muted">Quelques secondes. La photo n&apos;est pas conservée.</p>
         </section>
@@ -90,38 +97,49 @@ export default function Home() {
 
       {step === "confirm" && (
         <section className="screen">
-          {photoUrl && <img src={photoUrl} alt="Votre photo" className="photo" />}
+          {photos.length > 0 && (
+            <div className="thumbs" style={{ marginBottom: "0.5rem" }}>
+              {photos.map((p, i) => <img key={i} src={p} alt={`Photo ${i + 1}`} className={i === 0 ? "photo" : "thumb"} />)}
+              {photos.length < MAX_PHOTOS && <AddPhoto onFile={addPhoto} />}
+            </div>
+          )}
+          {photos.length > 0 && <p className="small">Ajoutez jusqu&apos;à {MAX_PHOTOS} photos pour votre annonce. Seule la première sert à reconnaître l&apos;objet.</p>}
+
           {error && <p className="notice error" style={{ marginTop: "1rem" }}>{error}</p>}
+
           <label className="label" htmlFor="product">Votre objet</label>
-          <input
-            id="product"
-            className="field"
-            value={product}
-            onChange={(e) => setProduct(e.target.value)}
-            placeholder="Ex. Nintendo Switch OLED"
-            autoComplete="off"
-          />
+          <input id="product" className="field" value={product} onChange={(e) => setProduct(e.target.value)} placeholder="Ex. Nintendo Switch OLED" autoComplete="off" />
           {lowConfidence && !error && (
-            <p className="small" style={{ marginTop: "0.5rem" }}>
-              Vérifiez le modèle exact (capacité, édition) : le prix en dépend.
-            </p>
+            <p className="small" style={{ marginTop: "0.5rem" }}>Vérifiez le modèle exact : le prix en dépend.</p>
+          )}
+
+          {suggestion && (
+            <>
+              <span className="label">{suggestion.label}</span>
+              <div className="chips">
+                {suggestion.options.map((o) => {
+                  const next = applyVariant(product, suggestion, o);
+                  return (
+                    <button key={o} type="button" className="chip" aria-pressed={next.toLowerCase() === product.trim().toLowerCase()} onClick={() => setProduct(next)}>
+                      {o}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
           )}
 
           <span className="label">Catégorie</span>
           <div className="chips">
             {CATEGORIES.map((c) => (
-              <button key={c} type="button" className="chip" aria-pressed={category === c} onClick={() => setCategory(c)}>
-                {CATEGORY_LABELS[c]}
-              </button>
+              <button key={c} type="button" className="chip" aria-pressed={category === c} onClick={() => setCategory(c)}>{CATEGORY_LABELS[c]}</button>
             ))}
           </div>
 
           <span className="label">État</span>
           <div className="chips" role="group" aria-label="État">
             {CONDITIONS.map((c) => (
-              <button key={c} type="button" className="chip" aria-pressed={condition === c} onClick={() => setCondition(c)}>
-                {c}
-              </button>
+              <button key={c} type="button" className="chip" aria-pressed={condition === c} onClick={() => setCondition(c)}>{c}</button>
             ))}
           </div>
 
@@ -132,53 +150,38 @@ export default function Home() {
           </div>
 
           <label className="label" htmlFor="accessories">Accessoires fournis <span className="small">(facultatif)</span></label>
-          <input id="accessories" className="field" value={accessories} maxLength={200} onChange={(e) => setAccessories(e.target.value)} placeholder="Ex. 2 Joy-Con, dock, chargeur" autoComplete="off" />
+          <input id="accessories" className="field" value={accessories} maxLength={200} onChange={(e) => setAccessories(e.target.value)} placeholder="Ex. chargeur, coque, câble" autoComplete="off" />
 
           <label className="label" htmlFor="details">Détails <span className="small">(facultatif)</span></label>
-          <textarea id="details" className="field" rows={2} value={details} maxLength={400} onChange={(e) => setDetails(e.target.value)} placeholder="Capacité, couleur, défauts visibles" />
+          <textarea id="details" className="field" rows={2} value={details} maxLength={400} onChange={(e) => setDetails(e.target.value)} placeholder="Couleur, défauts visibles, état de la batterie" />
           <p className="small" style={{ marginTop: "0.4rem" }}>Ces informations servent à rédiger votre annonce. Rien n&apos;est inventé.</p>
 
           <div className="stack" style={{ marginTop: "2rem" }}>
-            <button
-              className="btn btn-primary"
-              disabled={product.trim().length < 2}
-              onClick={() => { setError(null); setStep("search"); }}
-            >
-              Estimer le prix
-            </button>
+            <button className="btn btn-primary" disabled={product.trim().length < 2} onClick={launch}>Estimer le prix</button>
             <button className="link-btn" onClick={startOver}>Recommencer</button>
           </div>
         </section>
       )}
 
-      {step === "search" && (
-        <SearchScreen
-          product={product.trim()}
-          category={category}
-          condition={condition}
-          withBox={withBox}
-          accessories={accessories}
-          details={details}
-          onDone={(item) => pushHistory(item)}
-          onRestart={startOver}
-        />
-      )}
+      {step === "search" && search && <SearchScreen input={search} onRestart={startOver} />}
     </main>
   );
 }
 
-function HomeScreen({
-  onPhoto,
-  onText,
-  history,
-}: {
-  onPhoto: (f?: File) => void;
-  onText: (product: string, category: Category) => void;
-  history: HistoryItem[];
-}) {
+function HomeScreen({ onPhoto, onText }: { onPhoto: (f?: File) => void; onText: (product: string) => void }) {
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState("");
+  const [summary, setSummary] = useState<{ count: number; value: number } | null>(null);
+
+  useEffect(() => {
+    const refresh = () => {
+      const t = totals(readGrenier());
+      setSummary(t.count ? { count: t.count, value: t.sleepingValue } : null);
+    };
+    refresh();
+    return onGrenierChange(refresh);
+  }, []);
 
   return (
     <section className="screen">
@@ -189,313 +192,45 @@ function HomeScreen({
         <button className="btn btn-primary" onClick={() => cameraRef.current?.click()}>
           <CameraIcon /> Prendre une photo
         </button>
-        <button className="btn btn-quiet" onClick={() => galleryRef.current?.click()}>
-          Choisir une photo
-        </button>
+        <button className="btn btn-quiet" onClick={() => galleryRef.current?.click()}>Choisir une photo</button>
       </div>
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => onPhoto(e.target.files?.[0])} />
       <input ref={galleryRef} type="file" accept="image/*" className="sr-only" onChange={(e) => onPhoto(e.target.files?.[0])} />
-      <p className="small" style={{ marginTop: "0.75rem" }}>
-        Photographiez l&apos;objet seul : une photo avec un visage est refusée.
-      </p>
+
+      <ul className="tips" aria-label="Conseils pour la photo">
+        <li><TipIcon kind="seul" /> L&apos;objet seul, sans personne : une photo avec un visage est refusée.</li>
+        <li><TipIcon kind="lumiere" /> Une lumière franche, face à une fenêtre.</li>
+        <li><TipIcon kind="etiquette" /> Pour un téléphone, montrez le dos ou l&apos;étiquette : le modèle s&apos;y lit mieux.</li>
+      </ul>
 
       <div className="or">ou</div>
-      <form
-        className="stack"
-        onSubmit={(e) => { e.preventDefault(); if (text.trim().length >= 2) onText(text.trim(), "console"); }}
-      >
+      <form className="stack" onSubmit={(e) => { e.preventDefault(); if (text.trim().length >= 2) onText(text.trim()); }}>
         <label htmlFor="text" className="sr-only">Nom de l&apos;objet</label>
         <input id="text" className="field" value={text} onChange={(e) => setText(e.target.value)} placeholder="Tapez le nom de l'objet" autoComplete="off" />
         <button className="btn btn-quiet" type="submit" disabled={text.trim().length < 2}>Continuer</button>
       </form>
 
-      {history.length > 0 && (
-        <div style={{ marginTop: "2.5rem" }}>
-          <h2>Vos dernières estimations</h2>
-          <p className="small">Gardées seulement sur cet appareil.</p>
-          <ul className="sites">
-            {history.slice(0, 5).map((h) => (
-              <li key={h.product + h.date} className="site" style={{ gridTemplateColumns: "1fr auto" }}>
-                <span>
-                  <span className="site-name">{h.product}</span>
-                  <br />
-                  <span className="site-step">{new Date(h.date).toLocaleDateString("fr-FR")}</span>
-                </span>
-                <span className="num muted">{h.low && h.high ? `${euros(h.low)} – ${euros(h.high)}` : ""}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+      {summary && (
+        <Link href="/grenier" className="grenier-teaser">
+          <span>
+            <span className="small">Mon grenier, {summary.count} objet{summary.count > 1 ? "s" : ""}</span>
+            <span className="grenier-teaser-value num">{euros(summary.value)}</span>
+          </span>
+          <span className="small" aria-hidden>Voir</span>
+        </Link>
       )}
     </section>
   );
 }
 
-function SearchScreen({
-  product,
-  category,
-  condition,
-  withBox,
-  accessories,
-  details,
-  onDone,
-  onRestart,
-}: {
-  product: string;
-  category: Category;
-  condition: Condition;
-  withBox: boolean;
-  accessories: string;
-  details: string;
-  onDone: (item: HistoryItem) => void;
-  onRestart: () => void;
-}) {
-  const [rows, setRows] = useState<SiteRow[]>([]);
-  const [shop, setShop] = useState<ShopBlock | null>(null);
-  const [done, setDone] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const [platform, setPlatform] = useState<Platform>("vinted");
-  const [ads, setAds] = useState<ListingFormat[] | null>(null);
-  const [adState, setAdState] = useState<"loading" | "ok" | "fallback">("loading");
-  const [adError, setAdError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const shopRef = useRef<ShopBlock | null>(null);
-
-  useEffect(() => {
-    const stop = searchPrices(
-      product,
-      category,
-      (ev: SearchEvent) => {
-        if (ev.type === "start") {
-          setRows(ev.sites.map((s) => ({
-            key: s.key,
-            name: s.name,
-            state: s.active ? "attente" : "hors_categorie",
-            label: s.active ? "En attente" : "Ne vend pas ce type d'objet",
-            offers: [],
-          })));
-        } else if (ev.type === "site_step") {
-          setRows((r) => r.map((s) => s.key === ev.site ? { ...s, state: "en_cours", label: ev.label ? ev.label.charAt(0).toUpperCase() + ev.label.slice(1) : s.label, elapsed_s: ev.elapsed_s ?? s.elapsed_s } : s));
-        } else if (ev.type === "site_result") {
-          const base = ev.state === "ok" ? `${ev.offers.length} prix relevés` : ev.state === "aucun_resultat" ? "Aucune offre de ce modèle" : "Site indisponible";
-          const rejected = ev.n_rejected ? `, ${ev.n_rejected} écartée${ev.n_rejected > 1 ? "s" : ""} (autre modèle)` : "";
-          const label = base + rejected;
-          setRows((r) => r.map((s) => s.key === ev.site ? { ...s, state: ev.state, label, elapsed_s: ev.duration_s, offers: ev.offers } : s));
-        } else if (ev.type === "shop_block") {
-          setShop(ev.block);
-          shopRef.current = ev.block;
-        } else if (ev.type === "done") {
-          setDone(true);
-          const b = shopRef.current;
-          onDone({ product, date: new Date().toISOString(), low: b?.buyback_low, high: b?.buyback_high });
-        }
-      },
-      () => { setFailed(true); setDone(true); },
-    );
-    return stop;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [product, category]);
-
-  // L'annonce se rédige en parallèle des agents : elle est prête quand les prix arrivent.
-  function writeListing() {
-    setAdState("loading");
-    setAdError(null);
-    generateListing({ product, category, condition, box: withBox, accessories, details })
-      .then((formats) => { setAds(formats); setAdState("ok"); })
-      .catch((e: Error) => {
-        setAds(fallbackListing(product, condition, withBox, accessories, details));
-        setAdError(e.message);
-        setAdState("fallback");
-      });
-  }
-  useEffect(writeListing, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const ad = ads?.find((a) => a.key === platform) ?? null;
-
-  function editAd(field: "title" | "description", value: string) {
-    setAds((list) => list?.map((a) => (a.key === platform ? { ...a, [field]: value } : a)) ?? null);
-  }
-
-  async function copy() {
-    if (!ad) return;
-    try {
-      await navigator.clipboard.writeText(`${ad.title}\n\n${ad.description}`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* presse-papiers refusé : le texte reste sélectionnable */
-    }
-  }
-
-  const running = !done;
-  const okSites = rows.filter((r) => r.state === "ok");
-
+function AddPhoto({ onFile }: { onFile: (f?: File) => void }) {
+  const ref = useRef<HTMLInputElement>(null);
   return (
-    <section className="screen">
-      <p className="muted" style={{ margin: "0.5rem 0 0" }}>{CATEGORY_LABELS[category]}, {condition.toLowerCase()}</p>
-      <h1 className="display" style={{ marginTop: "0.25rem" }}>{product}</h1>
-
-      {failed && (
-        <p className="notice error">Le serveur ne répond pas. Vérifiez votre connexion, puis relancez l&apos;estimation.</p>
-      )}
-
-      {shop ? (
-        <PriceVerdict shop={shop} running={running} />
-      ) : (
-        running && !failed && <p className="lede" aria-live="polite">Nos agents visitent les boutiques d&apos;occasion. Comptez une à deux minutes.</p>
-      )}
-
-      {done && !shop && !failed && (
-        <p className="notice warn">
-          Aucune boutique n&apos;a cet objet en vente aujourd&apos;hui. Vérifiez le modèle exact, ou consultez les prix des particuliers ci-dessous.
-        </p>
-      )}
-
-      <ul className="sites" aria-live="polite">
-        {rows.map((s) => (
-          <li key={s.key} className="site" data-state={s.state}>
-            <span className="dot" data-state={s.state} aria-hidden />
-            <span>
-              <span className="site-name">{s.name}</span>
-              <br />
-              <span className="site-step">{s.label}</span>
-            </span>
-            <span className="small num">{s.elapsed_s ? `${Math.round(s.elapsed_s)} s` : ""}</span>
-          </li>
-        ))}
-      </ul>
-
-      {okSites.length > 0 && (
-        <div className="panel">
-          <h3>Les offres relevées</h3>
-          <p className="small" style={{ margin: "0 0 0.5rem" }}>Prix de revente affichés par les boutiques. Ouvrez une offre pour la voir sur le site.</p>
-          {okSites.map((s) => (
-            <details key={s.key} className="site-detail">
-              <summary>
-                <span>{s.name}</span>
-                <span className="num muted">{priceRange(s.offers.map((o) => o.price_eur))}</span>
-              </summary>
-              {s.offers.map((o, i) => (
-                <div key={i} className="offer">
-                  <span>{o.url ? <a href={o.url} target="_blank" rel="noopener noreferrer">{o.title}</a> : o.title}{o.condition ? <span className="small">, {o.condition}</span> : null}</span>
-                  <span className="num">{euros(o.price_eur)}</span>
-                </div>
-              ))}
-            </details>
-          ))}
-        </div>
-      )}
-
-      <div className="panel">
-        <h3>Vendre seul</h3>
-        <p className="small" style={{ margin: 0 }}>
-          Le prix eBay arrive bientôt dans l&apos;estimation. En attendant, comparez vous-même les prix des particuliers :
-        </p>
-        <div className="links">
-          {marketplaceLinks(product).map((l) => (
-            <a key={l.name} className="btn btn-quiet" href={l.url} target="_blank" rel="noopener noreferrer" style={{ background: "#fff" }}>
-              Voir sur {l.name}
-            </a>
-          ))}
-        </div>
-      </div>
-
-      <div className="panel">
-        <h3>Votre annonce</h3>
-        <div className="seg" role="group" aria-label="Plateforme" style={{ marginTop: "0.5rem" }}>
-          {(ads ?? fallbackListing(product, condition, withBox, accessories, details)).map((a) => (
-            <button key={a.key} type="button" aria-pressed={platform === a.key} onClick={() => setPlatform(a.key)}>
-              {a.key === "generique" ? "Autre" : a.name}
-            </button>
-          ))}
-        </div>
-
-        {adState === "loading" && (
-          <p className="muted" aria-live="polite" style={{ margin: "1rem 0 0.25rem" }}>On rédige votre annonce dans les 4 formats. Une trentaine de secondes.</p>
-        )}
-
-        {adState === "fallback" && (
-          <p className="notice warn" style={{ marginTop: "0.75rem" }}>
-            {adError} Voici un brouillon simple à compléter.{" "}
-            <button className="link-btn" onClick={writeListing}>Réessayer la rédaction</button>
-          </p>
-        )}
-
-        {ad && adState !== "loading" && (
-          <>
-            <label htmlFor="ad-title" className="label" style={{ display: "flex", justifyContent: "space-between" }}>
-              <span>Titre</span>
-              <span className="small num" style={{ color: ad.title.length > ad.title_max ? "#991b1b" : undefined }}>
-                {ad.title.length}/{ad.title_max}
-              </span>
-            </label>
-            <input id="ad-title" className="field" style={{ background: "#fff", border: "1px solid var(--line)" }} value={ad.title} onChange={(e) => editAd("title", e.target.value)} />
-            <label htmlFor="ad-desc" className="label">Description</label>
-            <textarea id="ad-desc" className="listing" style={{ marginTop: 0 }} value={ad.description} onChange={(e) => editAd("description", e.target.value)} />
-            <button className="btn btn-primary" onClick={copy}>{copied ? "Annonce copiée" : "Copier l'annonce"}</button>
-            <p className="small" style={{ marginTop: "0.6rem" }}>
-              {adState === "ok" ? "Annonce générée par IA. Relisez-la avant de publier. " : ""}
-              Ajoutez votre prix sur le site, puis publiez l&apos;annonce vous-même.
-            </p>
-          </>
-        )}
-      </div>
-
-      <div className="stack" style={{ marginTop: "2rem" }}>
-        <button className="btn btn-quiet" onClick={onRestart}>Estimer un autre objet</button>
-      </div>
-
-      <p className="footer-note">
-        Prix indicatifs relevés sur Easy Cash, Gamecash, Troc.com et Cash Converters. Comparaison non exhaustive. Objet reconnu par
-        intelligence artificielle. <a href="/comment-ca-marche">Comment ça marche</a>
-      </p>
-    </section>
+    <>
+      <button type="button" className="thumb thumb-add" onClick={() => ref.current?.click()} aria-label="Ajouter une photo">+</button>
+      <input ref={ref} type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => onFile(e.target.files?.[0])} />
+    </>
   );
-}
-
-function PriceVerdict({ shop, running }: { shop: ShopBlock; running: boolean }) {
-  // Une seule échelle en euros pour comparer d'un coup d'œil.
-  const min = Math.floor(Math.min(shop.buyback_low, shop.shop_low) / 10) * 10;
-  const max = Math.ceil(shop.shop_high / 10) * 10;
-  const pos = (v: number) => `${((v - min) / Math.max(max - min, 1)) * 100}%`;
-  const width = (a: number, b: number) => `${Math.max(((b - a) / Math.max(max - min, 1)) * 100, 2)}%`;
-
-  return (
-    <div aria-live="polite">
-      <div className="verdict">
-        <p className="muted" style={{ margin: 0 }}>En magasin, on vous en proposerait environ</p>
-        <div className="verdict-price num">{euros(shop.buyback_estimate)}</div>
-        <p className="small" style={{ margin: "0.4rem 0 0" }}>
-          Estimation basse : {Math.round(shop.coef * 100)} % du prix de revente en boutique, d&apos;après {shop.n_kept} prix
-          {running ? ", d'autres boutiques répondent encore" : ""}.
-        </p>
-      </div>
-
-      <div className="scale" role="img" aria-label={`Rachat estimé entre ${euros(shop.buyback_low)} et ${euros(shop.buyback_high)}, revente en boutique entre ${euros(shop.shop_low)} et ${euros(shop.shop_high)}`}>
-        <div className="scale-row">
-          <div className="scale-head"><span>Rachat en magasin</span><span className="num">{euros(shop.buyback_low)} – {euros(shop.buyback_high)}</span></div>
-          <div className="scale-track">
-            <div className="scale-bar magasin" style={{ left: pos(shop.buyback_low), width: width(shop.buyback_low, shop.buyback_high) }} />
-            <div className="scale-mark" style={{ left: pos(shop.buyback_estimate) }} />
-          </div>
-        </div>
-        <div className="scale-row">
-          <div className="scale-head"><span>Revendu par les boutiques</span><span className="num">{euros(shop.shop_low)} – {euros(shop.shop_high)}</span></div>
-          <div className="scale-track">
-            <div className="scale-bar boutique" style={{ left: pos(shop.shop_low), width: width(shop.shop_low, shop.shop_high) }} />
-          </div>
-        </div>
-        <div className="scale-axis num"><span>{euros(min)}</span><span>{euros(max)}</span></div>
-      </div>
-      <p className="small">L&apos;écart entre les deux barres, c&apos;est ce que vous gagnez à vendre vous-même.</p>
-    </div>
-  );
-}
-
-function priceRange(prices: number[]) {
-  const low = Math.min(...prices);
-  const high = Math.max(...prices);
-  return low === high ? euros(low) : `${euros(low)} – ${euros(high)}`;
 }
 
 function CameraIcon() {
@@ -505,4 +240,13 @@ function CameraIcon() {
       <circle cx="12" cy="12.5" r="3.5" stroke="currentColor" strokeWidth="1.8" />
     </svg>
   );
+}
+
+function TipIcon({ kind }: { kind: "seul" | "lumiere" | "etiquette" }) {
+  const paths = {
+    seul: <rect x="5" y="5" width="14" height="14" rx="3" stroke="currentColor" strokeWidth="1.8" />,
+    lumiere: <><circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" /><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></>,
+    etiquette: <><path d="M4 12.5V5a1 1 0 0 1 1-1h7.5L20 11.5 12.5 19 4 12.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" /></>,
+  };
+  return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>{paths[kind]}</svg>;
 }
