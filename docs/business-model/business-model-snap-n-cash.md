@@ -1,6 +1,8 @@
 # Snap N Cash : business model
 
 Version 2 du 17/11/2026 (formule du partenariat choisie par l'équipe), préparée pour Tristan (CPO) et Stephen (CEO). Elle remplace le premier jet du matin.
+
+> **Mise à jour du 17/11 au soir (relecture de Jude) :** coûts recalculés pour **6 boutiques** (Certideal et Swappie ajoutés le 17/11 : une estimation consomme 1,5 fois plus de tokens) ; offre gratuite exprimée en **3 estimations** ; risque des CGU des boutiques ajouté (partie 8). Tous les chiffres viennent du tableur, recalculé.
 Tous les calculs sont dans le tableur [snap-n-cash-projections.xlsx](snap-n-cash-projections.xlsx) : on change une hypothèse en bleu, tout se recalcule.
 
 **Légende des chiffres :** ✅ mesuré par l'équipe (dépôt GitHub) · 📄 source publique citée · 🟡 hypothèse à valider · ❓ à sourcer avant le pitch
@@ -11,9 +13,9 @@ Tous les calculs sont dans le tableur [snap-n-cash-projections.xlsx](snap-n-cash
 
 - **Le problème :** 86 % des Français gardent des objets inutilisés (320 € par foyer), mais 17 % seulement en ont déjà revendu. Ils citent le manque de temps, des démarches complexes et la peur de se tromper de prix 📄 (OpinionWay pour Leboncoin, 2025, dans Specs.md).
 - **La solution :** une photo, un prix indicatif relevé sur plusieurs sites en moins de 2 minutes, et une annonce prête à publier.
-- **Qui paie :** les 3 premières photos sont gratuites. Ensuite, trois abonnements : **Bronze** (4,99 €), **Silver** (14,99 €) et **Entreprise** (149 € HT). À partir de l'an 2, un **partenariat avec Vinted et Leboncoin** : d'abord payé par annonce publiée, puis par une licence. Et plus tard, des commissions des boutiques de rachat.
-- **Pourquoi c'est rentable :** une estimation nous coûte **0,17 € dans le pire cas** et **0,02 € dans un forfait H**. Chaque abonnement reste rentable même dans le pire cas.
-- **Projection, scénario central :** 22 000 € de chiffre d'affaires la première année, 150 000 € la deuxième, 375 000 € la troisième. Le résultat est positif en an 1 et en an 3, et négatif en an 2, l'année des embauches. Il faut lever environ 37 000 € 🟡.
+- **Qui paie :** les 3 premières estimations sont gratuites. Ensuite, trois abonnements : **Bronze** (4,99 €), **Silver** (14,99 €) et **Entreprise** (149 € HT). À partir de l'an 2, un **partenariat avec Vinted et Leboncoin** : d'abord payé par annonce publiée, puis par une licence. Et plus tard, des commissions des boutiques de rachat.
+- **Pourquoi c'est rentable :** une estimation sur les 6 boutiques nous coûte **0,25 € dans le pire cas** et **0,02 € dans un forfait H**. À l'usage moyen, chaque abonnement reste rentable même dans le pire cas ; seul Silver, quota épuisé au tarif le plus cher, perd 0,37 € par mois.
+- **Projection, scénario central :** 22 000 € de chiffre d'affaires la première année, 150 000 € la deuxième, 375 000 € la troisième. Dans le pire cas de coût, le résultat est positif en an 1, puis négatif en an 2 (embauches) et en an 3 (−8 000 €). Il faut lever environ 58 000 € 🟡. Dans un forfait H, le coût technique baisse fortement et l'an 3 redevient positif.
 
 ---
 
@@ -37,7 +39,7 @@ Tous les calculs sont dans le tableur [snap-n-cash-projections.xlsx](snap-n-cash
 
 | Client | Son problème | Ce qu'on lui apporte | Il paie ? |
 |---|---|---|---|
-| **Particulier occasionnel** | Ne sait pas quel prix mettre, n'a pas le temps | Un prix en 2 min, une annonce prête | 3 photos gratuites, puis Bronze |
+| **Particulier occasionnel** | Ne sait pas quel prix mettre, n'a pas le temps | Un prix en 2 min, une annonce prête | 3 estimations gratuites, puis Bronze |
 | **Vendeur régulier** (Vinted, Leboncoin, eBay) | Passe du temps à comparer les prix de chaque objet | 50 estimations par mois, publication rapide | Silver |
 | **Pro** (dépôt-vente, brocanteur, ressourcerie, petite enseigne) | Fixe des dizaines de prix par jour, à la main | Estimation en volume, plusieurs comptes, export | Entreprise |
 | **Plateformes** (Vinted, Leboncoin) | Veulent plus d'annonces, bien rédigées, au bon prix (elles se vendent plus vite) | Des annonces de qualité, d'objets qui dormaient | Par annonce publiée, puis licence |
@@ -62,27 +64,27 @@ Tous les calculs sont dans le tableur [snap-n-cash-projections.xlsx](snap-n-cash
 
 Les prix ont été **validés par l'équipe** le 17/11. La partie 5 bis explique comment les défendre devant le jury.
 
-**Pourquoi 3 photos gratuites et pas plus :** chaque estimation lance de vrais agents H et coûte de vrais tokens. Le calcul de la partie 5 montre que les 3 photos offertes sont remboursées 2,5 fois par les abonnés Bronze qu'elles font venir, même dans le pire cas de coût.
+**Pourquoi 3 estimations gratuites et pas plus :** chaque estimation lance de vrais agents H et coûte de vrais tokens. Le calcul de la partie 5 montre que les 3 estimations offertes sont remboursées 1,5 fois par les abonnés Bronze qu'elles font venir, même dans le pire cas de coût.
 
 **Pourquoi Bronze est mensuel sans engagement :** un particulier vend par vagues (un déménagement, un tri de printemps). Il s'abonne un ou deux mois puis arrête. Le modèle prévoit 15 % de résiliations par mois 🟡.
 
-**Point de départ de l'offre Entreprise :** l'espace revendeurs en cours de construction (branche `revendeurs`, cahier des charges `docs/revendeurs.md`) classe déjà les annonces par marge possible. Les fonctions Entreprise (plusieurs comptes, export, API) s'ajouteront dessus.
+**Point de départ de l'offre Entreprise :** l'espace revendeurs en cours de construction (page `/pro`, cahier des charges `docs/produit/revendeurs.md`) classe déjà les annonces par marge possible. Les fonctions Entreprise (plusieurs comptes, export, API) s'ajouteront dessus.
 
-**À prévoir côté produit :** compter les 3 photos gratuites impose un compte (une adresse e-mail). Ce n'est pas contraire à la règle 5 de CLAUDE.md (photos, annonces relevées et pseudonymes de vendeurs non conservés), mais il faudra une politique de confidentialité conforme au RGPD.
+**À prévoir côté produit :** compter les 3 estimations gratuites impose un compte (une adresse e-mail). Ce n'est pas contraire à la règle 5 de CLAUDE.md (photos, annonces relevées et pseudonymes de vendeurs non conservés), mais il faudra une politique de confidentialité conforme au RGPD.
 
 ---
 
 ## 5. Combien coûte une estimation, et ce que rapporte chaque abonnement
 
 ### Le coût de revient ✅
-Les 14 sessions d'agent du 16/11 (`mesures/agent_runs.csv`) consomment en moyenne **162 000 tokens par site**, soit **650 000 à 870 000 tokens par estimation** sur 4 boutiques.
+Les 14 sessions d'agent du 16/11 (`mesures/agent_runs.csv`) consomment en moyenne **162 000 tokens par site**, soit environ **1 140 000 tokens par estimation sur les 6 boutiques** actuelles (650 000 à 870 000 sur les 4 boutiques testées le 16/11).
 
 | Poste | Pire cas (payé à l'usage) | Dans un forfait H Builder |
 |---|---|---|
-| Agents H | 0,19 $ | 0,015 $ |
+| Agents H (6 boutiques) | 0,285 $ | 0,023 $ |
 | Hugging Face (identification + annonce) | 0,002 $ | 0,002 $ |
 | Hébergement variable | 0,001 € | 0,001 € |
-| **Total par estimation** | **0,17 €** | **0,02 €** |
+| **Total par estimation** | **0,25 €** | **0,02 €** |
 
 Sources : forfaits et prix des modèles sur la documentation H 📄. Le pire cas suppose le modèle Holo le plus cher, car on ne sait pas encore lequel fait tourner l'agent `web-surfer-flash` ❓.
 
@@ -95,19 +97,19 @@ Sources : forfaits et prix des modèles sur la documentation H 📄. Le pire cas
 | Prix HT encaissé | 4,16 € | 12,49 € | 149,00 € |
 | Frais de paiement (Stripe, 1,5 % + 0,25 €) | 0,33 € | 0,48 € | 2,93 € |
 | Estimations utilisées en moyenne | 4 | 20 | 250 |
-| **Marge brute, pire cas** | **3,17 € (76 %)** | **8,69 € (70 %)** | **104,54 € (70 %)** |
-| Marge brute, pire cas, quota entièrement utilisé | 2,17 € | 3,71 € | 63,01 € |
-| **Marge brute, dans un forfait H** | **3,77 € (91 %)** | **11,70 € (94 %)** | **142,12 € (95 %)** |
+| **Marge brute, pire cas** | **2,84 € (68 %)** | **7,06 € (57 %)** | **84,11 € (56 %)** |
+| Marge brute, pire cas, quota entièrement utilisé | 1,36 € | **−0,37 €** | 22,16 € |
+| **Marge brute, dans un forfait H** | **3,74 € (90 %)** | **11,57 € (93 %)** | **140,49 € (94 %)** |
 
 Les pourcentages sont calculés sur le prix HT encaissé.
 
-Aucun abonnement ne perd d'argent, même si l'abonné utilise tout son quota au tarif le plus cher.
+À l'usage moyen, aucun abonnement ne perd d'argent. **Seul Silver, quota entièrement utilisé au tarif le plus cher, perd 0,37 € par mois.** Deux parades : ramener son quota de 50 à 45 estimations (+0,87 € de marge), ou passer au forfait H Builder (93 % de marge). Décision à prendre par Tristan.
 
-### Le retour sur les photos gratuites
-- Un inscrit gratuit utilise en moyenne 2 photos 🟡. Pire cas : il nous coûte **0,33 €**.
-- Si 4 % des inscrits passent en Bronze 🟡, il faut 25 inscrits gratuits pour 1 abonné : **8,31 €** de photos offertes.
-- Un abonné Bronze reste en moyenne 6,7 mois et rapporte **21,13 €** de marge sur cette durée.
-- **Résultat : 1 € de photos offertes rapporte 2,5 € de marge en Bronze, et 3,3 € en Silver.** Dans un forfait H, le coût des photos gratuites devient négligeable.
+### Le retour sur les estimations gratuites
+- Un inscrit gratuit utilise en moyenne 2 estimations 🟡. Pire cas : il nous coûte **0,50 €**.
+- Si 4 % des inscrits passent en Bronze 🟡, il faut 25 inscrits gratuits pour 1 abonné : **12,39 €** d'estimations offertes.
+- Un abonné Bronze reste en moyenne 6,7 mois et rapporte **18,95 €** de marge sur cette durée.
+- **Résultat : 1 € d'estimations offertes rapporte 1,5 € de marge en Bronze, et 1,8 € en Silver.** Dans un forfait H, le coût des estimations gratuites devient négligeable.
 
 Le taux de passage de 4 % est prudent : sur 200 produits freemium, 29 % convertissent entre 2,5 et 7,5 % 📄 (Growth Unhinged, *Free-to-paid conversion report*).
 
@@ -137,11 +139,11 @@ Plutôt que de défendre un pourcentage, on peut montrer **jusqu'où le coût pe
 | | Bronze | Silver | Entreprise |
 |---|---|---|---|
 | Coût maximal par estimation (usage moyen) | 0,96 € | 0,60 € | 0,58 € |
-| Coût mesuré dans le pire cas | 0,17 € | 0,17 € | 0,17 € |
-| **Marge de sécurité** | **coût × 5,8** | **coût × 3,6** | **coût × 3,5** |
-| Marge de sécurité si tout le quota est utilisé | × 2,3 | × 1,4 | × 1,8 |
+| Coût mesuré dans le pire cas (6 boutiques) | 0,25 € | 0,25 € | 0,25 € |
+| **Marge de sécurité** | **coût × 3,9** | **coût × 2,4** | **coût × 2,4** |
+| Marge de sécurité si tout le quota est utilisé | × 1,5 | **× 0,97** | × 1,2 |
 
-**La phrase à dire :** « Même si nos agents consommaient 3,5 fois plus de tokens que mesuré, aucun abonnement ne perdrait d'argent. » Le point faible est Silver quand tout le quota est utilisé (marge × 1,4) : si les tests montrent un coût plus élevé, on baisse son quota de 50 à 40 estimations.
+**La phrase à dire :** « Même si nos agents consommaient 2,4 fois plus de tokens que mesuré sur nos 6 boutiques, aucun abonnement ne perdrait d'argent à l'usage moyen. » Le point faible est Silver quand tout le quota est utilisé (× 0,97, donc une petite perte) : on baisse son quota de 50 à 45 estimations, ou on passe au forfait H.
 
 ### Pourquoi ces prix sont justes pour le client
 On ne fixe pas le prix à partir de notre coût, mais à partir de **ce que le client y gagne** :
@@ -246,12 +248,12 @@ Hypothèses principales (toutes modifiables dans le tableur) : 500 inscrits orga
 | Partenariat Vinted / Leboncoin | 0 € | 26 800 € | 77 100 € |
 | Commissions des boutiques de rachat | 0 € | 7 400 € | 26 600 € |
 | **Chiffre d'affaires** | **22 100 €** | **149 500 €** | **375 200 €** |
-| Coût technique (H, Hugging Face, hébergement, estimations sous licence) | 3 000 € | 6 900 € | 32 800 € |
-| Marge brute | 18 000 € (81 %) | 137 500 € (92 %) | 331 500 € (88 %) |
+| Coût technique (H, Hugging Face, hébergement, estimations sous licence) | 3 000 € | 18 400 € | 55 500 € |
+| Marge brute | 18 000 € (81 %) | 126 100 € (84 %) | 308 800 € (82 %) |
 | Marketing, frais fixes, salaires | 16 800 € | 160 800 € | 316 800 € |
-| **Résultat d'exploitation** | **+1 200 €** | **−23 300 €** | **+14 700 €** |
+| **Résultat d'exploitation** | **+1 200 €** | **−34 700 €** | **−8 000 €** |
 
-Le besoin de trésorerie le plus fort est d'environ **37 000 €**, au mois 29 : les salaires démarrent en an 2, alors que le partenariat ne rapporte encore que la phase 1.
+Le besoin de trésorerie le plus fort est d'environ **58 000 €**, au mois 30 : les salaires démarrent en an 2, alors que le partenariat ne rapporte encore que la phase 1.
 
 ### Les trois scénarios
 
@@ -262,10 +264,10 @@ Le besoin de trésorerie le plus fort est d'environ **37 000 €**, au mois 29 :
 | Signature de la 1re plateforme | mois 25 | mois 13 | mois 10 |
 | Passage en licence | après l'horizon | mois 25 | mois 22 |
 | Chiffre d'affaires an 3 | 158 000 € | 375 000 € | 844 000 € |
-| Résultat d'exploitation an 3 | −167 000 € | +15 000 € | +401 000 € |
-| Besoin de financement sur 3 ans | 290 000 € | 37 000 € | 3 000 € |
+| Résultat d'exploitation an 3 | −175 000 € | −8 000 € | +349 000 € |
+| Besoin de financement sur 3 ans | 299 000 € | 58 000 € | 3 000 € |
 
-**À retenir :** le modèle tient si le partenariat arrive. Sans lui (scénario prudent), il ne faut pas embaucher en an 2 : les abonnements seuls couvrent les coûts techniques et le marketing, pas une équipe. Dans le scénario central, la levée de fonds à prévoir est d'environ 40 000 €.
+**À retenir :** le modèle tient si le partenariat arrive. Sans lui (scénario prudent), il ne faut pas embaucher en an 2 : les abonnements seuls couvrent les coûts techniques et le marketing, pas une équipe. Dans le scénario central, la levée de fonds à prévoir est d'environ 60 000 € dans le pire cas de coût ; le passage au forfait H Builder la réduit.
 
 ---
 
@@ -274,9 +276,10 @@ Le besoin de trésorerie le plus fort est d'environ **37 000 €**, au mois 29 :
 | Risque | Notre réponse |
 |---|---|
 | H Company n'autorise pas l'usage commercial de son API | Question posée aux mentors (Specs §9.4) ❓. Sans accord, pas de lancement commercial |
-| Le prix des tokens H change | Le pire cas (0,17 € par estimation) laisse déjà au moins 70 % de marge brute sur chaque abonnement |
+| Le prix des tokens H change | Le pire cas (0,25 € par estimation sur 6 boutiques) laisse au moins 56 % de marge brute à l'usage moyen ; dans un forfait H, plus de 90 % |
 | Un site bloque nos agents | Il sort de la liste (règle 2). Il reste eBay et les autres boutiques, puis les partenariats |
-| Les estimations sont fausses | Objectif mesuré sur 30 objets : écart médian ≤ 15 % avec le prix réellement vendu (Specs). À publier dans le pitch |
+| Les boutiques refusent un usage commercial | Gamecash et Cash Converters réservent leur site à un « usage privé » (CGU), comme Largo, Recommerce et Fnac. Le prototype n'est pas commercialisé (décision du 17/11, JOURNAL.md). **Tout lancement payant exige l'accord écrit de chaque enseigne**, à négocier avec les commissions de rachat (partie 3) |
+| Les estimations sont fausses | Objectif mesuré sur 10 objets : écart médian ≤ 15 % avec le prix réellement vendu (Specs). À publier dans le pitch |
 | Les particuliers ne paient pas | Les pros (Entreprise), le partenariat et les boutiques pèsent 61 % du chiffre d'affaires en an 3 (scénario central) |
 | Vinted ou Leboncoin copient l'idée | Notre force : la comparaison neutre entre plusieurs sites et les boutiques de rachat |
 | La licence nous enferme chez une plateforme | Licence non exclusive, application Snap N Cash indépendante (partie 6 bis) |

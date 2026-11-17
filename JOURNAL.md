@@ -449,7 +449,7 @@ Le dépôt est noté : rangement avant la fusion dans `main`.
 Préparé par Claude pour Tristan (CPO) et Stephen (CEO). Fichiers : `docs/business-model/business-model-snap-n-cash.md` et `docs/business-model/snap-n-cash-projections.xlsx`.
 
 Décisions de l'équipe (17/11, transmises par Tristan) :
-- 3 premières photos gratuites, puis abonnements Bronze 4,99 € TTC, Silver 14,99 € TTC, Entreprise 149 € HT par mois.
+- 3 premières estimations gratuites, puis abonnements Bronze 4,99 € TTC, Silver 14,99 € TTC, Entreprise 149 € HT par mois.
 - Cible Entreprise : dépôts-vente et brocanteurs d'abord. Horizon des projections : 3 ans. Fondateurs non payés en an 1.
 - Partenariat Vinted et Leboncoin : 0,30 € par annonce publiée pendant 12 mois, pour que les plateformes mesurent l'efficacité de l'outil, puis licence (4 000 € HT par mois et par plateforme, hypothèse).
 - Pourquoi : le partenariat donne un accès officiel à leurs prix, ce qui règle l'interdiction actuelle des CGU (règle 1).
@@ -460,7 +460,7 @@ Chiffres clés (scénario central, hypothèses) :
 - Chiffre d'affaires : 22 100 € en an 1, 149 500 € en an 2, 375 200 € en an 3. Résultat : +1 200 €, −23 300 €, +14 700 €. Besoin de financement : environ 37 000 €.
 
 Points d'attention :
-- Compter les 3 photos gratuites impose un compte (e-mail) : politique de confidentialité RGPD à prévoir.
+- Compter les 3 estimations gratuites impose un compte (e-mail) : politique de confidentialité RGPD à prévoir.
 - Dès qu'une plateforme nous rémunère, la page « Comment ça marche » doit le dire (elle affirme aujourd'hui qu'aucun site ne nous paie).
 - Licence non exclusive : l'application Snap N Cash garde la comparaison neutre de toutes les sources.
 
