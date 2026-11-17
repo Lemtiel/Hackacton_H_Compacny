@@ -308,6 +308,29 @@ details.site-detail summary::-webkit-details-marker { display: none; }
 
 .footer-note { margin-top: 2.5rem; font-size: 0.8125rem; color: var(--ink-soft); }
 
+/* Espace revendeurs */
+.pro-header .muted { margin: 0.5rem 0 0; }
+.pro-header .lede { margin-bottom: 1.5rem; }
+.pro-entry { margin: 1.25rem 0 0; text-align: center; font-size: 0.875rem; }
+.pro-entry a, .pro-empty a { color: var(--action); font-weight: 600; text-underline-offset: 0.18em; }
+.pro-results { padding: 1.25rem; }
+.pro-market-summary { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.pro-market-summary h2 { margin: 0.15rem 0 0.35rem; }
+.pro-market-summary .small { margin: 0; }
+.pro-market-summary .status-pill { flex: 0 0 auto; }
+.pro-fees { margin: 1.25rem 0 0.5rem; padding: 1rem; border-radius: var(--radius-m); background: #fff; }
+.pro-fees-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; font-weight: 600; }
+.pro-fees-head output { color: var(--action); font-size: 1.25rem; }
+.pro-fees .small { margin: 0; }
+.pro-offers { margin-top: 0.75rem; }
+.pro-offer { align-items: flex-start; border-top: 1px solid var(--line); padding: 0.85rem 0; }
+.pro-empty { margin-top: 1rem; display: grid; gap: 0.35rem; }
+
+@media (max-width: 420px) {
+  .pro-market-summary { display: grid; }
+  .pro-market-summary .status-pill { justify-self: start; }
+}
+
 /* Entrée d'écran : courte, sans rebond */
 .screen { animation: enter 360ms var(--ease-spring) both; }
 @keyframes enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
@@ -548,7 +571,7 @@ details.site-detail summary::-webkit-details-marker { display: none; }
 .grenier-total { margin-top: 0.5rem; }
 .grenier-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
 .grenier-item { padding: 1rem 0; border-bottom: 1px solid var(--line); }
-.grenier-head { display: flex; justify-content: space-between; gap: 1rem; align-items: start; }
+.grenier-head { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
 .grenier-value { font-weight: 700; font-size: 1.15rem; }
 .grenier-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-top: 0.6rem; }
 .status-pill { padding: 0.2rem 0.65rem; border-radius: 999px; font-size: 0.8125rem; font-weight: 600; background: var(--surface); color: var(--ink); }

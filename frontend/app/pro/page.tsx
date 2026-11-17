@@ -3,12 +3,13 @@
 // Espace revendeurs : version de départ, à faire évoluer par Tristan (voir docs/revendeurs.md).
 // Même recherche que l'app : aucun agent ni appel serveur en plus, le classement se calcule ici.
 
-import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { CATEGORY_LABELS, type Category, type Offer, type SearchEvent, euros, isDemo, searchPrices, shotUrl } from "@/lib/api";
 import { guessCategory } from "@/lib/variants";
 import { type Row, SearchProgress } from "@/components/SearchScreen";
 
-const RESALE_FEES = 0.1; // commission et envoi : à rendre réglable (docs/revendeurs.md, point 1)
+const DEFAULT_RESALE_FEES = 10;
 const DEAL_GAP = 0.15; // « Bonne affaire » à partir de 15 % sous la médiane
 const CATEGORIES = Object.keys(CATEGORY_LABELS) as Category[];
 
@@ -29,6 +30,7 @@ export default function ProPage() {
   const [done, setDone] = useState(false);
   const [failed, setFailed] = useState(false);
   const [demo, setDemo] = useState(false);
+  const [resaleFees, setResaleFees] = useState(DEFAULT_RESALE_FEES);
   const stopRef = useRef<(() => void) | null>(null);
 
   useEffect(() => setDemo(isDemo()), []);
@@ -75,7 +77,7 @@ export default function ProPage() {
     ? all
         .map((o) => ({
           ...o,
-          margin: Math.round(ref * (1 - RESALE_FEES) - o.price_eur),
+          margin: Math.round(ref * (1 - resaleFees / 100) - o.price_eur),
           gap: (ref - o.price_eur) / ref,
           outlier: o.price_eur < ref / 2 || o.price_eur > ref * 2,
         }))
@@ -85,9 +87,11 @@ export default function ProPage() {
   return (
     <main className="page">
       <section className="screen">
-        <p className="muted" style={{ margin: "0.5rem 0 0" }}>Espace revendeurs</p>
-        <h1 className="display search-title">Trouvez les objets à racheter.</h1>
-        <p className="lede">Nos agents relèvent les prix dans les boutiques d&apos;occasion. On classe les annonces selon la marge possible à la revente.</p>
+        <header className="pro-header">
+          <p className="muted">Espace revendeurs</p>
+          <h1 className="display search-title">Trouvez les objets à racheter.</h1>
+          <p className="lede">Nos agents relèvent les prix dans les boutiques d&apos;occasion. On classe les annonces selon la marge possible à la revente.</p>
+        </header>
 
         <form className="stack" onSubmit={(e) => { e.preventDefault(); launch(); }}>
           <label htmlFor="pro-product" className="sr-only">Objet recherché</label>
@@ -113,32 +117,70 @@ export default function ProPage() {
         {query && <SearchProgress rows={rows} done={done} demo={demo} />}
 
         {ref && (
-          <div className="panel">
-            <h3>Prix du marché : {euros(ref)}</h3>
-            <p className="small" style={{ margin: "0 0 0.75rem" }}>
-              Médiane de {kept.length} prix en boutique, même modèle. Marge estimée après {Math.round(RESALE_FEES * 100)} % de frais de revente.
-              Prix indicatifs.
-            </p>
-            {deals.map((d, i) => (
-              <div key={i} className="offer">
-                <span>
-                  {d.gap >= DEAL_GAP && !d.outlier && <span className="status-pill" data-status="vendu" style={{ marginRight: "0.4rem" }}>Bonne affaire</span>}
-                  {d.outlier && <span className="status-pill" style={{ marginRight: "0.4rem" }}>À vérifier</span>}
-                  {d.url ? <a href={d.url} target="_blank" rel="noopener noreferrer">{d.title}</a> : d.title}
-                  <span className="small">, {d.site}</span>
-                </span>
-                <span className="num" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                  {euros(d.price_eur)}
-                  <br />
-                  <span className="small">{d.margin >= 0 ? `+${euros(d.margin)}` : euros(d.margin)}</span>
-                </span>
+          <section className="panel pro-results" aria-labelledby="market-title">
+            <div className="pro-market-summary">
+              <div>
+                <p className="small">Référence de revente</p>
+                <h2 id="market-title">Prix du marché : {euros(ref)}</h2>
               </div>
-            ))}
+              <span className="status-pill">{kept.length} prix comparables</span>
+            </div>
+            <p className="small">
+              Médiane des prix relevés dans les boutiques, après retrait des valeurs aberrantes. Prix indicatifs, sources visibles ci-dessous.
+            </p>
+
+            <div className="pro-fees">
+              <div className="pro-fees-head">
+                <label htmlFor="resale-fees">Frais de revente estimés</label>
+                <output htmlFor="resale-fees" className="num">{resaleFees} %</output>
+              </div>
+              <input
+                id="resale-fees"
+                className="slider"
+                type="range"
+                min="0"
+                max="25"
+                step="1"
+                value={resaleFees}
+                onChange={(event) => setResaleFees(Number(event.target.value))}
+                style={{ "--fill": `${(resaleFees / 25) * 100}%` } as CSSProperties}
+              />
+              <p className="small">Commission et envoi estimés. Les marges se recalculent immédiatement.</p>
+            </div>
+
+            <div className="pro-offers">
+              {deals.map((d, i) => (
+                <article key={`${d.site}-${d.url ?? d.title}-${i}`} className="offer pro-offer">
+                  <span>
+                    {d.gap >= DEAL_GAP && !d.outlier && <span className="status-pill" data-status="vendu" style={{ marginRight: "0.4rem" }}>Bonne affaire</span>}
+                    {d.outlier && <span className="status-pill" style={{ marginRight: "0.4rem" }}>À vérifier</span>}
+                    {d.url ? <a href={d.url} target="_blank" rel="noopener noreferrer">{d.title}</a> : d.title}
+                    <span className="small">, {d.site}</span>
+                  </span>
+                  <span className="num" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                    {euros(d.price_eur)}
+                    <br />
+                    <span className="small">{d.margin >= 0 ? `+${euros(d.margin)}` : euros(d.margin)}</span>
+                  </span>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {done && all.length === 0 && !failed && (
+          <div className="notice warn pro-empty">
+            <strong>Aucune boutique ne propose ce modèle.</strong>
+            <span>Essayez un autre objet ou revenez à l&apos;estimation classique.</span>
+            <Link href="/">Revenir à la recherche classique</Link>
           </div>
         )}
 
-        {done && !ref && !failed && (
-          <p className="notice warn" style={{ marginTop: "1rem" }}>Trop peu de prix pour juger ce modèle. Essayez un nom plus précis.</p>
+        {done && all.length > 0 && !ref && !failed && (
+          <div className="notice warn pro-empty">
+            <strong>Trop peu de prix pour juger ce modèle.</strong>
+            <span>{raw.length} prix trouvé{raw.length === 1 ? "" : "s"} : il en faut au moins 3 comparables. Essayez un nom plus précis.</span>
+          </div>
         )}
       </section>
     </main>
