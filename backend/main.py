@@ -3,6 +3,8 @@
   POST /api/identify   photo -> contrôle visage -> identification (marque, modèle, état)
   GET  /api/search     recherche des prix en boutique, résultats envoyés site par site (SSE)
   POST /api/listing    annonce rédigée en 4 formats (Vinted, Leboncoin, eBay, générique)
+  GET  /api/ebay       bloc « Vendre seul » : annonces eBay en cours (API Browse), séparées des boutiques
+  GET  /api/shot/{id}  mode démo : dernière capture d'écran d'un agent, relayée sans être enregistrée
 
 Rien n'est conservé : ni photo, ni annonce relevée. Les résultats ne vivent que le temps de la requête.
 
@@ -14,18 +16,21 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import secrets
 import threading
+import time
 from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
+import httpx
 from hai_agents import Client
 
 from agents.price_agent import MAX_SECONDS, run_site
 from agents.sites import CATEGORIES, SITES, sites_for
-from backend import listing, matching, photo, pricing
+from backend import ebay, listing, matching, photo, pricing
 
 ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env")
@@ -34,6 +39,25 @@ MAX_UPLOAD = 8 * 1024 * 1024
 # Le compte H autorise 3 sessions simultanées : au-delà, un site attend son tour.
 MAX_PARALLEL = int(os.getenv("HAI_MAX_PARALLEL", "3"))
 _slots = threading.Semaphore(MAX_PARALLEL)
+
+# Mode démo (pitch, vidéo) : captures d'écran des agents. Coupé par défaut (règle 9 : pas de capture des sites
+# montrée aux utilisateurs). S'active avec DEMO_SHOTS=1 côté serveur ET ?demo=1 dans l'adresse de l'interface.
+DEMO_SHOTS = os.getenv("DEMO_SHOTS", "") == "1"
+SHOT_TTL_S = 600
+# Jeton aléatoire -> (adresse H de la capture, heure d'expiration). En mémoire seulement, aucune image sur disque.
+_shots: dict[str, tuple[str, float]] = {}
+_shots_lock = threading.Lock()
+
+
+def _register_shot(url: str) -> str:
+    now = time.time()
+    token = secrets.token_urlsafe(16)
+    with _shots_lock:
+        for k in [k for k, (_, exp) in _shots.items() if exp < now]:
+            del _shots[k]
+        _shots[token] = (url, now + SHOT_TTL_S)
+    return token
+
 
 app = FastAPI(title="Snap N Cash")
 
@@ -59,7 +83,9 @@ def config():
         "max_seconds": MAX_SECONDS,
         "vision_model": (os.getenv("HF_VISION_MODEL") or photo.DEFAULT_VISION_MODEL),
         "identify_ready": bool(os.getenv("HF_TOKEN")),
+        "ebay_ready": ebay.configured(),
         "conditions": listing.CONDITIONS,
+        "demo_shots": DEMO_SHOTS,
     }
 
 
@@ -95,6 +121,42 @@ async def make_listing(req: listing.ListingRequest):
         raise HTTPException(502, "La rédaction a échoué. Réessayez dans un instant.")
 
 
+@app.get("/api/ebay")
+async def ebay_prices(
+    product: str = Query(..., min_length=2, max_length=120),
+    category: str = Query("smartphone"),
+):
+    # Bloc séparé des boutiques (licence eBay) : ses prix ne passent ni dans shop_block ni dans un modèle de texte.
+    if category not in CATEGORIES:
+        raise HTTPException(422, "Catégorie inconnue.")
+    try:
+        return await ebay.search(product, category)
+    except ebay.EbayNotConfigured:
+        return {"state": "non_configure", "block": None, "items": []}
+    except ebay.EbayError:
+        return {"state": "indisponible", "block": None, "items": []}
+
+
+@app.get("/api/shot/{token}")
+async def shot(token: str):
+    # La capture se lit chez H avec notre clé : on la relaie octet par octet, sans la garder.
+    if not DEMO_SHOTS:
+        raise HTTPException(404)
+    with _shots_lock:
+        entry = _shots.get(token)
+    if not entry or entry[1] < time.time():
+        raise HTTPException(404)
+    try:
+        # H redirige vers l'image ; httpx retire l'en-tête Authorization si la redirection change d'hôte.
+        async with httpx.AsyncClient(timeout=10, follow_redirects=True) as c:
+            r = await c.get(entry[0], headers={"Authorization": f"Bearer {os.getenv('HAI_API_KEY', '')}"})
+    except httpx.HTTPError:
+        raise HTTPException(502)
+    if r.status_code != 200 or not r.headers.get("content-type", "").startswith("image/"):
+        raise HTTPException(502)
+    return Response(r.content, media_type=r.headers["content-type"], headers={"Cache-Control": "no-store"})
+
+
 def _site_payload(site: str, r, product: str, category: str) -> dict:
     # Seules les annonces du même modèle comptent : les autres sont écartées par notre code.
     kept, rejected = matching.filter_offers(product, category, r.offers)
@@ -116,9 +178,11 @@ def _site_payload(site: str, r, product: str, category: str) -> dict:
 async def search(
     product: str = Query(..., min_length=2, max_length=120),
     category: str = Query("smartphone"),
+    demo: bool = Query(False),
 ):
     if category not in CATEGORIES:
         raise HTTPException(422, "Catégorie inconnue.")
+    shots = demo and DEMO_SHOTS
     if not os.getenv("HAI_API_KEY"):
         raise HTTPException(503, "HAI_API_KEY manque dans .env.")
 
@@ -141,6 +205,7 @@ async def search(
                         "type": "site_step", "site": site, "elapsed_s": s["elapsed_s"],
                         "label": "démarrage du navigateur" if s["steps"] == 0 else f"navigue, étape {s['steps']}",
                     }),
+                    on_shot=(lambda url: emit({"type": "site_shot", "site": site, "shot": _register_shot(url)})) if shots else None,
                 )
                 emit(_site_payload(site, r, product, category))
             except Exception:

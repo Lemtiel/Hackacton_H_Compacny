@@ -243,3 +243,84 @@ Bug corrigé : la couleur rendue par l'identification (« Midnight ») partait d
 Hypothèse à remplacer : sans bloc eBay, le prix « vendre seul » est estimé à 15 % sous le prix boutique (`frontend/lib/verdict.ts`). À recalibrer avec le jeu de 30 objets, puis à remplacer par la médiane eBay.
 
 Testé en local : iPhone 13 128 Go, Easy Cash 7 prix, Cash Converters 3 prix, Troc.com aucun ; verdict « vendez-le vous-même » (+113 €) ; ajout automatique dans Mon grenier. Non testé : téléphone réel, découverte au doigt sur écran tactile.
+
+### Mardi 17/11, matin : bloc eBay « Vendre seul » (Jude)
+Garde-fou rapide passé avant le code : go sous conditions (pseudonyme vendeur filtré, licence eBay à lire avant vendredi). Jude, chef de projet, a autorisé la modification de `backend/main.py`.
+
+Fait :
+- `backend/ebay.py` : jeton OAuth gardé en mémoire, recherche Browse sur `EBAY_FR` (prix fixe, euros, objets situés en France, occasion et reconditionné, ni neuf ni pour pièces). Même tri par modèle que les boutiques (`matching.py`). On ne garde que le titre, le prix, l'état et le lien : le pseudonyme du vendeur et les images sont jetés à la lecture. Aucun cache des résultats.
+- Calcul : valeurs aberrantes retirées (même règle que les boutiques), fourchette entre les quartiles, prix conseillé = médiane moins 10 % (hypothèse des Specs, réglable par `EBAY_SELL_DISCOUNT`). Pas de prix sous 3 annonces.
+- Route `GET /api/ebay` dans `backend/main.py`, plus `ebay_ready` dans `/api/config`. Sans clés : état `non_configure`, et l'interface masque le bloc.
+- Interface : bloc « Vendre seul (eBay) » séparé des offres des boutiques, appelé en parallèle des agents. Le verdict et le curseur utilisent la médiane eBay quand elle existe, sinon l'hypothèse des 15 % sous le prix boutique. Le curseur suit le nouveau prix tant que l'utilisateur ne l'a pas touché. Mon grenier ne garde que la fourchette calculée.
+- Option `EBAY_ENV=sandbox` pour tester avec des clés sandbox.
+
+Testé : `tests/test_ebay.py` sur une réponse simulée, 14/14 (pseudonyme absent, Lite, OLED et coque écartées, lot à 650 € retiré, jeton réutilisé). `tests/test_matching.py` toujours à 25/25. TypeScript compile. Route réelle : répond `non_configure` sans clés.
+Non testé : appel réel à eBay (clés vides), affichage du bloc dans le navigateur avec de vraies données, cas eBay seul (Redmi Note 10S).
+
+Limite : l'API Browse rend des prix demandés, pas des ventes conclues. La décote de 10 % reste à recalibrer sur le jeu de 30 objets.
+Compte développeur eBay créé le 17/11 vers 9h, en attente de validation par eBay (« au moins un jour ouvré »). Personne dans l'équipe n'a de compte validé : on attend. Clés au mieux mercredi 18/11.
+
+### Mardi 17/11, matin : sources de prix élargies (Jude)
+Demande de Jude : 4 boutiques, c'est trop peu. Vérification de 10 candidats (robots.txt, CGU ou mentions légales, accès), sources dans le dossier de travail de la session.
+
+| Site | robots.txt | CGU | Décision |
+|---|---|---|---|
+| Certideal | recherche interdite, catégories autorisées | aucune clause contre l'accès automatisé (CG et CGU marketplace) | **Ajouté**, navigation par catégorie |
+| Swappie | filtres et tri interdits | CG de vente : aucune clause contre l'accès automatisé | **Ajouté**, sans filtres ; derrière Cloudflare, l'agent est passé |
+| Largo | recherche interdite | mentions légales : « usage personnel et non commercial » | Écarté |
+| Recommerce | recherche et paramètres interdits | mentions légales : « usage personnel, privé, non collectif et non commercial » | Écarté |
+| Smaaart | recherche interdite | « pas autorisé à utiliser un système automatisé pour extraire du contenu à des fins commerciales » | Écarté |
+| Refurbed | ouvert | §13.2 : « no data mining, robots or similar […] programs » | Écarté |
+| Cash Express | illisible (Cloudflare) | non lues | À lire à la main, puis test d'agent |
+| Micromania | illisible (Incapsula) | non lues | À lire à la main, puis test d'agent |
+| Rakuten, Fnac | illisibles (blocage) | — | Écartés : places de marché de particuliers |
+| Rue du Commerce, LDLC | ouverts | — | Écartés : surtout du neuf |
+
+Test réel, « Apple iPhone 13 128 Go », smartphone :
+| Site | Résultat | Durée | Jetons |
+|---|---|---|---|
+| Certideal | 6 prix de 255,99 à 311,99 € (médiane 265,99 €) | 79,7 s, réponse forcée à 70 s | 179 604 |
+| Swappie | 1 prix, 229 € (une page par modèle, pas d'annonces à l'unité) | 77,0 s, réponse forcée à 70 s | 155 416 |
+
+Fait : 2 entrées dans `agents/sites.py`, aucune autre ligne de code. Listes de sites mises à jour dans l'interface (pied de page, « Comment ça marche »), CLAUDE.md, CONTEXT.md et Specs.md.
+
+Limites et risques :
+- Temps : le compte H permet 3 sessions simultanées. Un smartphone lance maintenant 5 agents, soit 2 vagues : jusqu'à 3 min, au-dessus de l'objectif de 2 min. Question à poser aux mentors H.
+- Certideal et Swappie vendent du reconditionné avec garantie : leurs prix tirent la médiane « boutique » vers le haut. Le coefficient de rachat de 40 % reste à vérifier pour ces deux sites.
+- Swappie ne rend qu'un prix par état : peu de valeur pour la médiane.
+- Un seul objet testé par site. Non testé dans l'interface.
+Suite : Rakuten France a fermé sa marketplace le 30/09/2026, donc écarté (les CGU en ligne ne voulaient rien dire). Fnac : le robots.txt autorise la recherche simple et les fiches produit (filtres et pages suivantes interdits), mais les CGU de fnac.com restent introuvables, et celles de Le Claireur (FDPS, même groupe) interdisent toute extraction : abandonné. Liste finale : 6 boutiques et eBay (clés en attente).
+
+### Mardi 17/11, 10h : décision sur les clauses « usage privé / non commercial » (Jude)
+Constat du garde-fou : Gamecash (CGU : « Seul un usage strictement privé est autorisé ») et Cash Converters (CGU : « seule l'utilisation pour un usage privé […] est autorisée ») ont la même clause que Largo, Recommerce et Fnac, écartés plus tôt pour ce motif. Point classé ROUGE pour incohérence de critère.
+
+**Décision de Jude : risque accepté.** Raison : Snap N Cash reste un prototype de hackathon, présenté en pitch et jamais commercialisé ; la consultation des sites pendant la semaine n'a pas de but commercial. Les clauses « usage privé / non commercial » ne bloquent donc pas. Gamecash et Cash Converters restent. Le même raisonnement rouvre Largo, Recommerce, Fnac et Smaaart (qui n'interdit l'extraction automatisée qu'« à des fins commerciales »).
+Reste exclu : Refurbed, dont les CGU interdisent les robots sans condition (§13.2).
+Conséquence pour le pitch : un lancement commercial demanderait l'accord écrit des enseignes. À mettre dans la slide « limites et roadmap ».
+Questions H de 11h déléguées à Josia (Jude bloqué par la grève jusqu'à 14h) : limite de 3 sessions simultanées, intégration de `agent_view_url` dans l'interface, vitesse des sessions. Retirées par Jude : l'usage commercial (§9.4), sans objet puisque le projet ne sera pas commercialisé, et les crédits, puisque l'équipe dispose de 6 comptes.
+Fiche de 11h transmise à Josia : 10 questions (replays, anti-robot §5.2, autorisation des sites §5.3, données vues par l'agent). Les questions 1 à 3 du départ (sessions simultanées, plusieurs comptes, agent en direct) ont déjà leur réponse selon Jude.
+Marché : on reste en France (Poshmark écarté, CGU §4(b) contre toute collecte automatisée ; Chine écartée). L'international ira dans la roadmap du pitch, Europe d'abord.
+Fnac validé par Jude puis testé (« Nintendo Switch », console) : l'agent tombe sur une page anti-robot (« You have been blocked ») en 15,7 s, avec 9 757 jetons. Règle 2 appliquée : Fnac sort de la liste, sans nouvel essai. Config retirée.
+
+### Mardi 17/11, 11h : test de l'affichage de l'agent en direct
+Session de test sur Easy Cash (« Nintendo Switch »), annulée au bout de 60 s.
+- **Vidéo en direct (`LiveViewUrlEvent`)** : aucun lien reçu avec `h/web-surfer-flash`. Indisponible pour cet agent, ou pour notre offre (question à poser à H).
+- **Page Agent View de H en iframe** : impossible, la page renvoie `X-Frame-Options: DENY`. On ne peut que l'ouvrir dans un onglet, en étant connecté à la plateforme H.
+- **Captures pas à pas (`ObservationEvent.image`)** : la première arrive à 12 s, la deuxième à 16 s. L'adresse renvoie une erreur 404 sans authentification et une PNG de 336 Ko avec la clé API. Notre serveur peut donc les relayer à l'interface, sans jamais exposer la clé.
+- La capture montre la page catégorie « Consoles » d'Easy Cash avec le bandeau de cookies ouvert.
+Conclusion : seule l'option « captures pas à pas relayées par le serveur » est faisable. Elle reste soumise à la règle 9 (pas de capture des sites montrée aux utilisateurs) : à réserver à un mode démo, selon la décision de Jude.
+
+### Mardi 17/11, fin de matinée : mode démo « l'agent en direct » (Jude)
+Fait :
+- `agents/price_agent.py` : pendant chaque session, lecture des nouveaux événements (`changes`, sans attente) pour récupérer l'adresse de la dernière capture d'écran. Nouvelle consigne : refuser les cookies (« never accept cookies »).
+- `backend/main.py` : les adresses de capture restent en mémoire derrière un jeton aléatoire, valable 10 min. La route `GET /api/shot/{jeton}` lit l'image chez H avec notre clé et la relaie sans l'enregistrer. Coupé par défaut : il faut `DEMO_SHOTS=1` côté serveur (mis dans le `.env` local, vide dans `.env.example`) ET `?demo=1` dans l'adresse de l'interface. La règle 9 tient pour les utilisateurs.
+- Interface : avec `?demo=1`, chaque agent en cours affiche une vignette de ce qu'il voit, mise à jour à chaque capture.
+- Bug corrigé : H répond par une redirection vers l'image. Le relais la suit maintenant (httpx retire la clé si l'hôte change).
+
+Testé :
+- Recherche réelle « Nintendo Switch » (console) avec `demo=1` : 42 captures reçues (Easy Cash 13, Gamecash 13, Cash Converters 9, Troc.com 7). Résultats : Gamecash, Easy Cash et Cash Converters « ok », Troc.com « aucun résultat », entre 61 et 81 s.
+- Relais d'une capture après correction : 200, PNG de 336 Ko. Jeton inconnu : 404.
+- TypeScript compile.
+
+Non testé : l'affichage des vignettes dans le navigateur, le comportement de l'agent face au bandeau de cookies avec la nouvelle consigne, le mode démo sur téléphone.
+À noter pour la question 10 de Josia : le SDK de H propose `delete_screenshot_after_min`, qui fixe au bout de combien de minutes les captures sont effacées chez H.

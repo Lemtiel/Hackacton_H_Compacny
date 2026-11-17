@@ -60,11 +60,23 @@ export type SearchEvent =
   | { type: "start"; product: string; category: string; sites: { key: string; name: string; active: boolean }[] }
   | { type: "site_step"; site: string; label?: string; elapsed_s?: number; steps?: number }
   | { type: "site_result"; site: string; state: "ok" | "aucun_resultat" | "indisponible"; duration_s?: number; offers: Offer[]; n_rejected?: number }
+  | { type: "site_shot"; site: string; shot: string }
   | { type: "shop_block"; block: ShopBlock | null }
   | { type: "done" };
 
-export function searchPrices(product: string, category: string, onEvent: (e: SearchEvent) => void, onError: () => void) {
-  const url = `${API_URL}/api/search?product=${encodeURIComponent(product)}&category=${encodeURIComponent(category)}`;
+// Mode démo (pitch, vidéo) : ?demo=1 dans l'adresse de la page affiche les captures des agents.
+export function isDemo(): boolean {
+  try {
+    return new URLSearchParams(window.location.search).get("demo") === "1";
+  } catch {
+    return false;
+  }
+}
+
+export const shotUrl = (token: string) => `${API_URL}/api/shot/${encodeURIComponent(token)}`;
+
+export function searchPrices(product: string, category: string, onEvent: (e: SearchEvent) => void, onError: () => void, demo = false) {
+  const url = `${API_URL}/api/search?product=${encodeURIComponent(product)}&category=${encodeURIComponent(category)}${demo ? "&demo=1" : ""}`;
   const source = new EventSource(url);
   source.onmessage = (msg) => {
     const ev = JSON.parse(msg.data) as SearchEvent;
@@ -110,4 +122,37 @@ export async function generateListing(req: ListingRequest): Promise<import("./li
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(typeof data.detail === "string" ? data.detail : "La rédaction a échoué. Réessayez dans un instant.");
   return data.formats;
+}
+
+// Bloc « Vendre seul (eBay) » : annonces eBay en cours via l'API officielle, jamais mélangées aux boutiques.
+export type EbayBlock = {
+  n_prices: number;
+  n_kept: number;
+  listed_low: number;
+  listed_high: number;
+  listed_median: number;
+  discount: number;
+  sell_low: number;
+  sell_high: number;
+  sell_price: number;
+};
+
+export type EbayResult = {
+  state: "ok" | "aucun_resultat" | "indisponible" | "non_configure";
+  block: EbayBlock | null;
+  items: Offer[];
+  n_found?: number;
+  n_rejected?: number;
+  duration_s?: number;
+};
+
+export async function fetchEbay(product: string, category: string, signal?: AbortSignal): Promise<EbayResult> {
+  const url = `${API_URL}/api/ebay?product=${encodeURIComponent(product)}&category=${encodeURIComponent(category)}`;
+  try {
+    const res = await fetch(url, { signal });
+    if (!res.ok) return { state: "indisponible", block: null, items: [] };
+    return (await res.json()) as EbayResult;
+  } catch {
+    return { state: "indisponible", block: null, items: [] };
+  }
 }

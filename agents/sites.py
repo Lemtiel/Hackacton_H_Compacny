@@ -37,6 +37,27 @@ SITES = {
         "sells": ["smartphone", "console", "jeu_video", "tablette", "informatique"],
         "start_urls": {"default": "https://www.cashconverters.fr/"},
     },
+    # Ajoutés le 17/11 après lecture du robots.txt et des CGU (JOURNAL.md, « sources de prix élargies »).
+    "certideal": {
+        "name": "Certideal",
+        # robots.txt interdit search_query, controller=search, /recherche, ?orderby, ?n= :
+        # navigation par les pages de catégorie seulement. CGU : aucune clause contre l'accès automatisé.
+        "search_allowed": False,
+        "sells": ["smartphone", "tablette", "informatique"],
+        "start_urls": {
+            "smartphone": "https://certideal.com/",
+            "tablette": "https://certideal.com/ipad-reconditionnes-118",
+            "informatique": "https://certideal.com/macbook-142",
+        },
+    },
+    "swappie": {
+        "name": "Swappie",
+        # robots.txt interdit les filtres (?grades=, ?minPrice=, ?sorting=...) : pas de filtres ni de tri.
+        # CGU : aucune clause contre l'accès automatisé. Derrière Cloudflare : sort de la liste si l'agent est bloqué.
+        "search_allowed": False,
+        "sells": ["smartphone", "tablette"],
+        "start_urls": {"default": "https://swappie.com/fr/"},
+    },
 }
 
 CATEGORIES = ["smartphone", "console", "jeu_video", "tablette", "informatique"]

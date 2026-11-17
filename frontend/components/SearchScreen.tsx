@@ -4,13 +4,17 @@ import { useEffect, useRef, useState } from "react";
 import {
   CATEGORY_LABELS,
   type Category,
+  type EbayResult,
   type Offer,
   type SearchEvent,
   type ShopBlock,
   euros,
+  fetchEbay,
   generateListing,
+  isDemo,
   marketplaceLinks,
   searchPrices,
+  shotUrl,
 } from "@/lib/api";
 import { type GrenierItem, newId, updateItem, upsertItem } from "@/lib/grenier";
 import { type Condition, type ListingFormat, type Platform, fallbackListing } from "@/lib/listing";
@@ -25,6 +29,7 @@ type Row = {
   steps: string[];
   elapsed: number;
   offers: Offer[];
+  shot?: string;
 };
 
 const MAX_S = 90;
@@ -48,6 +53,20 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
   const [myPrice, setMyPrice] = useState<number | null>(null);
   const idRef = useRef(newId());
   const shopRef = useRef<ShopBlock | null>(null);
+  const [ebay, setEbay] = useState<EbayResult | null>(null);
+  const ebayRef = useRef<EbayResult | null>(null);
+  const priceTouched = useRef(false);
+
+  // eBay répond en 1 à 2 s, en parallèle des agents : bloc séparé, jamais mélangé aux boutiques.
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetchEbay(product, category, ctrl.signal).then((r) => {
+      if (ctrl.signal.aborted) return;
+      ebayRef.current = r;
+      setEbay(r);
+    });
+    return () => ctrl.abort();
+  }, [product, category]);
 
   useEffect(() => {
     const stop = searchPrices(
@@ -75,6 +94,8 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
           const base = ev.state === "ok" ? `${ev.offers.length} prix relevé${ev.offers.length > 1 ? "s" : ""}` : ev.state === "aucun_resultat" ? "Aucune offre de ce modèle" : "Site indisponible";
           const rejected = ev.n_rejected ? `, ${ev.n_rejected} écartée${ev.n_rejected > 1 ? "s" : ""} (autre modèle)` : "";
           setRows((r) => r.map((s) => (s.key === ev.site ? { ...s, state: ev.state, label: base + rejected, elapsed: ev.duration_s ?? s.elapsed, offers: ev.offers } : s)));
+        } else if (ev.type === "site_shot") {
+          setRows((r) => r.map((s) => (s.key === ev.site ? { ...s, shot: shotUrl(ev.shot) } : s)));
         } else if (ev.type === "shop_block") {
           setShop(ev.block);
           shopRef.current = ev.block;
@@ -83,22 +104,26 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
         }
       },
       () => { setFailed(true); setDone(true); },
+      isDemo(),
     );
     return stop;
   }, [product, category]);
 
-  const verdict = shop ? computeVerdict(shop) : null;
+  const verdict = shop ? computeVerdict(shop, ebaySellRange(ebay)) : null;
 
-  // Prix proposé par défaut : le milieu de la fourchette « vendre seul ».
+  // Prix proposé par défaut : le prix « vendre seul ». Il suit le calcul (eBay peut arriver après les boutiques)
+  // tant que l'utilisateur n'a pas bougé le curseur.
+  const defaultPrice = verdict?.sellAloneMid ?? null;
   useEffect(() => {
-    if (verdict && myPrice === null) setMyPrice(verdict.sellAloneMid);
-  }, [verdict, myPrice]);
+    if (defaultPrice !== null && !priceTouched.current) setMyPrice(defaultPrice);
+  }, [defaultPrice]);
 
   // L'objet entre dans Mon grenier dès que la recherche est finie, puis suit le prix choisi.
   useEffect(() => {
     if (!done || failed) return;
     const b = shopRef.current;
-    const v = b ? computeVerdict(b) : null;
+    const e = ebaySellRange(ebayRef.current);
+    const v = b ? computeVerdict(b, e) : null;
     const item: GrenierItem = {
       id: idRef.current,
       product,
@@ -106,9 +131,9 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
       condition,
       date: new Date().toISOString(),
       buyback: b?.buyback_estimate ?? null,
-      sellAloneLow: v?.sellAloneLow ?? null,
-      sellAloneHigh: v?.sellAloneHigh ?? null,
-      myPrice,
+      sellAloneLow: v?.sellAloneLow ?? e?.low ?? null,
+      sellAloneHigh: v?.sellAloneHigh ?? e?.high ?? null,
+      myPrice: myPrice ?? e?.median ?? null,
       status: "a_vendre",
     };
     upsertItem(item);
@@ -118,6 +143,12 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
   useEffect(() => {
     if (done && myPrice !== null) updateItem(idRef.current, { myPrice });
   }, [done, myPrice]);
+
+  // eBay arrivé après la fin des agents (rare) : on met à jour la fourchette dans Mon grenier.
+  useEffect(() => {
+    const e = ebaySellRange(ebay);
+    if (done && !failed && e) updateItem(idRef.current, { sellAloneLow: e.low, sellAloneHigh: e.high });
+  }, [done, failed, ebay]);
 
   const running = !done;
   const okSites = rows.filter((r) => r.state === "ok");
@@ -137,7 +168,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
 
       {done && !shop && !failed && (
         <p className="notice warn" style={{ marginTop: "1rem" }}>
-          Aucune boutique n&apos;a ce modèle en vente aujourd&apos;hui. Vérifiez le modèle exact, ou consultez les prix des particuliers ci-dessous.
+          Aucune boutique n&apos;a ce modèle en vente aujourd&apos;hui. Vérifiez le modèle exact, ou consultez les prix eBay et ceux des particuliers ci-dessous.
         </p>
       )}
 
@@ -145,9 +176,13 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
         <>
           <VerdictCard verdict={verdict} running={running} />
           <PriceScale shop={shop} verdict={verdict} />
-          {myPrice !== null && <PriceSlider shop={shop} verdict={verdict} value={myPrice} onChange={setMyPrice} />}
+          {myPrice !== null && (
+            <PriceSlider shop={shop} verdict={verdict} value={myPrice} onChange={(v) => { priceTouched.current = true; setMyPrice(v); }} />
+          )}
         </>
       )}
+
+      <EbayPanel result={ebay} />
 
       {okSites.length > 0 && (
         <div className="panel">
@@ -207,7 +242,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
       </div>
 
       <p className="footer-note">
-        Prix indicatifs relevés sur Easy Cash, Gamecash, Troc.com et Cash Converters. Comparaison non exhaustive. Objet reconnu et annonce
+        Prix indicatifs relevés sur Easy Cash, Gamecash, Troc.com, Cash Converters, Certideal et Swappie, et sur eBay par son API officielle. Comparaison non exhaustive. Objet reconnu et annonce
         rédigée par intelligence artificielle. <a href="/comment-ca-marche">Comment ça marche</a>
       </p>
     </section>
@@ -230,6 +265,13 @@ function AgentList({ rows }: { rows: Row[] }) {
           </div>
           {s.state === "en_cours" && (
             <>
+              {s.shot && (
+                <figure className="agent-shot">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={s.shot} alt={`Ce que voit l'agent sur ${s.name}`} />
+                  <figcaption className="small">En direct, vu par l&apos;agent (mode démo)</figcaption>
+                </figure>
+              )}
               <div className="agent-progress" aria-hidden>
                 <span style={{ transform: `scaleX(${Math.min(s.elapsed / MAX_S, 1)})` }} />
               </div>
@@ -270,7 +312,9 @@ function VerdictCard({ verdict, running }: { verdict: Verdict; running: boolean 
         </div>
       </div>
       <p className="small" style={{ margin: "0.75rem 0 0" }}>
-        {verdict.source === "boutiques" ? "Prix entre particuliers estimé à partir des boutiques, en attendant les prix eBay. " : ""}
+        {verdict.source === "ebay"
+          ? "Vendre seul : annonces eBay en cours, moins 10 %. "
+          : "Prix entre particuliers estimé à partir des boutiques, faute d'annonces eBay. "}
         {running ? "D'autres boutiques répondent encore." : ""}
       </p>
     </div>
@@ -279,7 +323,7 @@ function VerdictCard({ verdict, running }: { verdict: Verdict; running: boolean 
 
 function PriceScale({ shop, verdict }: { shop: ShopBlock; verdict: Verdict }) {
   const min = Math.floor(Math.min(shop.buyback_low, verdict.sellAloneLow) / 10) * 10;
-  const max = Math.ceil(shop.shop_high / 10) * 10;
+  const max = Math.ceil(Math.max(shop.shop_high, verdict.sellAloneHigh) / 10) * 10;
   const span = Math.max(max - min, 1);
   const pos = (v: number) => `${((v - min) / span) * 100}%`;
   const width = (a: number, b: number) => `${Math.max(((b - a) / span) * 100, 2)}%`;
@@ -305,8 +349,8 @@ function PriceScale({ shop, verdict }: { shop: ShopBlock; verdict: Verdict }) {
 }
 
 function PriceSlider({ shop, verdict, value, onChange }: { shop: ShopBlock; verdict: Verdict; value: number; onChange: (v: number) => void }) {
-  const min = Math.floor(shop.buyback_low);
-  const max = Math.ceil(shop.shop_high);
+  const min = Math.floor(Math.min(shop.buyback_low, verdict.sellAloneLow));
+  const max = Math.ceil(Math.max(shop.shop_high, verdict.sellAloneHigh));
   const zone = priceZone(value, verdict, shop);
   return (
     <div className="panel">
@@ -441,4 +485,48 @@ function priceRange(prices: number[]) {
   const low = Math.min(...prices);
   const high = Math.max(...prices);
   return low === high ? euros(low) : `${euros(low)} – ${euros(high)}`;
+}
+
+function ebaySellRange(r: EbayResult | null) {
+  return r?.block ? { low: r.block.sell_low, high: r.block.sell_high, median: r.block.sell_price } : null;
+}
+
+// Bloc « Vendre seul (eBay) », séparé des boutiques (licence eBay).
+function EbayPanel({ result }: { result: EbayResult | null }) {
+  if (result?.state === "non_configure") return null;
+  const b = result?.block;
+  return (
+    <div className="panel" aria-live="polite">
+      <h3>Vendre seul (eBay)</h3>
+      {!result && <p className="small" style={{ margin: 0 }}>Recherche des annonces eBay…</p>}
+      {result?.state === "indisponible" && <p className="small" style={{ margin: 0 }}>eBay ne répond pas pour l&apos;instant.</p>}
+      {result && result.state !== "indisponible" && !b && (
+        <p className="small" style={{ margin: 0 }}>Trop peu d&apos;annonces eBay de ce modèle pour donner un prix.</p>
+      )}
+      {b && (
+        <>
+          <div className="slider-value num">{euros(b.sell_price)}</div>
+          <p className="small" style={{ margin: "0 0 0.5rem" }}>
+            Prix conseillé : la médiane des {b.n_kept} annonces en cours ({euros(b.listed_median)}), moins {Math.round(b.discount * 100)} %,
+            car un prix affiché part rarement tel quel. Fourchette : {euros(b.sell_low)} – {euros(b.sell_high)}.
+          </p>
+        </>
+      )}
+      {result && result.items.length > 0 && (
+        <details className="site-detail">
+          <summary>
+            <span>Annonces eBay, même modèle{result.n_rejected ? `, ${result.n_rejected} écartée${result.n_rejected > 1 ? "s" : ""}` : ""}</span>
+            <span className="num muted">{priceRange(result.items.map((o) => o.price_eur))}</span>
+          </summary>
+          {result.items.map((o, i) => (
+            <div key={i} className="offer">
+              <span>{o.url ? <a href={o.url} target="_blank" rel="noopener noreferrer">{o.title}</a> : o.title}{o.condition ? <span className="small">, {o.condition}</span> : null}</span>
+              <span className="num">{euros(o.price_eur)}</span>
+            </div>
+          ))}
+        </details>
+      )}
+      <p className="small" style={{ margin: "0.5rem 0 0" }}>Source : API officielle d&apos;eBay, annonces d&apos;occasion en France. Prix demandés, pas des ventes conclues.</p>
+    </div>
+  );
 }

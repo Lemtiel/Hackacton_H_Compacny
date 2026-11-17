@@ -17,7 +17,7 @@ H Company sert à une seule tâche : naviguer sur les sites sans API. Hugging Fa
 - Entrées : photo seule, photo suivie de questions d'état (état, boîte, accessoires), texte libre.
 - Sources de prix :
   - eBay via l'API Browse officielle ;
-  - agents H sur Easy Cash (pages de catégorie uniquement), Gamecash, Troc.com et Cash Converters.
+  - agents H sur Easy Cash (pages de catégorie uniquement), Gamecash, Troc.com, Cash Converters, Certideal et Swappie (ajoutés le 17/11).
 - Boutons qui ouvrent la recherche de l'objet sur Vinted, Leboncoin, Cdiscount et TikTok Shop, dans le navigateur de l'utilisateur.
 - Annonce générée en 4 formats : Vinted, Leboncoin, eBay, texte générique.
 - Historique des estimations stocké dans le navigateur de l'utilisateur.
@@ -41,7 +41,7 @@ H Company sert à une seule tâche : naviguer sur les sites sans API. Hugging Fa
 5. **Affichage progressif.** Chaque site s'affiche dès qu'il répond. L'écran montre les agents en train de naviguer si l'API H le permet. Sinon, il affiche les étapes de chaque agent (« ouvre Easy Cash », « catégorie Smartphones », « 6 prix trouvés »), puis le replay de la session. Un site qui dépasse 90 secondes passe en « indisponible », et l'estimation se fait sans lui. Un site sans résultat, par exemple Gamecash pour un téléphone, affiche « aucun résultat ».
 6. **Calcul (notre code, sans IA), une fourchette par bloc, sans jamais mélanger eBay et les autres sites (licence eBay) :**
    - **Vendre seul :** à partir des annonces eBay seules. Valeurs aberrantes retirées, fourchette, puis médiane moins une décote. Ce prix est le prix conseillé.
-   - **Revendre en magasin :** à partir des boutiques seules (Easy Cash, Gamecash, Troc.com, Cash Converters). Valeurs aberrantes retirées, fourchette, puis prix de revente multiplié par un coefficient. L'écran l'affiche comme une estimation basse.
+   - **Revendre en magasin :** à partir des boutiques seules (Easy Cash, Gamecash, Troc.com, Cash Converters, Certideal, Swappie). Valeurs aberrantes retirées, fourchette, puis prix de revente multiplié par un coefficient. L'écran l'affiche comme une estimation basse.
 7. **Résultat :** deux blocs séparés, « Vendre seul (eBay) » et « Revendre en magasin », chacun avec sa fourchette, son prix et ses prix détaillés par site avec leurs liens. Le prix conseillé est celui de « vendre seul ».
 8. **Annonce.** Un modèle de texte Hugging Face rédige l'annonce dans les 4 formats. L'utilisateur la copie et la publie lui-même. Les données eBay ne passent pas dans le modèle de texte.
 9. **Historique.** Le navigateur garde les estimations passées. Notre serveur ne conserve rien.
@@ -83,7 +83,7 @@ H Company sert à une seule tâche : naviguer sur les sites sans API. Hugging Fa
 | L'usage commercial de l'API H est autorisé | Réponse négative des mentors : modèle économique à revoir (modèles Holo en accès libre, licence à vérifier) |
 
 **Risques :**
-- Cash Converters est derrière Cloudflare et peut bloquer l'agent.
+- Cash Converters et Swappie sont derrière Cloudflare et peuvent bloquer l'agent.
 - La licence eBay complète n'a pas encore été lue.
 - Un juré peut objecter qu'un script ferait le même travail que l'agent. Réponse : zéro code par site, navigation réelle, et un 5e site ajouté en démo par une simple ligne de configuration, testé à l'avance.
 - Face à Reprizo (eBay seul), la différence repose sur trois atouts combinés : plus de sources, le choix entre vendre seul et vendre en magasin, et des agents visibles en direct.
