@@ -76,6 +76,9 @@ a { color: var(--action); }
   margin: 1.5rem 0 0.75rem;
 }
 
+/* Nom de l'objet sur l'écran de recherche : plus petit que le titre d'accueil, pour garder la barre visible */
+.search-title { font-size: clamp(1.6rem, 6vw, 2.1rem); margin: 0.25rem 0 0.5rem; text-wrap: balance; }
+
 .lede {
   font-size: 1.0625rem;
   color: var(--ink-soft);
@@ -157,7 +160,7 @@ h2 {
   border-radius: var(--radius-m);
   padding: 0.95rem 1rem;
 }
-.field::placeholder { color: #8aa0ba; }
+.field::placeholder { color: #6b809b; }
 
 .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .chip {
@@ -481,13 +484,13 @@ details.site-detail summary::-webkit-details-marker { display: none; }
 .agent-tile { margin: 0; position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: var(--surface); aspect-ratio: 1 / 1; }
 .agent-tile:not([data-state="en_cours"]) img { opacity: 0.45; }
 .agent-tile img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
-.agent-tile-wait { height: 100%; display: grid; place-items: center; font-size: 0.8rem; color: #8aa0ba; padding: 0.5rem; text-align: center; }
+.agent-tile-wait { height: 100%; display: grid; place-items: center; font-size: 0.8rem; color: var(--ink-soft); padding: 0.5rem; text-align: center; }
 .agent-tile figcaption { position: absolute; left: 0.4rem; bottom: 0.4rem; font-size: 0.72rem; font-weight: 600; background: rgba(255,255,255,0.92); color: var(--ink); padding: 0.1rem 0.45rem; border-radius: 999px; }
 .agent-shot { margin: 0 0 0.6rem 2rem; }
 .agent-shot img { display: block; width: 100%; max-width: 480px; aspect-ratio: 1 / 1; object-fit: cover; object-position: top; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); }
 .agent-shot figcaption { margin-top: 0.25rem; }
 .agent-steps { list-style: none; margin: 0 0 0.8rem 2rem; padding: 0; display: grid; gap: 0.2rem; }
-.agent-steps li { font-size: 0.8125rem; color: #8aa0ba; padding-left: 0.9rem; position: relative; }
+.agent-steps li { font-size: 0.8125rem; color: var(--ink-soft); padding-left: 0.9rem; position: relative; }
 .agent-steps li::before { content: ""; position: absolute; left: 0; top: 0.55rem; width: 0.35rem; height: 0.35rem; border-radius: 50%; background: var(--ok); }
 
 /* Verdict « Où vendre ? » */

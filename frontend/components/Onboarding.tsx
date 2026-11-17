@@ -4,21 +4,40 @@ import { useEffect, useRef, useState } from "react";
 
 const KEY = "snapncash.onboarded";
 
+// Illustrations aux couleurs du logo (bleu nuit, vert), au lieu d'émojis qui changent selon le téléphone.
+const ART_SEARCH = (
+  <svg width="68" height="68" viewBox="0 0 48 48" fill="none" aria-hidden>
+    <rect x="5" y="9" width="26" height="20" rx="4" stroke="var(--ink)" strokeWidth="3" />
+    <path d="M10 16h16M10 22h10" stroke="var(--ink)" strokeWidth="3" strokeLinecap="round" />
+    <circle cx="31" cy="30" r="8" fill="var(--bg)" stroke="var(--ok)" strokeWidth="3.5" />
+    <path d="M37 36l6 6" stroke="var(--ok)" strokeWidth="3.5" strokeLinecap="round" />
+  </svg>
+);
+const ART_CHOICE = (
+  <svg width="68" height="68" viewBox="0 0 48 48" fill="none" aria-hidden>
+    <path d="M24 7v34M13 41h22" stroke="var(--ink)" strokeWidth="3" strokeLinecap="round" />
+    <path d="M8 15h32" stroke="var(--ink)" strokeWidth="3" strokeLinecap="round" />
+    <path d="M8 15l-5 11h10L8 15zM40 15l-5 11h10l-5-11z" stroke="var(--ink)" strokeWidth="2.5" strokeLinejoin="round" />
+    <circle cx="24" cy="15" r="5.5" fill="var(--ok)" />
+  </svg>
+);
+
 const SLIDES = [
   {
     title: "Une photo suffit.",
     text: "Photographiez un objet qui dort chez vous : console, smartphone, tablette, jeu vidéo. On le reconnaît en quelques secondes.",
-    art: "📸",
+    // eslint-disable-next-line @next/next/no-img-element
+    art: <img src="/logo-icon.png" alt="" width={72} height={51} />,
   },
   {
     title: "Nos agents font le tour des boutiques.",
     text: "Ils consultent les boutiques d'occasion comme vous le feriez, et relèvent les vrais prix. Vous les voyez travailler en direct.",
-    art: "🔎",
+    art: ART_SEARCH,
   },
   {
     title: "Vous choisissez : vendre seul ou en magasin.",
     text: "On vous dit ce que vous gagnez dans chaque cas, et l'annonce est prête à copier. Vos objets restent dans Mon grenier.",
-    art: "💶",
+    art: ART_CHOICE,
   },
 ];
 

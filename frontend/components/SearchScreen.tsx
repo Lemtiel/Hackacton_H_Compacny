@@ -21,7 +21,7 @@ import { type Condition, type ListingFormat, type Platform, fallbackListing } fr
 import { PUBLISH_URLS, type Verdict, computeVerdict, priceZone } from "@/lib/verdict";
 
 type State = "attente" | "en_cours" | "ok" | "aucun_resultat" | "indisponible" | "hors_categorie";
-type Row = {
+export type Row = {
   key: string;
   name: string;
   state: State;
@@ -161,7 +161,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
   return (
     <section className="screen">
       <p className="muted" style={{ margin: "0.5rem 0 0" }}>{CATEGORY_LABELS[category]}, {condition.toLowerCase()}</p>
-      <h1 className="display" style={{ marginTop: "0.25rem" }}>{product}</h1>
+      <h1 className="display search-title">{product}</h1>
 
       {failed && <p className="notice error">Le serveur ne répond pas. Vérifiez votre connexion, puis relancez l&apos;estimation.</p>}
 
@@ -182,6 +182,14 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
           )}
         </>
       )}
+
+      {/* L'annonce, deuxième promesse du produit, juste après le prix (elle se rédige pendant la recherche). */}
+      <ListingPanel
+        input={input}
+        myPrice={myPrice}
+        onPublish={(platform) => updateItem(idRef.current, { status: "en_vente", platform })}
+        canTrack={done && !failed}
+      />
 
       <EbayPanel result={ebay} />
 
@@ -206,26 +214,25 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
         </div>
       )}
 
-      <div className="panel">
-        <h3>Prix entre particuliers</h3>
-        <p className="small" style={{ margin: 0 }}>
-          Nos agents ne lisent pas Vinted ni Leboncoin. Ouvrez leur recherche pour comparer vous-même :
-        </p>
-        <div className="links">
-          {marketplaceLinks(product).map((l) => (
-            <a key={l.name} className="btn btn-quiet" href={l.url} target="_blank" rel="noopener noreferrer" style={{ background: "#fff" }}>
-              Voir sur {l.name}
-            </a>
-          ))}
+      {/* Liens vers d'autres sites : seulement une fois notre résultat affiché, pour ne pas faire partir l'utilisateur
+          pendant l'attente. Le lien eBay disparaît quand le bloc eBay a ses propres prix. */}
+      {done && (
+        <div className="panel">
+          <h3>Prix entre particuliers</h3>
+          <p className="small" style={{ margin: 0 }}>
+            Nos agents ne lisent pas Vinted ni Leboncoin. Ouvrez leur recherche pour comparer vous-même :
+          </p>
+          <div className="links">
+            {marketplaceLinks(product)
+              .filter((l) => !(ebay?.block && l.name.startsWith("eBay")))
+              .map((l) => (
+                <a key={l.name} className="btn btn-quiet" href={l.url} target="_blank" rel="noopener noreferrer" style={{ background: "#fff" }}>
+                  Voir sur {l.name}
+                </a>
+              ))}
+          </div>
         </div>
-      </div>
-
-      <ListingPanel
-        input={input}
-        myPrice={myPrice}
-        onPublish={(platform) => updateItem(idRef.current, { status: "en_vente", platform })}
-        canTrack={done && !failed}
-      />
+      )}
 
       {photos.length > 0 && (
         <div className="panel">
@@ -252,7 +259,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
 
 // Une seule barre pour toute la recherche. En mode démo, les écrans des agents s'affichent côte à côte
 // dessous (captures rafraîchies à chaque étape). Les noms des sites restent dans « Les offres relevées ».
-function SearchProgress({ rows, done, demo }: { rows: Row[]; done: boolean; demo: boolean }) {
+export function SearchProgress({ rows, done, demo }: { rows: Row[]; done: boolean; demo: boolean }) {
   const active = rows.filter((r) => r.state !== "hors_categorie");
   if (active.length === 0) return null;
   const finished = active.filter((r) => r.state === "ok" || r.state === "aucun_resultat" || r.state === "indisponible").length;

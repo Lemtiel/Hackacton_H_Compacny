@@ -368,3 +368,13 @@ Fait : la liste site par site pendant l'attente est remplacée par une barre uni
 Testé dans Chrome (« Nintendo Switch », mode démo) : barre de 9 % à 90 %, 4 vignettes à jour, verdict, curseur et offres par site affichés à la fin (Easy Cash 150 à 180 €, Gamecash 166 à 194 €, Cash Converters 120 à 200 €). Logo visible dans l'en-tête.
 Non testé : le rendu sur téléphone, et l'état des vignettes terminées (ajouté après le test).
 Suite (demande de Jude) : en mode démo, tous les écrans des agents tiennent sur une seule ligne, plus large que la colonne de lecture (jusqu'à 1 200 px), centrée sous la barre. Sur téléphone (moins de 700 px), la ligne défile à l'horizontale, 2 écrans visibles à la fois. Testé dans Chrome à 1 440 px (« Apple iPhone 13 128 Go », 5 agents : Easy Cash, Troc.com, Cash Converters, Certideal, Swappie) : 5 écrans sur une ligne, centrés. Premier essai décentré (la grille parente s'élargissait), corrigé. Non testé : le défilement sur téléphone.
+
+### Mardi 17/11, après-midi : revue UX/UI, corrections rouges et orange (Jude)
+Fait :
+- Écran de résultats : l'annonce remonte juste après le prix (elle s'affiche pendant l'attente, sous la barre). Le bloc « Prix entre particuliers » (liens Vinted, Leboncoin, eBay) n'apparaît qu'à la fin de la recherche, pour ne pas faire partir l'utilisateur pendant l'attente. Le lien eBay disparaît quand le bloc eBay a ses propres prix.
+- Nom de l'objet plus petit sur l'écran de recherche (`.search-title`), la barre reste visible.
+- Découverte : le logo et deux illustrations aux couleurs du logo remplacent les émojis.
+- Contraste : textes gris clair (#8aa0ba) remplacés par l'encre secondaire, placeholder plus foncé.
+Testé dans Chrome (localhost) : les 3 écrans de découverte, puis « Nintendo Switch » : pendant l'attente, barre puis annonce, sans liens externes ; à 3 boutiques sur 4, verdict, échelle, curseur, annonce, offres ; liens externes absents avant la fin.
+Non testé : l'état final avec les liens externes, et l'affichage sur téléphone (le Mac a perdu le Wi-Fi, l'interface pointe maintenant sur localhost).
+Reste de la revue (jaune) : accueil à 5 actions, écran de précisions trop long. Après : 3 photos envoyées à l'identification et conseils de vente.
