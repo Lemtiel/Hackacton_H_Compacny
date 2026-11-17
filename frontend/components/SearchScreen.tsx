@@ -57,6 +57,9 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
   const [ebay, setEbay] = useState<EbayResult | null>(null);
   const ebayRef = useRef<EbayResult | null>(null);
   const priceTouched = useRef(false);
+  // Mode démo (?demo=1) : lu après le montage, pour que le rendu serveur et le rendu navigateur concordent.
+  const [demo, setDemo] = useState(false);
+  useEffect(() => setDemo(isDemo()), []);
 
   // eBay répond en 1 à 2 s, en parallèle des agents : bloc séparé, jamais mélangé aux boutiques.
   useEffect(() => {
@@ -162,11 +165,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
 
       {failed && <p className="notice error">Le serveur ne répond pas. Vérifiez votre connexion, puis relancez l&apos;estimation.</p>}
 
-      {!shop && running && !failed && (
-        <p className="lede" aria-live="polite">Nos agents visitent les boutiques d&apos;occasion. Comptez une à deux minutes.</p>
-      )}
-
-      <AgentList rows={rows} />
+      <SearchProgress rows={rows} done={done} demo={demo} />
 
       {done && !shop && !failed && (
         <p className="notice warn" style={{ marginTop: "1rem" }}>
@@ -251,42 +250,48 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
   );
 }
 
-function AgentList({ rows }: { rows: Row[] }) {
+// Une seule barre pour toute la recherche. En mode démo, les écrans des agents s'affichent côte à côte
+// dessous (captures rafraîchies à chaque étape). Les noms des sites restent dans « Les offres relevées ».
+function SearchProgress({ rows, done, demo }: { rows: Row[]; done: boolean; demo: boolean }) {
+  const active = rows.filter((r) => r.state !== "hors_categorie");
+  if (active.length === 0) return null;
+  const finished = active.filter((r) => r.state === "ok" || r.state === "aucun_resultat" || r.state === "indisponible").length;
+  const progress = done
+    ? 1
+    : active.reduce((sum, r) => sum + (r.state === "attente" ? 0 : r.state === "en_cours" ? Math.min(r.elapsed / MAX_S, 0.95) : 1), 0) / active.length;
+  const n = active.length;
+  const label = done
+    ? `${n} boutiques d'occasion consultées`
+    : finished === 0
+      ? `Nos agents visitent ${n} boutiques d'occasion…`
+      : `${finished} boutique${finished > 1 ? "s" : ""} sur ${n} ${finished > 1 ? "ont" : "a"} répondu…`;
+  const live = active.filter((r) => r.state === "en_cours" || r.shot);
   return (
-    <ul className="sites" aria-live="polite">
-      {rows.map((s) => (
-        <li key={s.key} className="agent" data-state={s.state}>
-          <div className="site">
-            <span className="dot" data-state={s.state} aria-hidden />
-            <span>
-              <span className="site-name">{s.name}</span>
-              <br />
-              <span className="site-step">{s.label}</span>
-            </span>
-            <span className="small num">{s.elapsed ? `${Math.round(s.elapsed)} s` : ""}</span>
-          </div>
-          {s.state === "en_cours" && (
-            <>
-              {s.shot && (
-                <figure className="agent-shot">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={s.shot} alt={`Ce que voit l'agent sur ${s.name}`} />
-                  <figcaption className="small">En direct, vu par l&apos;agent (mode démo)</figcaption>
-                </figure>
-              )}
-              <div className="agent-progress" aria-hidden>
-                <span style={{ transform: `scaleX(${Math.min(s.elapsed / MAX_S, 1)})` }} />
-              </div>
-              {s.steps.length > 1 && (
-                <ol className="agent-steps">
-                  {s.steps.slice(0, -1).map((st, i) => <li key={i}>{st}</li>)}
-                </ol>
-              )}
-            </>
-          )}
-        </li>
-      ))}
-    </ul>
+    <div className="search-progress" aria-live="polite">
+      <div className="search-progress-head">
+        <span>{label}</span>
+        <span className="small num">{Math.round(progress * 100)} %</span>
+      </div>
+      <div className="search-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)} aria-label="Avancement de la recherche">
+        <span style={{ transform: `scaleX(${progress})` }} data-done={done} />
+      </div>
+      {demo && !done && live.length > 0 && (
+        <div className="agent-grid">
+          {live.map((r) => (
+            <figure key={r.key} className="agent-tile" data-state={r.state}>
+              {r.shot
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={r.shot} alt={`Ce que voit l'agent sur ${r.name}`} />
+                : <div className="agent-tile-wait">Démarrage du navigateur…</div>}
+              <figcaption>
+                {r.name}
+                {r.state === "ok" ? ` · ${r.offers.length} prix` : r.state === "aucun_resultat" ? " · aucun résultat" : r.state === "indisponible" ? " · indisponible" : ""}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

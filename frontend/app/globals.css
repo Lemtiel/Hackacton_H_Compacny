@@ -460,6 +460,29 @@ details.site-detail summary::-webkit-details-marker { display: none; }
 .agent[data-state="hors_categorie"] { opacity: 0.45; }
 .agent-progress { height: 3px; border-radius: 999px; background: var(--surface); margin: -0.35rem 0 0.6rem 2rem; overflow: hidden; }
 .agent-progress span { display: block; height: 100%; background: var(--action); transform-origin: left; transition: transform 900ms linear; }
+.search-progress { margin: 1.25rem 0 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.6rem; }
+.search-progress-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-weight: 600; }
+.search-bar { height: 8px; border-radius: 999px; background: var(--surface); overflow: hidden; }
+.search-bar span { display: block; height: 100%; background: var(--action); transform-origin: left; transition: transform 900ms linear; }
+.search-bar span[data-done="true"] { background: var(--ok); }
+/* Mode démo : tous les agents sur une seule ligne. Sur grand écran, la ligne déborde de la colonne de lecture
+   pour garder des écrans lisibles au projecteur ; sur téléphone, elle défile à l'horizontale. */
+.agent-grid {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 0.6rem; margin-top: 0.4rem;
+  width: min(calc(100vw - 32px), 1200px); margin-left: calc(50% - min(calc(50vw - 16px), 600px));
+}
+@media (max-width: 700px) {
+  .agent-grid {
+    width: auto; margin-left: 0; grid-auto-columns: 46%;
+    overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 0.25rem;
+  }
+  .agent-tile { scroll-snap-align: start; }
+}
+.agent-tile { margin: 0; position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: var(--surface); aspect-ratio: 1 / 1; }
+.agent-tile:not([data-state="en_cours"]) img { opacity: 0.45; }
+.agent-tile img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.agent-tile-wait { height: 100%; display: grid; place-items: center; font-size: 0.8rem; color: #8aa0ba; padding: 0.5rem; text-align: center; }
+.agent-tile figcaption { position: absolute; left: 0.4rem; bottom: 0.4rem; font-size: 0.72rem; font-weight: 600; background: rgba(255,255,255,0.92); color: var(--ink); padding: 0.1rem 0.45rem; border-radius: 999px; }
 .agent-shot { margin: 0 0 0.6rem 2rem; }
 .agent-shot img { display: block; width: 100%; max-width: 480px; aspect-ratio: 1 / 1; object-fit: cover; object-position: top; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); }
 .agent-shot figcaption { margin-top: 0.25rem; }
@@ -522,7 +545,7 @@ details.site-detail summary::-webkit-details-marker { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .onboarding, .verdict-card, .photo-scan { animation: none; }
-  .agent-progress span, .dots-dot { transition: none; }
+  .agent-progress span, .dots-dot, .search-bar span { transition: none; }
   .onboarding-track { scroll-behavior: auto; }
 }
 @media (prefers-reduced-transparency: reduce) {
