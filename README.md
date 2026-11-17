@@ -98,6 +98,7 @@ Les mesures des sessions d'agent sont dans [`mesures/agent_runs.csv`](mesures/ag
 | `tests/` | Tests du tri par modèle et du bloc eBay |
 | `mesures/` | Journal chiffré des sessions d'agent |
 | `docs/produit/` | Parcours d'écrans, mentions, espace revendeurs |
+| `docs/business-model/` | Modèle économique, coût de run et projections sur 3 ans (document et tableur) |
 | `docs/sondage/` | Sondage maison et réponses anonymes |
 | `docs/demo/` | Simulation vidéo pour le pitch (imitation, marquée comme telle) |
 | `Specs.md`, `CONTEXT.md`, `JOURNAL.md` | Ce qu'on construit, le cadre, les décisions datées |
