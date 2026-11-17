@@ -1,6 +1,6 @@
 "use client";
 
-// Espace revendeurs : version de départ, à faire évoluer par Tristan (voir docs/revendeurs.md).
+// Espace revendeurs : version de départ, à faire évoluer par Tristan (voir docs/produit/revendeurs.md).
 // Même recherche que l'app : aucun agent ni appel serveur en plus, le classement se calcule ici.
 
 import Link from "next/link";

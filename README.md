@@ -1,22 +1,119 @@
-# Livrables CPO (Tristan)
+<p align="center"><img src="frontend/app/icon.png" alt="Logo Snap N Cash" width="120"></p>
 
-Trois livrables de cadrage produit, rédigés le 16/11/2026 à partir de Specs.md, CLAUDE.md et du JOURNAL. Ce sont des documents de travail : rien n'est encore généré dans v0 ni testé.
+<h1 align="center">Snap N Cash</h1>
 
-| Livrable | Fichier | Contenu |
-| --- | --- | --- |
-| Parcours et écrans v0 | [parcours-ecrans-v0.md](parcours-ecrans-v0.md) | Parcours utilisateur, charte, prompt de base v0 (types TypeScript du flux), 8 écrans avec leur prompt, table de conformité, questions ouvertes |
-| Page « Comment ça marche » et mentions | [comment-ca-marche-mentions.md](comment-ca-marche-mentions.md) | Texte final de la page, mentions écran par écran, fondements juridiques, décisions à prendre, checklist d'intégration |
-| Sondage maison (action 5) | [sondage/sondage_maison.md](sondage/sondage_maison.md) et [sondage/sondage_reponses.xlsx](sondage/sondage_reponses.xlsx) | Questionnaire (WhatsApp ou Google Forms), méthode de calcul, tableau de saisie anonyme avec synthèse automatique |
+<p align="center"><strong>Ce qui dort chez vous a un prix.</strong> Une photo, le bon prix, l'annonce prête.</p>
 
-## Points à trancher en équipe
+<p align="center">Team 13 · Hackathon Eugenia School × H Company × Vercel × Hugging Face · 16 au 20 novembre 2026</p>
 
-- Vue Agent View de H et règle 9 (pas de capture des sites sources).
-- Prix eBay inséré par notre code, pas par le modèle de texte (règle 4).
-- Critère de classement des offres (article L111-7).
-- Éditeur légal et adresse de contact des mentions légales.
-- Tutoiement ou vouvoiement : le doc des écrans tutoie, la page « Comment ça marche » vouvoie.
-- Valeurs entre crochets (décote eBay 10 %, coefficient magasin 40 %) à remplacer par les valeurs mesurées.
+---
 
-## Ce qui a été testé
+## Le problème
+86 % des Français gardent des objets inutilisés, 320 € par foyer en moyenne, mais 17 % seulement les ont déjà revendus. Ils citent le manque de temps (29 %), des démarches jugées complexes (20 %) et la peur de se tromper de prix (16 %) (OpinionWay pour Leboncoin, septembre 2025). Pour le high-tech, 46 millions de téléphones dorment dans les tiroirs (Harris Interactive et Crédoc pour Ecologic, 2023).
 
-Rien. Le tableau du sondage est vide (aucune réponse saisie) et ne contient aucune donnée personnelle.
+## La solution
+L'utilisateur photographie son objet high-tech ou son jeu vidéo. Un modèle Hugging Face le reconnaît. **Des agents H Company visitent en direct six boutiques d'occasion françaises** qui n'ont pas d'API, et relèvent les prix. L'app répond en moins de deux minutes :
+- **où vendre** : vendre soi-même ou en magasin, avec le gain en euros ;
+- **à quel prix** : fourchette, prix conseillé, curseur « vente rapide, prix juste, ambitieux » ;
+- **l'annonce prête** aux formats Vinted, Leboncoin, eBay et texte libre, plus des **photos studio** (objet détouré sur fond clair, objet non modifié).
+
+**Pourquoi un agent et pas un script :** aucune ligne de code n'est propre à un site. Une boutique s'ajoute par une entrée de configuration ; Certideal et Swappie ont été ajoutés ainsi le 17/11 et ont marché au premier essai.
+
+## Parcours
+1. **Découverte** : trois écrans au premier lancement.
+2. **Trois photos guidées** : l'objet de face, le dos ou l'étiquette, un détail. Une photo avec un visage est refusée.
+3. **Identification** : marque, modèle, capacité, catégorie, en 1 à 3 s.
+4. **Les agents au travail** : une barre de progression ; en mode démo (`?demo=1`), les écrans des agents côte à côte.
+5. **Verdict « Où vendre ? »**, échelle des prix, curseur.
+6. **Annonce** en 4 formats et **photos studio**, puis publication par l'utilisateur.
+7. **Mon grenier** : objets estimés, statut, gains, gardés dans le navigateur.
+8. **Espace revendeurs** (`/pro`) : annonces des boutiques classées par marge de revente.
+
+## Architecture
+
+```
+Téléphone ou ordinateur                Notre serveur                         Services
+┌──────────────────────┐   HTTPS   ┌──────────────────────────┐   ┌──────────────────────────────────┐
+│ Next.js 15 (Vercel)  │ ────────▶ │ FastAPI (Space HF)        │──▶│ Hugging Face : gemma-4-31B-it     │
+│ Mon grenier dans le  │ ◀──────── │ /api/identify  /api/search│   │  (identification, annonce)        │
+│ navigateur           │  site par │ /api/ebay  /api/listing   │──▶│ H Company Agent API               │
+└──────────────────────┘   site    │ /api/studio  /api/shot    │   │  h/web-surfer-flash, 6 boutiques  │
+                                   │ Tri par modèle, médianes, │──▶│ eBay API Browse (bloc séparé)     │
+                                   │ contrôle des visages      │──▶│ Bria RMBG-2.0 via fal.ai (studio) │
+                                   └──────────────────────────┘   └──────────────────────────────────┘
+```
+
+| Brique | Choix | Mesuré |
+|---|---|---|
+| Interface | Next.js 15, déployée sur Vercel | — |
+| Serveur | FastAPI, dans un Space Hugging Face | — |
+| Agents | H Company Agent API, `h/web-surfer-flash`, une session par site, 3 en parallèle | 24 à 81 s par site |
+| Identification | `google/gemma-4-31B-it` via le routeur Hugging Face, jusqu'à 3 photos | 1 à 3 s |
+| Annonce | `google/gemma-4-31B-it` | 1 à 4 s |
+| Contrôle des visages | `opencv/face_detection_yunet`, sur notre serveur | 10 à 300 ms |
+| Studio photo | `briaai/RMBG-2.0` via fal.ai ; secours `ZhengPeng7/BiRefNet_lite` en local | 1 à 2 s |
+| Prix entre particuliers | eBay API Browse, dans un bloc séparé | clés en attente |
+
+Boutiques consultées par les agents : Easy Cash, Gamecash, Troc.com, Cash Converters, Certideal, Swappie. Vinted et Leboncoin interdisent l'accès automatisé : un bouton ouvre leur recherche chez l'utilisateur.
+
+## Règles que le produit respecte
+- **Aucun agent sur un site qui l'interdit**, aucun contournement d'anti-robot (Fnac, qui bloque l'agent, est sorti de la liste).
+- **robots.txt respecté** : Easy Cash et Certideal par leurs catégories, Swappie sans filtres.
+- **Rien n'est conservé côté serveur** : ni photo, ni annonce relevée, ni pseudonyme de vendeur.
+- **Les données eBay restent dans leur bloc** et ne passent dans aucun modèle de texte.
+- **Prix indicatifs**, mention « générée par IA », sites consultés listés dans « Comment ça marche ».
+
+## Lancer en local
+Prérequis : Python 3.12 ou plus, Node 20 ou plus, et les clés dans un fichier `.env` à la racine (modèle : `.env.example`). Le fichier `.env` n'est jamais versionné.
+
+```bash
+# Serveur
+python -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/uvicorn backend.main:app --reload --port 8000
+
+# Interface (autre terminal)
+cd frontend
+cp .env.local.example .env.local   # NEXT_PUBLIC_API_URL=http://localhost:8000
+npm install
+npm run dev                         # http://localhost:3000, mode démo : http://localhost:3000/?demo=1
+```
+
+Une recherche lance de vrais agents H : environ 80 s et des crédits par site.
+
+## Tests
+```bash
+.venv/bin/python tests/test_matching.py   # tri des annonces par modèle : 52 cas
+.venv/bin/python tests/test_ebay.py       # bloc eBay sur une réponse simulée : 14 vérifications
+.venv/bin/python -m agents.test_agents --site gamecash --product "Nintendo Switch" --category console   # agent réel
+```
+Les mesures des sessions d'agent sont dans [`mesures/agent_runs.csv`](mesures/agent_runs.csv), les résultats et les cas d'échec dans [`JOURNAL.md`](JOURNAL.md).
+
+## Organisation du dépôt
+| Dossier ou fichier | Contenu |
+|---|---|
+| `frontend/` | Interface Next.js |
+| `backend/` | Serveur FastAPI : identification, tri, prix, eBay, annonce, studio |
+| `agents/` | Agents H Company : consigne, configuration des boutiques, script de test |
+| `tests/` | Tests du tri par modèle et du bloc eBay |
+| `mesures/` | Journal chiffré des sessions d'agent |
+| `docs/produit/` | Parcours d'écrans, mentions, espace revendeurs |
+| `docs/sondage/` | Sondage maison et réponses anonymes |
+| `docs/demo/` | Simulation vidéo pour le pitch (imitation, marquée comme telle) |
+| `Specs.md`, `CONTEXT.md`, `JOURNAL.md` | Ce qu'on construit, le cadre, les décisions datées |
+
+## État au 17/11
+**Testé :** parcours complet sur ordinateur et sur téléphone, 3 photos guidées, agents sur les 6 boutiques, studio photo, espace revendeurs (compilation).
+**Pas encore :** appel réel à eBay (validation du compte en attente), déploiement en ligne, mesure sur 10 objets. Suivi dans les [issues](https://github.com/Lemtiel/Hackacton_H_Compacny/issues).
+
+## Équipe
+| | Rôle |
+|---|---|
+| Stephen Morlot | CEO |
+| Jude Buyikana | CTO, pilote du projet |
+| Josia Tatou | CAO, orchestration des agents |
+| Sebastian Espinosa | CAIO, modèles et calibrage |
+| Kevin Assombi | CDO, données et mesures |
+| Tristan David | CPO, produit et modèle économique |
+
+Prix indicatifs, comparaison non exhaustive. Estimation et annonce générées par IA. Prototype de hackathon, non commercialisé.

@@ -434,3 +434,12 @@ Lancé en parallèle du test de Stephen, avec un réglage différent : départ s
 - Sans réponse forcée, Easy Cash relève 8 prix au lieu de 3, mais met plus de 2 min 30 : partir de l'URL de catégorie (comme dans `agents/sites.py`) reste indispensable.
 - Les 4 sessions lancées en même temps ont toutes abouti, sans rester bloquées en file d'attente. La limite de 3 sessions simultanées reste à clarifier avec les mentors.
 - Estimation complète sur 4 sites : environ 870 000 tokens.
+
+### Mardi 17/11, soir : organisation du dépôt (Jude)
+Le dépôt est noté : rangement avant la fusion dans `main`.
+- PR n°7 (espace revendeurs, finalisé par Josia) relue et fusionnée dans `interface` : règles du calcul inchangées, rien dans `backend/` ni `agents/`.
+- `main` fusionnée dans `interface` (livrables CPO, simulation de démo) : conflits du journal et de `mesures/agent_runs.csv` résolus en gardant les deux côtés.
+- Rangement : documents produit dans `docs/produit/` (dont le README des livrables de Tristan), sondage dans `docs/sondage/`, simulation dans `docs/demo/simulation/`. Liens corrigés.
+- Nouveau README « fiche projet » : problème, solution, parcours, architecture, règles, lancement, tests, organisation, état, équipe.
+- Vérification automatique GitHub (`.github/workflows/ci.yml`) : tests du serveur et compilation de l'interface à chaque push et PR.
+- Issues : une par chantier (#8 à #15), avec responsable.
