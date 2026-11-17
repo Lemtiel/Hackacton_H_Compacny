@@ -78,7 +78,7 @@ H Company sert à une seule tâche : naviguer sur les sites sans API. Hugging Fa
 | Les agents H accèdent à au moins 2 des 4 sites | Moins de 2 au test de mardi : chercher d'autres sources autorisées (Certideal, Recommerce, Largo, après vérification de leurs CGU) |
 | Une session d'agent coûte moins de 0,25 $ et dure moins de 90 s | Dépassement au test de mardi : passer aux scripts sur les sites simples (décision de Josia) |
 | Coefficient de rachat en magasin autour de 40 % | Les 5 offres réelles relevées jeudi le remplacent |
-| Décote eBay autour de 10 % | Les 30 objets de test la recalculent |
+| Décote eBay autour de 10 % | Les 10 objets de test la recalculent |
 | L'API H permet d'afficher l'agent en direct | Non au test de mardi : afficher les étapes de chaque agent, puis le replay de la session |
 | L'usage commercial de l'API H est autorisé | Réponse négative des mentors : modèle économique à revoir (modèles Holo en accès libre, licence à vérifier) |
 
@@ -91,7 +91,7 @@ H Company sert à une seule tâche : naviguer sur les sites sans API. Hugging Fa
 - Doute principal de l'équipe : l'accès des agents aux sites.
 
 ## Critères de succès
-Mesurés sur un jeu de 30 objets high-tech et jeux vidéo. Le prix de référence est le prix réellement vendu sur eBay, relevé à la main.
+Mesurés sur un jeu de 10 objets high-tech et jeux vidéo (ramené de 30 à 10 par Jude le 17/11). Le prix de référence est le prix réellement vendu sur eBay, relevé à la main.
 
 | Mesure | Objectif |
 |---|---|
@@ -132,7 +132,7 @@ Responsables : Stephen (CEO) et Tristan (CPO). Présenté au point business du m
 | 3 | Demander aux mentors H si l'usage commercial de l'API est autorisé (§9.4) | Jude | Mardi 17/11 11h |
 | 4 | Décider script ou agent, site par site, selon le test | Josia | Mardi 17/11 au soir |
 | 5 | Sondage maison sur le temps passé à fixer un prix et publier (5 à 10 personnes) | Tristan | Lundi 16/11 au soir |
-| 6 | Constituer le jeu de 30 objets avec leur prix eBay réellement vendu | Kevin | Mercredi 18/11 17h |
+| 6 | Constituer le jeu de 10 objets avec leur prix eBay réellement vendu, et les mesurer | Kevin | Mercredi 18/11 17h |
 | 7 | Relever 5 offres de rachat réelles pour caler le coefficient | Kevin | Jeudi 19/11 midi |
 | 8 | Lire la licence de l'API eBay en entier | Jude | Mercredi 18/11 |
 | 9 | Mesure avec 3 testeurs, à la main puis avec l'app | Tristan | Jeudi 19/11 |
@@ -146,5 +146,5 @@ Responsables : Stephen (CEO) et Tristan (CPO). Présenté au point business du m
 3. Créer la clé API H Company et la clé eBay.
 4. Tester les agents sur les 4 sites (mardi matin).
 5. Construire le parcours de bout en bout sur la Nintendo Switch.
-6. Mesurer sur 10 objets (mercredi), puis sur 30 (jeudi).
+6. Mesurer sur 10 objets (Kevin).
 7. Préparer la démo, la vidéo de 5 min et le pitch deck.

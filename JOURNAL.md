@@ -406,3 +406,13 @@ Testé : 2 images de synthèse via le module (1,4 et 1,8 s), la route (200, JPEG
 Non testé : de vraies photos d'objets (contours, reflets), l'enregistrement sur iPhone, le coût réel par image, la bascule automatique vers BiRefNet en cas de panne de fal.ai.
 Garde-fou : nouveau sous-traitant (fal.ai, États-Unis) qui reçoit les photos. À reprendre dans le garde-fou complet de vendredi.
 Test de Jude sur téléphone (réseau 10.40.5.83) : le parcours et le studio photo marchent.
+
+### Mardi 17/11, soir : répartition des chantiers (décisions de Jude)
+- Modèle économique et coût de run : **Tristan**.
+- Fusion des branches (`interface` vers `main`) : **à la fin de la journée**.
+- Mesure : **10 objets** au lieu de 30, par **Kevin** (Specs.md mis à jour).
+- Recalibrage des prix (décote eBay, coefficient de rachat, hypothèse des 15 %) : **Sebastian**.
+- Vidéo plan B : **Kevin et Stephen**.
+- Livrables de vendredi (README, vidéo de 5 min, pitch deck) : **vendredi**.
+- Conformité finale (garde-fou complet, puis revue hostile) : **Jude, avant vendredi**.
+- Déploiement Vercel et Space : pas jeudi (échéance à préciser).
