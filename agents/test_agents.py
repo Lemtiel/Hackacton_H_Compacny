@@ -78,9 +78,9 @@ def report(r: RunResult) -> None:
     log("\n".join(lines))
 
 
-def one(client: Client, site: str, product: str, category: str) -> RunResult:
+def one(client: Client, site: str, product: str, category: str, hint: str | None = None) -> RunResult:
     try:
-        r = run_site(client, site, product, category, log=log)
+        r = run_site(client, site, product, category, log=log, hint=hint)
     except Exception as e:  # erreur API : on la journalise aussi
         r = RunResult(site=site, product=product, status="error", note=f"{type(e).__name__}: {e}")
     append_log(r)
@@ -96,12 +96,13 @@ def main() -> None:
     g.add_argument("--all", action="store_true", help="les 4 sites en parallèle")
     p.add_argument("--product", required=True)
     p.add_argument("--category", choices=CATEGORIES, default="smartphone")
+    p.add_argument("--hint", default=None, help="description générique, ex. « manette PS5 »")
     a = p.parse_args()
 
     client = Client()
     sites = list(SITES) if a.all else [a.site]
     with ThreadPoolExecutor(max_workers=len(sites)) as ex:
-        results = list(ex.map(lambda s: one(client, s, a.product, a.category), sites))
+        results = list(ex.map(lambda s: one(client, s, a.product, a.category, a.hint), sites))
 
     ok = sum(r.available for r in results)
     log(f"\nRésumé : {ok}/{len(results)} sites disponibles. Journal : {LOG.relative_to(ROOT)}")

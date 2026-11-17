@@ -34,21 +34,28 @@ class Offers(BaseModel):
     note: Optional[str] = Field(default=None, description="Short note: why few or no results, blocking, etc.")
 
 
-def build_task(site_key: str, product: str) -> str:
+def build_task(site_key: str, product: str, hint: Optional[str] = None) -> str:
     site = SITES[site_key]
     if site["search_allowed"]:
         nav = "You may use the site's own search bar."
+        if hint:
+            nav += f' If searching the exact name finds nothing, try a broader query such as "{hint}".'
     else:
         nav = (
             "Do NOT use the site's search bar or any search URL. Navigate only by clicking "
             "category menus, category pages and pagination links. Do not apply filters or sorting."
         )
+        if hint:
+            nav += f' Pick the category that fits this kind of product ({hint}).'
+    what = f'"{product}" ({hint})' if hint else f'"{product}"'
     return (
         f"You are on {site['name']}, a French second-hand retailer. "
-        f'Find used items for sale matching this product: "{product}". {nav} '
-        "Collect up to 8 listings of the exact same model (ignore accessories, cases and other models). "
+        f"Find used items for sale matching this product: {what}. {nav} "
+        "Collect up to 8 listings of the exact same model. Ignore items that are not this product: "
+        "accessories made for it, cases and other models. "
         "For each listing give the title, the price in euros, the condition or grade if shown, and the product page URL. "
         "Do not log in, do not add to cart, do not fill any form. "
+        "If a cookie consent banner appears, choose the option that refuses or continues without accepting; never accept cookies. "
         "If a captcha or an anti-bot page appears, stop immediately and report it in the note. "
         "If the site does not sell this kind of product or has no matching listing, return an empty list with a short note."
     )
@@ -88,12 +95,39 @@ def _usage(status) -> tuple[int, int, int]:
     return i, c, o
 
 
-def run_site(client: Client, site_key: str, product: str, category: str, log=print) -> RunResult:
+def _last_image_url(events) -> Optional[str]:
+    """Adresse de la dernière capture d'écran parmi des événements de session (ObservationEvent.image)."""
+    found = None
+
+    def walk(x):
+        nonlocal found
+        if isinstance(x, dict):
+            if x.get("type") == "url" and str(x.get("source", "")).startswith("https://") and "image" in str(x.get("media_type") or "image"):
+                found = x["source"]
+            for v in x.values():
+                walk(v)
+        elif isinstance(x, list):
+            for v in x:
+                walk(v)
+
+    for ev in events or []:
+        try:
+            walk(ev.model_dump(mode="json"))
+        except Exception:
+            continue
+    return found
+
+
+def run_site(client: Client, site_key: str, product: str, category: str, log=print, on_step=None, on_shot=None,
+             hint: Optional[str] = None) -> RunResult:
+    """on_step(dict) reçoit chaque changement d'étape, pour l'affichage progressif.
+    on_shot(url) reçoit l'adresse de chaque nouvelle capture d'écran (mode démo). L'adresse n'est lisible
+    qu'avec la clé API : elle ne doit jamais partir telle quelle vers le navigateur."""
     res = RunResult(site=site_key, product=product)
     t0 = time.monotonic()
     handle = client.start_session(
         agent=AGENT,
-        messages=build_task(site_key, product),
+        messages=build_task(site_key, product, hint),
         overrides={"agent.environments[kind=web].start_url": start_url(site_key, category)},
         answer_schema=Offers,
     )
@@ -102,12 +136,27 @@ def run_site(client: Client, site_key: str, product: str, category: str, log=pri
 
     status = None
     last_steps = -1
+    ev_index = 0
+    last_shot = None
     while True:
         elapsed = time.monotonic() - t0
         status = handle.status()
+        if on_shot:
+            try:
+                ch = handle.changes(from_index=ev_index, wait_for_seconds=0)
+                if ch and ch.new_events:
+                    ev_index = (ch.first_index if ch.first_index is not None else ev_index) + len(ch.new_events)
+                    shot = _last_image_url(ch.new_events)
+                    if shot and shot != last_shot:
+                        last_shot = shot
+                        on_shot(shot)
+            except Exception:
+                pass  # l'affichage démo ne doit jamais faire échouer la recherche
         if status.steps != last_steps:
             last_steps = status.steps
             log(f"[{site_key}] {elapsed:5.1f}s  {status.status}  étape {status.steps}")
+            if on_step:
+                on_step({"status": status.status, "steps": status.steps, "elapsed_s": round(elapsed, 1)})
         if status.status in TERMINAL:
             break
         if elapsed >= MAX_SECONDS and not res.cancelled:

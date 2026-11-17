@@ -311,4 +311,4 @@ Cinq points touchent les Specs ou les règles : CLAUDE.md demande de s'arrêter 
 - [ ] **Variante de l'objet.** Ajouter la question « Quelle version ? » (capacité, édition) à l'écran 3, comme le suggèrent les tests iPhone 12 et Switch OLED du JOURNAL. Elle n'est pas dans les Specs.
 - [ ] **Temps d'attente affiché.** Les tests du 16/11 montrent 60 à 85 s par boutique, jusqu'à 167 s sans réponse forcée. L'écran 4 annonce « 1 à 2 minutes » : à ajuster après les tests de mardi.
 
-**Pas couvert ici :** le sondage maison (action 5 des Specs), voir [sondage/sondage_maison.md](sondage/sondage_maison.md).
+**Pas couvert ici :** le sondage maison (action 5 des Specs), voir [sondage_maison.md](../sondage/sondage_maison.md).

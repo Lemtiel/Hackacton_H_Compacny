@@ -82,6 +82,11 @@ L'utilisateur photographie un objet high-tech ou un jeu vidéo. Un modèle Huggi
 | Gamecash | Agent H | Autorisé |
 | Troc.com | Agent H | Autorisé |
 | Cash Converters | Agent H, derrière Cloudflare | Autorisé si l'agent passe sans artifice |
+| Certideal | Agent H, pages de catégorie seulement (recherche interdite par le robots.txt) | Autorisé (vérifié le 17/11) |
+| Swappie | Agent H, sans filtres ni tri (interdits par le robots.txt), derrière Cloudflare | Autorisé, l'agent est passé le 17/11 |
+| Largo, Recommerce | CGU : « usage personnel et non commercial » | Interdit |
+| Smaaart, Refurbed | CGU : extraction automatisée interdite | Interdit |
+| Cash Express, Micromania | Anti-robot (Cloudflare, Incapsula) sur le robots.txt ; CGU non lues | À vérifier à la main |
 | Vinted, Leboncoin, Cdiscount, TikTok Shop | Bouton qui ouvre leur recherche chez l'utilisateur | Agent interdit (CGU ou robots.txt) |
 
 Les CGU de H Company (§5.2 et §5.3) imposent de respecter les CGU des sites visités et interdisent de contourner un anti-robot.

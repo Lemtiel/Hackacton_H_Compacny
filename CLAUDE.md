@@ -12,7 +12,7 @@
 - Signaler clairement ce qui a été testé et ce qui ne l'a pas été.
 
 ## Règles non négociables
-1. **Sources de prix :** seulement eBay (API Browse) et les agents H sur Easy Cash, Gamecash, Troc.com et Cash Converters. Aucun agent ni scraping sur Vinted, Leboncoin, Cdiscount, TikTok Shop, Back Market ou Label Emmaüs.
+1. **Sources de prix :** seulement eBay (API Browse) et les agents H sur Easy Cash, Gamecash, Troc.com, Cash Converters, Certideal et Swappie. Aucun agent ni scraping sur Vinted, Leboncoin, Cdiscount, TikTok Shop, Back Market, Label Emmaüs, Largo, Recommerce, Smaaart, Refurbed (CGU qui l'interdisent).
 2. **Aucun contournement d'anti-robot.** Un site qui bloque l'agent sort de la liste. Les CGU de H Company (§5.2, §5.3) l'exigent aussi.
 3. **Easy Cash :** navigation par les pages de catégorie, jamais par le moteur de recherche (bloqué par le robots.txt).
 4. **eBay :** résultats dans un bloc séparé, jamais mélangés aux autres sites. Les données eBay ne passent pas dans un modèle de texte génératif.
