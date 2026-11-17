@@ -108,10 +108,11 @@ Mesurés sur un jeu de 10 objets high-tech et jeux vidéo (ramené de 30 à 10 p
 ## Modèle économique et coût de run
 Le brief exige de dire qui paie, combien et pourquoi, ainsi que le coût de run (slide dédiée du pitch deck).
 
-- **MVP :** gratuit et anonyme, sans compte ni paiement.
-- **Pistes déjà notées (roadmap) :** packs d'estimations payants, offre revendeurs.
-- **Coût de run :** objectif < 0,25 $ par estimation. Il se calcule à partir des mesures réelles : sessions d'agent H (tokens, durée), appels Hugging Face (vision, texte, visages), hébergement (Vercel, Space).
-- **À trancher :** qui paie (particulier, revendeur, enseigne), le prix, et la marge par rapport au coût de run. Dépend aussi de la réponse des mentors sur l'usage commercial de l'API H (§9.4).
+- **MVP (hackathon) :** gratuit et anonyme, sans compte ni paiement.
+- **Après le hackathon (validé par l'équipe le 17/11) :** 3 premières photos gratuites, puis abonnements Bronze (4,99 € TTC/mois, 10 estimations), Silver (14,99 € TTC/mois, 50 estimations) et Entreprise (149 € HT/mois, 500 estimations ; dépôts-vente et brocanteurs d'abord). Partenariat Vinted et Leboncoin : 0,30 € par annonce publiée pendant 12 mois, puis licence non exclusive.
+- **Coût de run :** objectif < 0,25 $ par estimation. Calculé sur les mesures du 16/11 : 0,17 € par estimation dans le pire cas (agents H payés à l'usage), environ 0,02 € dans un forfait H.
+- **Détail, hypothèses et projections sur 3 ans :** [docs/business-model/](docs/business-model/business-model-snap-n-cash.md) (document et tableur).
+- **Reste ouvert :** l'usage commercial de l'API H (§9.4, question aux mentors).
 
 Responsables : Stephen (CEO) et Tristan (CPO). Présenté au point business du mercredi.
 

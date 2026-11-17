@@ -443,3 +443,26 @@ Le dépôt est noté : rangement avant la fusion dans `main`.
 - Nouveau README « fiche projet » : problème, solution, parcours, architecture, règles, lancement, tests, organisation, état, équipe.
 - Vérification automatique GitHub (`.github/workflows/ci.yml`) : tests du serveur et compilation de l'interface à chaque push et PR.
 - Issues : une par chantier (#8 à #15), avec responsable.
+## Mardi 17 novembre 2026
+
+### Business model
+Préparé par Claude pour Tristan (CPO) et Stephen (CEO). Fichiers : `docs/business-model/business-model-snap-n-cash.md` et `docs/business-model/snap-n-cash-projections.xlsx`.
+
+Décisions de l'équipe (17/11, transmises par Tristan) :
+- 3 premières photos gratuites, puis abonnements Bronze 4,99 € TTC, Silver 14,99 € TTC, Entreprise 149 € HT par mois.
+- Cible Entreprise : dépôts-vente et brocanteurs d'abord. Horizon des projections : 3 ans. Fondateurs non payés en an 1.
+- Partenariat Vinted et Leboncoin : 0,30 € par annonce publiée pendant 12 mois, pour que les plateformes mesurent l'efficacité de l'outil, puis licence (4 000 € HT par mois et par plateforme, hypothèse).
+- Pourquoi : le partenariat donne un accès officiel à leurs prix, ce qui règle l'interdiction actuelle des CGU (règle 1).
+
+Chiffres clés (scénario central, hypothèses) :
+- Coût d'une estimation : 0,17 € dans le pire cas (mesures du 16/11, modèle Holo le plus cher, agents payés à l'usage), environ 0,02 € dans le forfait H Builder.
+- Marge brute par abonné, pire cas : 70 à 76 % du prix HT. Aucun abonnement ne perd d'argent tant que le coût par estimation reste sous 0,58 €.
+- Chiffre d'affaires : 22 100 € en an 1, 149 500 € en an 2, 375 200 € en an 3. Résultat : +1 200 €, −23 300 €, +14 700 €. Besoin de financement : environ 37 000 €.
+
+Points d'attention :
+- Compter les 3 photos gratuites impose un compte (e-mail) : politique de confidentialité RGPD à prévoir.
+- Dès qu'une plateforme nous rémunère, la page « Comment ça marche » doit le dire (elle affirme aujourd'hui qu'aucun site ne nous paie).
+- Licence non exclusive : l'application Snap N Cash garde la comparaison neutre de toutes les sources.
+
+Non vérifié : le modèle derrière `web-surfer-flash`, l'usage commercial de l'API H, le prix réaliste d'une licence, le coût d'acquisition (3 € par inscrit retenus).
+
