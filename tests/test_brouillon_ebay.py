@@ -67,7 +67,7 @@ def post(files=None, key="cle-demo-test", **over):
 main.EBAY_DRAFT_LOCAL = False
 check("fonction désactivée : 404", post().status_code == 404)
 main.EBAY_DRAFT_LOCAL = True
-check("sans clé de démo : 403", post(key="").status_code == 403)
+check("sans clé de démo : 403 avec la marche à suivre", (lambda r: r.status_code == 403 and "?cle=" in r.json()["detail"])(post(key="")))
 check("mauvaise clé de démo : 403", post(key="autre").status_code == 403)
 check("sans photo : 422", client.post("/api/ebay/draft", data={**form, "key": "cle-demo-test"}).status_code == 422)
 check("fichier qui n'est pas une image : 422", post(files=[("files", ("a.txt", b"hello", "text/plain"))]).status_code == 422)

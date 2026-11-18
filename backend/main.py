@@ -210,7 +210,7 @@ async def ebay_draft(
     if not EBAY_DRAFT_LOCAL:
         raise HTTPException(404, "Cette fonction n'est pas activée sur ce serveur.")
     if not _demo_key_ok(key or request.headers.get("x-demo-key", "")):
-        raise HTTPException(403, "Réservé à la démo : cette fonction agit sur un compte eBay précis.")
+        raise HTTPException(403, "Clé de démo absente ou incorrecte. Rouvrez l'app avec ?cle=VOTRE_CLE dans l'adresse, sans virgule ni point à la fin.")
     if not 1 <= len(files) <= 10:
         raise HTTPException(422, "Entre 1 et 10 photos.")
     blobs: list[tuple[bytes, str]] = []
