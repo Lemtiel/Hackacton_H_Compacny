@@ -969,3 +969,8 @@ html[data-motion="off"] .falling { display: none; }
 @media (max-width: 420px) { .tips { font-size: 0.8rem; } .tips li { gap: 0.5rem; } }
 /* Le bouton central dépasse de la barre : plus de marge en bas de page pour ne rien masquer */
 .page { padding-bottom: calc(8.5rem + env(safe-area-inset-bottom)); }
+
+/* Cartes d'exemple : prix boutique en discret, l'action en avant */
+.example-shop { color: var(--ink-soft); }
+.example-shop .num { font-weight: 700; color: var(--ink); }
+.example-cta { font-weight: 700; color: var(--action); font-size: 0.9rem; }

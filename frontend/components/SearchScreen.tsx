@@ -53,6 +53,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
   const [shop, setShop] = useState<ShopBlock | null>(null);
   const [done, setDone] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [refused, setRefused] = useState<string | null>(null); // recherche refusée par le serveur (limite d'usage)
   const [myPrice, setMyPrice] = useState<number | null>(null);
   const idRef = useRef(newId());
   const shopRef = useRef<ShopBlock | null>(null);
@@ -105,6 +106,9 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
         } else if (ev.type === "shop_block") {
           setShop(ev.block);
           shopRef.current = ev.block;
+        } else if (ev.type === "error") {
+          setRefused(ev.message);
+          setFailed(true);
         } else if (ev.type === "done") {
           setDone(true);
         }
@@ -166,7 +170,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
       <p className="muted" style={{ margin: "0.5rem 0 0" }}>{CATEGORY_LABELS[category]}, {condition.toLowerCase()}</p>
       <h1 className="display search-title">{product}</h1>
 
-      {failed && <p className="notice error">Le serveur ne répond pas. Vérifiez votre connexion, puis relancez l&apos;estimation.</p>}
+      {failed && <p className="notice error">{refused ?? "Le serveur ne répond pas. Vérifiez votre connexion, puis relancez l'estimation."}</p>}
 
       <SearchProgress rows={rows} done={done} demo={demo} />
 
@@ -318,7 +322,7 @@ function VerdictCard({ verdict, running }: { verdict: Verdict; running: boolean 
         <div className="verdict-option" data-chosen={!seul}>
           <span className="small">Offre de rachat typique</span>
           <span className="verdict-amount">≈ <CountUp value={verdict.buyback} /></span>
-          <span className="small">Estimation basse · un passage</span>
+          <span className="small">Médiane mesurée · un passage</span>
         </div>
       </div>
       <p className="small" style={{ margin: "0.75rem 0 0" }}>
@@ -340,7 +344,7 @@ function PriceScale({ shop, verdict }: { shop: ShopBlock; verdict: Verdict }) {
   const bars = [
     { label: "Vendre seul", cls: "seul", lo: verdict.sellAloneLow, hi: verdict.sellAloneHigh, mark: verdict.sellAloneMid },
     { label: "Prix affiché par les boutiques", cls: "boutique", lo: shop.shop_low, hi: shop.shop_high },
-    { label: "Offre de rachat typique (estimation basse)", cls: "magasin", lo: shop.buyback_low, hi: shop.buyback_high, mark: shop.buyback_estimate },
+    { label: "Offre de rachat typique (médiane mesurée)", cls: "magasin", lo: shop.buyback_low, hi: shop.buyback_high, mark: shop.buyback_estimate },
   ];
   return (
     <div className="scale" role="img" aria-label={bars.map((b) => `${b.label} : ${euros(b.lo)} à ${euros(b.hi)}`).join(", ")}>

@@ -59,7 +59,7 @@ export const LEGAL_PAGES: LegalPage[] = [
         <h2>3. Les prix sont indicatifs</h2>
         <p>
           Les prix sont relevés sur {SITES}, et sur eBay par son API officielle. La comparaison n&apos;est pas exhaustive : d&apos;autres sites
-          vendent ces objets. L&apos;estimation « en magasin » est une estimation basse : seule l&apos;offre faite en boutique, après inspection, fait foi.
+          vendent ces objets. L&apos;estimation « en magasin » est une estimation typique : seule l&apos;offre faite en boutique, après inspection, fait foi.
           Snap N Cash ne garantit ni un prix de vente ni une vente.
         </p>
         <h2>4. Contenus générés par IA</h2>

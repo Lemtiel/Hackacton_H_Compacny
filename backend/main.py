@@ -20,10 +20,11 @@ import os
 import secrets
 import threading
 import time
+from collections import defaultdict, deque
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response, StreamingResponse
 import httpx
@@ -49,6 +50,51 @@ SHOT_TTL_S = 600
 # Jeton aléatoire -> (adresse H de la capture, heure d'expiration). En mémoire seulement, aucune image sur disque.
 _shots: dict[str, tuple[str, float]] = {}
 _shots_lock = threading.Lock()
+
+
+# Garde-fous d'usage, pour une app en ligne sans compte : chaque recherche lance jusqu'à 6 sessions H payantes,
+# chaque photo studio est facturée par fal.ai. Valeurs réglables dans .env.
+SEARCH_PER_HOUR = int(os.getenv("SEARCH_PER_HOUR") or "20")  # recherches par adresse IP et par heure
+STUDIO_PER_HOUR = int(os.getenv("STUDIO_PER_HOUR") or "40")  # photos studio par adresse IP et par heure
+MAX_SEARCHES = int(os.getenv("MAX_SEARCHES") or "4")  # recherches en cours en même temps, toutes adresses confondues
+STUDIO_ENABLED = (os.getenv("STUDIO_ENABLED") or "1") == "1"
+_hits: dict[tuple[str, str], deque] = defaultdict(deque)
+_hits_lock = threading.Lock()
+_running = 0
+_running_lock = threading.Lock()
+
+
+def _client_ip(request: Request) -> str:
+    """Adresse du client pour les limites d'usage.
+
+    X-Forwarded-For se lit de droite à gauche : chaque proxy ajoute à la fin l'adresse qui lui parle. La première
+    entrée est celle que le client déclare lui-même (falsifiable) ; la dernière est celle que le proxy du Space a
+    vue. TRUSTED_PROXIES (défaut 1) = nombre de proxys de confiance devant le serveur."""
+    hops = max(1, int(os.getenv("TRUSTED_PROXIES") or "1"))
+    fwd = [x.strip() for x in request.headers.get("x-forwarded-for", "").split(",") if x.strip()]
+    if len(fwd) >= hops:
+        return fwd[-hops]
+    return request.client.host if request.client else "inconnue"
+
+
+def _demo_key_ok(key: str) -> bool:
+    """Clé de démo (DEMO_KEY dans .env) : lève la limite par adresse IP, pour que la démo ne soit pas bloquée
+    par les autres personnes du même Wi-Fi. Le plafond de recherches simultanées s'applique toujours."""
+    expected = os.getenv("DEMO_KEY") or ""
+    return bool(expected) and bool(key) and secrets.compare_digest(key, expected)
+
+
+def _allow(kind: str, ip: str, per_hour: int) -> bool:
+    """Fenêtre glissante d'une heure, en mémoire. True si l'appel est permis (et le compte)."""
+    now = time.time()
+    with _hits_lock:
+        q = _hits[(kind, ip)]
+        while q and q[0] < now - 3600:
+            q.popleft()
+        if len(q) >= per_hour:
+            return False
+        q.append(now)
+        return True
 
 
 def _register_shot(url: str) -> str:
@@ -125,7 +171,11 @@ _studio_slot = threading.Semaphore(1)
 
 
 @app.post("/api/studio")
-async def make_studio(file: UploadFile = File(...)):
+async def make_studio(request: Request, file: UploadFile = File(...)):
+    if not STUDIO_ENABLED:
+        raise HTTPException(503, "Les photos studio sont désactivées pour le moment.")
+    if not _demo_key_ok(request.headers.get("x-demo-key", "")) and not _allow("studio", _client_ip(request), STUDIO_PER_HOUR):
+        raise HTTPException(429, "Trop de photos studio d'un coup. Réessayez dans un moment.")
     data = await file.read(MAX_UPLOAD + 1)
     if len(data) > MAX_UPLOAD:
         raise HTTPException(413, "Photo trop lourde (8 Mo maximum).")
@@ -215,6 +265,7 @@ def _site_payload(site: str, r, product: str, category: str, condition: str = "B
 
 @app.get("/api/search")
 async def search(
+    request: Request,
     product: str = Query(..., min_length=2, max_length=120),
     category: str = Query("smartphone"),
     demo: bool = Query(False),
@@ -223,6 +274,7 @@ async def search(
     box: bool | None = Query(None),
     accessories: str = Query("", max_length=200),
     details: str = Query("", max_length=400),
+    key: str = Query("", max_length=100),
 ):
     if category not in CATEGORIES:
         raise HTTPException(422, "Catégorie inconnue.")
@@ -233,7 +285,18 @@ async def search(
     if not os.getenv("HAI_API_KEY"):
         raise HTTPException(503, "HAI_API_KEY manque dans .env.")
 
+    # Refus envoyé comme un événement du flux : EventSource ne lit pas le code HTTP, l'interface affiche le message.
+    def refuse(message: str):
+        async def one():
+            yield _sse({"type": "error", "message": message})
+            yield _sse({"type": "done"})
+        return StreamingResponse(one(), media_type="text/event-stream", headers={"Cache-Control": "no-store"})
+
+    if not _demo_key_ok(key) and not _allow("search", _client_ip(request), SEARCH_PER_HOUR):
+        return refuse("Vous avez lancé beaucoup d'estimations en peu de temps. Réessayez dans un moment.")
+
     loop = asyncio.get_running_loop()
+    stop = threading.Event()  # levé quand l'utilisateur quitte la recherche
     queue: asyncio.Queue = asyncio.Queue()
     client = Client()
     active = sites_for(category)
@@ -243,12 +306,17 @@ async def search(
 
     def work(site: str) -> None:
         emit({"type": "site_step", "site": site, "label": "en attente d'un agent libre"})
-        with _slots:
+        while not _slots.acquire(timeout=1):
+            if stop.is_set():
+                return  # recherche abandonnée avant même d'obtenir une place
+        try:
+            if stop.is_set():
+                return
             emit({"type": "site_step", "site": site, "label": f"ouvre {SITES[site]['name']}"})
             try:
                 r = run_site(
                     client, site, product, category, log=lambda _m: None, hint=hint,
-                    condition=condition, box=box, accessories=accessories, details=details,
+                    condition=condition, box=box, accessories=accessories, details=details, stop=stop,
                     on_step=lambda s: emit({
                         "type": "site_step", "site": site, "elapsed_s": s["elapsed_s"],
                         "label": "démarrage du navigateur" if s["steps"] == 0 else f"navigue, étape {s['steps']}",
@@ -258,26 +326,45 @@ async def search(
                 emit(_site_payload(site, r, product, category, condition))
             except Exception:
                 emit({"type": "site_result", "site": site, "state": "indisponible", "offers": []})
+        finally:
+            _slots.release()
 
     async def stream():
-        yield _sse({
-            "type": "start", "product": product, "category": category,
-            "sites": [{"key": k, "name": v["name"], "active": k in active} for k, v in SITES.items()],
-        })
-        for s in active:
-            threading.Thread(target=work, args=(s,), daemon=True).start()
-        prices: list[float] = []
-        remaining = len(active)
-        while remaining:
-            ev = await queue.get()
-            if ev["type"] == "site_result":
-                remaining -= 1
-                prices += [o["price_eur"] for o in ev["offers"]]
-                yield _sse(ev)
-                yield _sse({"type": "shop_block", "block": pricing.shop_block(prices)})
-            else:
-                yield _sse(ev)
-        yield _sse({"type": "done"})
+        # La place est prise ici, dans le flux, et rendue dans son « finally » : si le navigateur part avant le
+        # premier octet, le flux ne démarre jamais et aucune place n'est prise (pas de compteur bloqué).
+        global _running
+        with _running_lock:
+            full = _running >= MAX_SEARCHES
+            if not full:
+                _running += 1
+        if full:
+            yield _sse({"type": "error", "message": "Nos agents sont tous occupés. Réessayez dans une minute."})
+            yield _sse({"type": "done"})
+            return
+        try:
+            yield _sse({
+                "type": "start", "product": product, "category": category,
+                "sites": [{"key": k, "name": v["name"], "active": k in active} for k, v in SITES.items()],
+            })
+            for s in active:
+                threading.Thread(target=work, args=(s,), daemon=True).start()
+            prices: list[float] = []
+            remaining = len(active)
+            while remaining:
+                ev = await queue.get()
+                if ev["type"] == "site_result":
+                    remaining -= 1
+                    prices += [o["price_eur"] for o in ev["offers"]]
+                    yield _sse(ev)
+                    yield _sse({"type": "shop_block", "block": pricing.shop_block(prices)})
+                else:
+                    yield _sse(ev)
+            yield _sse({"type": "done"})
+        finally:
+            # Fin normale ou navigateur parti : on arrête les agents encore en route et on libère la place.
+            stop.set()
+            with _running_lock:
+                _running -= 1
 
     return StreamingResponse(stream(), media_type="text/event-stream", headers={"Cache-Control": "no-store"})
 

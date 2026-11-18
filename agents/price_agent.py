@@ -7,6 +7,7 @@ vient de la configuration du site.
 from __future__ import annotations
 
 import sys
+import threading
 import time
 from dataclasses import dataclass, field
 from typing import Optional
@@ -167,10 +168,12 @@ def _last_image_url(events) -> Optional[str]:
 
 def run_site(client: Client, site_key: str, product: str, category: str, log=print, on_step=None, on_shot=None,
              hint: Optional[str] = None, condition: str = "Bon état", box: Optional[bool] = None,
-             accessories: str = "", details: str = "") -> RunResult:
+             accessories: str = "", details: str = "", stop: Optional[threading.Event] = None) -> RunResult:
     """on_step(dict) reçoit chaque changement d'étape, pour l'affichage progressif.
     on_shot(url) reçoit l'adresse de chaque nouvelle capture d'écran (mode démo). L'adresse n'est lisible
-    qu'avec la clé API : elle ne doit jamais partir telle quelle vers le navigateur."""
+    qu'avec la clé API : elle ne doit jamais partir telle quelle vers le navigateur.
+    stop : quand il est levé (l'utilisateur a quitté la recherche), la session est annulée tout de suite,
+    pour ne pas consommer de crédits ni garder une place dont la recherche suivante a besoin."""
     res = RunResult(site=site_key, product=product)
     t0 = time.monotonic()
     active_t0: Optional[float] = None
@@ -212,7 +215,11 @@ def run_site(client: Client, site_key: str, product: str, category: str, log=pri
                 on_step({"status": status.status, "steps": status.steps, "elapsed_s": round(active_elapsed, 1)})
         if status.status in TERMINAL:
             break
-        if active_t0 is None and elapsed >= MAX_QUEUE_SECONDS and not res.cancelled:
+        if stop is not None and stop.is_set() and not res.cancelled:
+            handle.cancel()
+            res.cancelled = True
+            log(f"[{site_key}] recherche abandonnée par l'utilisateur : annulé")
+        elif active_t0 is None and elapsed >= MAX_QUEUE_SECONDS and not res.cancelled:
             handle.cancel()
             res.cancelled = True
             log(f"[{site_key}] > {MAX_QUEUE_SECONDS}s en file : annulé")

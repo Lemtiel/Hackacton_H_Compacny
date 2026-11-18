@@ -63,6 +63,7 @@ export type SearchEvent =
   | { type: "site_step"; site: string; label?: string; elapsed_s?: number; steps?: number }
   | { type: "site_result"; site: string; state: "ok" | "aucun_resultat" | "indisponible"; duration_s?: number; offers: Offer[]; n_rejected?: number }
   | { type: "site_shot"; site: string; shot: string }
+  | { type: "error"; message: string }
   | { type: "shop_block"; block: ShopBlock | null }
   | { type: "done" };
 
@@ -85,6 +86,18 @@ export function isDemo(): boolean {
 
 export const shotUrl = (token: string) => `${API_URL}/api/shot/${encodeURIComponent(token)}`;
 
+// Clé de démo : ouverte une fois avec ?cle=… dans l'adresse, gardée dans ce navigateur. Elle lève la limite par
+// adresse IP côté serveur (DEMO_KEY), pour que la démo ne soit pas bloquée par les autres personnes du même Wi-Fi.
+export function demoKey(): string {
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get("cle");
+    if (fromUrl) localStorage.setItem("snapncash.cle", fromUrl);
+    return localStorage.getItem("snapncash.cle") || "";
+  } catch {
+    return "";
+  }
+}
+
 export function searchPrices(
   product: string,
   category: string,
@@ -101,6 +114,8 @@ export function searchPrices(
   if (context.box !== undefined && context.box !== null) params.set("box", String(context.box));
   if (context.accessories) params.set("accessories", context.accessories);
   if (context.details) params.set("details", context.details);
+  const key = demoKey();
+  if (key) params.set("key", key);
   const url = `${API_URL}/api/search?${params.toString()}`;
   const source = new EventSource(url);
   source.onmessage = (msg) => {
@@ -186,7 +201,8 @@ export async function fetchEbay(product: string, category: string, signal?: Abor
 export async function makeStudio(photo: Blob): Promise<Blob> {
   const body = new FormData();
   body.append("file", photo, "photo.jpg");
-  const res = await fetch(`${API_URL}/api/studio`, { method: "POST", body });
+  const key = demoKey();
+  const res = await fetch(`${API_URL}/api/studio`, { method: "POST", body, headers: key ? { "X-Demo-Key": key } : undefined });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error(typeof data.detail === "string" ? data.detail : "La photo studio a échoué. Réessayez dans un instant.");

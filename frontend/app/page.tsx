@@ -285,7 +285,9 @@ function HomeScreen({ onPhoto, onText }: { onPhoto: (f?: File) => void; onText: 
   );
 }
 
-// Prix réellement relevés par nos agents le 17/11 (JOURNAL.md), montrés comme exemples. Un toucher lance l'estimation.
+// Prix médians réellement relevés par nos agents (JOURNAL.md) : ce sont les prix AFFICHÉS PAR LES BOUTIQUES,
+// pas ce que touche le vendeur. La carte le dit ; l'estimation donne ensuite le rachat et la vente entre particuliers.
+// Switch : 16/11, 7 prix. iPhone 13 128 Go : 17/11, Certideal. DualSense : 17/11, 7 prix.
 const EXAMPLES = [
   { name: "Nintendo Switch", price: 166, art: "console" },
   { name: "Apple iPhone 13 128 Go", price: 266, art: "phone" },
@@ -295,17 +297,18 @@ const EXAMPLES = [
 function ExampleCards({ onPick }: { onPick: (product: string) => void }) {
   return (
     <section className="examples" aria-labelledby="examples-title">
-      <h2 id="examples-title" className="examples-title">Ça vaut combien ?</h2>
+      <h2 id="examples-title" className="examples-title">Combien vous en tireriez ?</h2>
       <div className="examples-row">
         {EXAMPLES.map((e) => (
           <button key={e.name} type="button" className="example-card" data-art={e.art} onClick={() => onPick(e.name)}>
             <span className="example-art" aria-hidden>{ART[e.art]}</span>
             <span className="example-name">{e.name.replace("Apple ", "").replace(" 128 Go", "")}</span>
-            <span className="example-price num">≈ {e.price} €</span>
+            <span className="example-shop small">En boutique <span className="num">≈ {e.price} €</span></span>
+            <span className="example-cta">Estimer le mien →</span>
           </button>
         ))}
       </div>
-      <p className="small" style={{ margin: "0.5rem 0 0" }}>Prix médians relevés en boutique d&apos;occasion le 17/11, à titre d&apos;exemple.</p>
+      <p className="small" style={{ margin: "0.5rem 0 0" }}>Prix de revente affichés par les boutiques d&apos;occasion (relevés les 16 et 17/11). Ce que vous touchez est plus bas : l&apos;estimation vous dit combien, en magasin et entre particuliers.</p>
     </section>
   );
 }
