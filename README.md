@@ -85,10 +85,11 @@ Une recherche lance de vrais agents H : environ 80 s et des crédits par site.
 ```bash
 .venv/bin/python tests/test_matching.py   # tri des annonces par modèle et par état : 92 cas
 .venv/bin/python tests/test_ebay.py       # bloc eBay sur une réponse simulée : 19 vérifications
+.venv/bin/python tests/test_ebay_categorie.py # catégorie eBay suggérée, 15 réponses réelles de l'API : 49 vérifications
 .venv/bin/python tests/test_garde_fous.py # arrêt des agents, limites d'usage, coefficient de rachat par catégorie, offres gardées après délai : 23 vérifications
 .venv/bin/python -m agents.test_agents --site gamecash --product "Nintendo Switch" --category console   # agent réel
 ```
-Ces trois scripts tournent à chaque push (onglet Actions).
+Ces quatre scripts tournent à chaque push (onglet Actions).
 
 ## Mesurer
 ```bash
@@ -117,8 +118,8 @@ Sortie : taux de réussite par boutique (au moins 3 prix), durée d'une estimati
 | `Specs.md`, `CONTEXT.md`, `JOURNAL.md` | Ce qu'on construit, le cadre, les décisions datées |
 
 ## État au 18/11
-**Testé :** parcours complet sur ordinateur et sur téléphone, 3 photos guidées, agents sur les 6 boutiques, studio photo, nouvelle interface (clair et sombre), espace revendeurs, arrêt des agents quand l'utilisateur quitte une recherche (en réel), limites d'usage, coefficient de rachat mesuré par catégorie sur 30 objets ([docs/calibrage-rachat.md](docs/calibrage-rachat.md)).
-**Pas encore :** appel réel à eBay (validation du compte en attente), déploiement en ligne, mesure sur 10 objets. Point faible mesuré le 18/11 : peu de boutiques rendent 3 prix avec la consigne d'état stricte. Suivi dans les [issues](https://github.com/Lemtiel/Hackacton_H_Compacny/issues).
+**Testé :** parcours complet sur ordinateur et sur téléphone, 3 photos guidées (réduites à 1600 px avant l'envoi), agents sur les 6 boutiques, studio photo, nouvelle interface (clair et sombre), espace revendeurs, arrêt des agents quand l'utilisateur quitte une recherche (en réel), limites d'usage, coefficient de rachat mesuré par catégorie sur 30 objets ([docs/calibrage-rachat.md](docs/calibrage-rachat.md)), **API eBay en réel** (annonces « Vendre seul », catégorie suggérée sur 15 produits), classement des offres par état (Gamecash n'est plus à 0 prix), lien « Publier sur eBay » qui ouvre l'éditeur avec titre, catégorie et état remplis (vérifié sur un compte connecté).
+**Pas encore :** déploiement en ligne, mesure sur 10 objets, bouton « Partager photos et annonce » sur un vrai iPhone (testé avec un partage simulé ; il exige du HTTPS), publication en 1 clic sur eBay (maquette et plan dans [docs/produit/publication-ebay.md](docs/produit/publication-ebay.md), hors Specs actuelles). Le prix, la description et les photos ne passent pas par le lien eBay. Suivi dans les [issues](https://github.com/Lemtiel/Hackacton_H_Compacny/issues).
 
 ## Équipe
 | | Rôle |
