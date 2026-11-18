@@ -22,8 +22,9 @@ export default function HowItWorks() {
       <h2 style={{ marginTop: "2rem" }}>Le calcul</h2>
       <p className="muted">
         Les prix très éloignés des autres sont écartés. Le prix « en magasin » estime ce qu&apos;une boutique vous proposerait : il part du prix
-        auquel les boutiques revendent l&apos;objet, multiplié par 0,59 : la part que reverse une boutique, mesurée chez Easy Cash sur
-        7 objets (médiane). C&apos;est une estimation typique : l&apos;offre réelle se fait en boutique, après inspection.
+        auquel les boutiques revendent l&apos;objet, multiplié par la part que reverse une boutique, selon la catégorie : de 0,43 pour un
+        jeu vidéo à 0,74 pour une console récente. Ces parts ont été mesurées chez Easy Cash sur 30 objets (médianes). C&apos;est une
+        estimation typique : l&apos;offre réelle se fait en boutique, après inspection.
       </p>
       <p className="muted">Aucun site n&apos;est mis en avant contre paiement. Les résultats sont classés par prix.</p>
 

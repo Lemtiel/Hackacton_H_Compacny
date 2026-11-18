@@ -1,0 +1,31 @@
+date,enseigne,categorie,marque,produit,prix_vente_eur,type_prix_vente,prix_rachat_bon_etat_eur,coef_rachat
+2026-11-17,easycash,smartphone,APPLE,iPhone 11 Noir 64 Go,149.99,a partir de,76.00,0.507
+2026-11-17,easycash,smartphone,APPLE,iPhone 12 Noir 64 Go,195.99,a partir de,116.00,0.592
+2026-11-17,easycash,smartphone,APPLE,iPhone 13 Minuit 128 Go,259.99,a partir de,155.00,0.596
+2026-11-17,easycash,smartphone,APPLE,iPhone 13 mini Minuit 256 Go,349.99,prix unique,164.00,0.469
+2026-11-17,easycash,smartphone,APPLE,iPhone 14 Minuit 128 Go,309.99,a partir de,208.00,0.671
+2026-11-17,easycash,smartphone,APPLE,iPhone 15 Noir 128 Go,419.99,a partir de,265.00,0.631
+2026-11-18,easycash,smartphone,SAMSUNG,Galaxy S21 Ultra Phantom black 128 Go,259.99,a partir de,183.00,0.704
+2026-11-17,easycash,console,NINTENDO,Switch (OLED) Noir 64 Go + 2 Joy Con Blanc,184.99,a partir de,94.00,0.508
+2026-11-18,easycash,console,NINTENDO,Switch Lite Turquoise 32 Go,109.99,a partir de,48.00,0.436
+2026-11-18,easycash,console,SONY,PS5 Blanc 825 Go + 1 manette,549.99,a partir de,430.00,0.782
+2026-11-18,easycash,jeu_video,NINTENDO,Advance Wars 1+2 Re-Boot Camp (Switch),29.99,a partir de,13.00,0.433
+2026-11-18,easycash,jeu_video,NINTENDO,Another Code - Recollection (Switch),26.99,a partir de,7.00,0.259
+2026-11-18,easycash,jeu_video,NINTENDO,Super Mario Galaxy + Super Mario Galaxy 2 (Switch),44.99,a partir de,16.00,0.356
+2026-11-18,easycash,jeu_video,NINTENDO,Stardew Valley (Switch),25.00,a partir de,14.00,0.560
+2026-11-18,easycash,tablette,APPLE,iPad 10 (2022) Bleu 64 Go Cellular,319.99,prix unique,161.00,0.503
+2026-11-18,easycash,tablette,APPLE,iPad Mini 6 (2022) Gris 64 Go Wifi,299.99,a partir de,132.00,0.440
+2026-11-18,easycash,tablette,SAMSUNG,Galaxy Tab S10 FE Anthracite 128 Go Wifi,339.99,prix unique,169.00,0.497
+2026-11-18,easycash,informatique,APPLE,MacBook Air A2337 (2020) M1 8 Go 256 Go 13.3,489.99,prix unique,328.00,0.669
+2026-11-18,easycash,informatique,APPLE,MacBook Air A2681(2022) M2 8 Go 256 Go 13.6,679.99,prix unique,471.00,0.693
+2026-11-18,easycash,informatique,APPLE,"MacBook Air A2681 (2022) M2 8 Go 256 Go 13.3 (meme modele, autre reference)",634.99,prix unique,425.00,0.669
+2026-11-18,easycash,console,SONY,PS4 Noir 500 Go + 1 Manette,89.99,a partir de,40.00,0.444
+2026-11-18,easycash,console,SONY,PS4 Noir 1 To + 1 manette,99.99,a partir de,47.00,0.470
+2026-11-18,easycash,console,SONY,PS5 Slim Blanc 1 To + 1 Manette,649.99,a partir de,480.00,0.738
+2026-11-18,easycash,console,NINTENDO,Switch Noir 32 Go + 2 manettes,179.99,a partir de,68.00,0.378
+2026-11-18,easycash,console,MICROSOFT,Xbox Series X Noir 1 To + 1 manette,669.99,a partir de,423.00,0.631
+2026-11-18,easycash,jeu_video,NINTENDO,Xenoblade Chronicles 2 (Switch),29.99,a partir de,15.00,0.500
+2026-11-18,easycash,jeu_video,NINTENDO,Astral Chain (Switch),24.99,a partir de,10.00,0.400
+2026-11-18,easycash,jeu_video,NINTENDO,Bayonetta 2 (Switch),28.99,a partir de,11.00,0.379
+2026-11-18,easycash,jeu_video,NINTENDO,Tomodachi Life - Une vie de reve (Switch),39.99,a partir de,21.00,0.525
+2026-11-18,easycash,jeu_video,NINTENDO,Marvel Ultimate Alliance 3 The Black Order (Switch),24.99,a partir de,12.00,0.480
