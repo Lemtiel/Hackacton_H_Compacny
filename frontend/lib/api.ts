@@ -23,7 +23,15 @@ export type Identification = {
   kind?: string | null; // description générique pour élargir la recherche : « manette PS5 »
 };
 
-export type Offer = { title: string; price_eur: number; condition?: string | null; url?: string | null };
+// condition_match (boutiques seulement) : « exact » = même état que demandé ; « proche » = un cran au-dessus ou
+// en dessous, ajouté s'il manquait des offres ; « inconnu » = la boutique n'affiche pas d'état.
+export type Offer = {
+  title: string;
+  price_eur: number;
+  condition?: string | null;
+  url?: string | null;
+  condition_match?: "exact" | "proche" | "inconnu";
+};
 
 export type SiteState = "attente" | "en_cours" | "ok" | "aucun_resultat" | "indisponible" | "hors_categorie";
 

@@ -645,3 +645,17 @@ Fait :
 - **Correction, validée par Kevin** (`rank_categories` dans `backend/ebay.py`, notre code, sans IA). L'interface envoie aussi notre catégorie. On écarte les catégories de pièces et de collection : un objet en panne se publie dans sa catégorie normale, avec l'état « pour pièces ». On écarte les accessoires, sauf si l'objet en est un (manette, Joy-Con, coque : listes de `matching.py`). On ne garde que la famille eBay de l'objet (Téléphonie, Jeux vidéo, Informatique). La catégorie de référence passe en tête et sert de secours : Téléphones mobiles 9355, Consoles 139971, Jeux 139973, Tablettes 171485, Ordinateurs portables 177. Ces identifiants viennent des réponses réelles.
 - **Testé :** `tests/test_ebay_categorie.py` passe à 43/43. Il comprend 12 réponses réelles gardées dans `tests/ebay_categories_reelles.json` (identifiant, nom et chemin seulement) : la bonne catégorie sort en tête pour les 12, sans pièces ni collection. La route réelle a été appelée sur 5 objets. Dans l'app, avec les agents H et la rédaction IA bloqués dans la page pour ne pas consommer de crédits, la fiche de Redmi Note 10S affiche « Téléphonie, mobilité > Téléphones mobiles ».
 - **Limites :** les identifiants de catégorie peuvent changer si eBay réorganise son arbre. « Ordinateurs portables » sert de secours pour toute l'informatique, même pour un ordinateur de bureau.
+
+### Mercredi 18/11, après-midi : l'état classe les offres au lieu de les exclure (issue #23, Tristan)
+Constat du test de 10h30 (Nintendo Switch, « Bon état ») : Gamecash 0 prix, car il n'affiche pas le libellé « Bon état » ; Cash Converters 1 prix. Une seule boutique sur 4 atteignait 3 prix, ce qui bloque l'objectif de la mesure (#8). Certideal et Swappie notent aussi à leur façon (Correct, Très bon état, Parfait état, Premium).
+
+**Décision (validée par Tristan, à relire par Jude) : l'état sert à classer, plus à exclure.**
+- Une boutique avec au moins 3 offres au même état : rien ne change, les autres états restent écartés.
+- Sinon, on complète avec les offres à un cran d'écart (au-dessus ou en dessous), puis avec celles dont la boutique n'affiche pas d'état. Chaque offre porte `condition_match` (`exact`, `proche`, `inconnu`), et l'interface l'indique (« état voisin », « état non précisé »).
+- Toujours écartés : deux crans d'écart ou plus, « pour pièces » face à un objet qui marche (et l'inverse), offre sans fiche produit, doublon.
+- Table des libellés élargie dans `backend/matching.py` (`GRADE_LABELS`) : Très bon, Excellent, Parfait état, Premium, Satisfaisant, Grade A/B/C, etc.
+- Consigne de l'agent (`agents/price_agent.py`, règle 2) : copier l'état tel qu'affiché, compléter par les états voisins s'il manque des offres, laisser l'état vide si la boutique n'en montre pas. À coordonner avec le chantier « vitesse des agents », qui touche la même consigne.
+
+Limite : mélanger des états voisins peut décaler un peu la médiane (un « très bon état » est plus cher). Le décalage reste visible à l'écran et ne joue qu'en l'absence de 3 offres au même état.
+**Testé :** `tests/test_matching.py` 74/74 (22 nouveaux cas : libellés, complément par états voisins, boutique sans état, pour pièces), `test_ebay.py` 14/14, `test_ebay_categorie.py` 13/13, `test_garde_fous.py` 18/18, TypeScript compile. `_site_payload` vérifié à la main sur des offres simulées de Gamecash.
+**Pas testé :** une vraie recherche avec les agents H (pas de clé dans cette session). À refaire : la Switch sur les 4 boutiques, et vérifier que Gamecash rend de nouveau des prix.
