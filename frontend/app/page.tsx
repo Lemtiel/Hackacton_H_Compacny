@@ -139,7 +139,7 @@ export default function Home() {
           {photos[0] && <img src={photos[0]} alt="Votre photo" className="photo photo-scan" />}
           <h2 style={{ marginTop: "1.5rem" }}>On reconnaît votre objet…</h2>
           <p className="muted">
-            Quelques secondes, à partir de {photos.length > 1 ? `vos ${photos.length} photos` : "votre photo"}. Rien n&apos;est conservé sur nos serveurs.
+            Quelques secondes. Vos photos ne sont pas conservées.
           </p>
         </section>
       )}
@@ -151,7 +151,7 @@ export default function Home() {
               {photos.map((p, i) => <img key={i} src={p} alt={`Photo ${i + 1}`} className={i === 0 ? "photo" : "thumb"} />)}
             </div>
           )}
-          {photos.length > 0 && <p className="small">Les photos guidées ont servi à reconnaître l&apos;objet. Toutes restent sur votre téléphone pour l&apos;annonce.</p>}
+          {photos.length > 0 && <p className="small">Vos photos restent sur votre téléphone, pour l&apos;annonce.</p>}
 
           {error && <p className="notice error" style={{ marginTop: "1rem" }}>{error}</p>}
 
@@ -159,9 +159,6 @@ export default function Home() {
           <input id="product" className="field" value={product} onChange={(e) => setProduct(e.target.value)} placeholder="Ex. Nintendo Switch OLED" autoComplete="off" />
           {lowConfidence && !error && (
             <p className="small" style={{ marginTop: "0.5rem" }}>Vérifiez le modèle exact : le prix en dépend.</p>
-          )}
-          {hint && (
-            <p className="small" style={{ marginTop: "0.5rem" }}>Si le nom exact ne donne rien, nos agents chercheront aussi « {hint} ».</p>
           )}
 
           {suggestion && (

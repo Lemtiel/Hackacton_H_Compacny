@@ -30,8 +30,8 @@ const SLIDES = [
     art: <img src="/logo-icon.png" alt="" width={72} height={51} />,
   },
   {
-    title: "Nos agents font le tour des boutiques.",
-    text: "Ils consultent les boutiques d'occasion comme vous le feriez, et relèvent les vrais prix. Vous les voyez travailler en direct.",
+    title: "On fait le tour des boutiques pour vous.",
+    text: "Les prix d'occasion de votre objet, comparés en une à deux minutes. Vous n'avez rien à chercher.",
     art: ART_SEARCH,
   },
   {

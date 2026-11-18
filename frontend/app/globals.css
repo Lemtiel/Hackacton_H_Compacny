@@ -974,3 +974,6 @@ html[data-motion="off"] .falling { display: none; }
 .example-shop { color: var(--ink-soft); }
 .example-shop .num { font-weight: 700; color: var(--ink); }
 .example-cta { font-weight: 700; color: var(--action); font-size: 0.9rem; }
+
+/* Boutiques consultées, en petit sous la barre */
+.search-sources { margin: 0; }
