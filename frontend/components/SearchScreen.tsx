@@ -4,11 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import {
   CATEGORY_LABELS,
   type Category,
+  type DraftEvent,
   type EbayCategoryResult,
   type EbayResult,
   type Offer,
   type SearchEvent,
   type ShopBlock,
+  draftAvailable,
   euros,
   fetchEbay,
   fetchEbayCategory,
@@ -18,6 +20,7 @@ import {
   marketplaceLinks,
   searchPrices,
   shotUrl,
+  startEbayDraft,
 } from "@/lib/api";
 import { type GrenierItem, newId, updateItem, upsertItem } from "@/lib/grenier";
 import { type Condition, type ListingFormat, type Platform, ebayCondition, fallbackListing } from "@/lib/listing";
@@ -421,6 +424,10 @@ function ListingPanel({
   const ebayCatAsked = useRef(false);
   const [canShare, setCanShare] = useState(false);
   const [shareMsg, setShareMsg] = useState<string | null>(null);
+  // Brouillon eBay par un agent H (démo seulement : serveur de démo + clé de démo)
+  const [draftOn, setDraftOn] = useState(false);
+  const [draft, setDraft] = useState<{ running: boolean; label: string; result: Extract<DraftEvent, { type: "result" }> | null; error: string | null } | null>(null);
+  useEffect(() => { draftAvailable().then(setDraftOn); }, []);
 
   // Le partage natif n'existe qu'en HTTPS (ou localhost) et sur les navigateurs qui le gèrent : sinon on ne montre pas le bouton.
   useEffect(() => setCanShare(typeof navigator !== "undefined" && typeof navigator.share === "function"), []);
@@ -490,6 +497,24 @@ function ListingPanel({
 
   const ebayCategory = ebayCat?.state === "ok" ? ebayCat.categories[0] : null;
 
+  // Un agent H prépare le brouillon dans le Chrome de l'ordinateur ; l'utilisateur publie lui-même depuis eBay.
+  async function prepareDraft() {
+    if (!ad || myPrice === null) return;
+    setDraft({ running: true, label: "Envoi des photos à l'agent…", result: null, error: null });
+    try {
+      await startEbayDraft(
+        { photos: sharePhotos, title: ad.title, description: ad.description, price: myPrice, categoryId: ebayCategory?.id, condition },
+        (e) => {
+          if (e.type === "step") setDraft((d) => (d ? { ...d, label: e.label } : d));
+          if (e.type === "result") setDraft((d) => (d ? { ...d, running: false, result: e } : d));
+        },
+      );
+      setDraft((d) => (d && d.running ? { ...d, running: false } : d));
+    } catch (err) {
+      setDraft({ running: false, label: "", result: null, error: (err as Error).message });
+    }
+  }
+
   return (
     <div className="panel">
       <h3>Votre annonce</h3>
@@ -532,6 +557,11 @@ function ListingPanel({
                 Partager photos et annonce
               </button>
             )}
+            {platform === "ebay" && draftOn && sharePhotos.length > 0 && (
+              <button type="button" className="btn btn-quiet" style={{ background: "#fff" }} onClick={prepareDraft} disabled={myPrice === null || draft?.running}>
+                {draft?.running ? "L'agent prépare le brouillon…" : "Laisser un agent H préparer le brouillon eBay"}
+              </button>
+            )}
             {publish && (
               <a
                 className="btn btn-quiet"
@@ -547,6 +577,26 @@ function ListingPanel({
           </div>
 
           {shareMsg && <p className="notice warn" style={{ marginTop: "0.75rem" }}>{shareMsg}</p>}
+
+          {platform === "ebay" && draft && (
+            <div className="panel" style={{ marginTop: "0.9rem", background: "var(--bg)" }} aria-live="polite">
+              <h3 style={{ margin: 0 }}>Brouillon eBay par un agent</h3>
+              {draft.running && <p className="small" style={{ margin: "0.4rem 0 0" }}>{draft.label}. Regardez la fenêtre Chrome eBay : l&apos;agent y travaille. Il ne publie jamais.</p>}
+              {draft.error && <p className="notice error" style={{ marginTop: "0.5rem" }}>{draft.error}</p>}
+              {draft.result && draft.result.status === "draft_saved" && (
+                <p style={{ margin: "0.4rem 0 0" }}>
+                  <strong>Brouillon enregistré</strong> ({draft.result.photos_uploaded ?? 0} photo{(draft.result.photos_uploaded ?? 0) > 1 ? "s" : ""}, description, prix). Ouvrez-le dans eBay et cliquez vous-même sur « Mettre en vente ».
+                  {draft.result.draft_url && <> <a href={draft.result.draft_url} target="_blank" rel="noopener noreferrer">Ouvrir le brouillon</a>.</>}
+                </p>
+              )}
+              {draft.result && draft.result.status === "login_required" && (
+                <p className="notice warn" style={{ marginTop: "0.5rem" }}>L&apos;agent a rencontré une page de connexion ou de vérification d&apos;eBay. Connectez-vous dans la fenêtre Chrome eBay, puis relancez.</p>
+              )}
+              {draft.result && !["draft_saved", "login_required"].includes(draft.result.status) && (
+                <p className="notice warn" style={{ marginTop: "0.5rem" }}>Brouillon incomplet. {draft.result.note}</p>
+              )}
+            </div>
+          )}
 
           {/* Fiche eBay : ce qu'il faut remplir sur eBay, dans l'ordre. L'utilisateur publie lui-même. */}
           {platform === "ebay" && (

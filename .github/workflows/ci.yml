@@ -26,6 +26,8 @@ jobs:
         run: pip install -r requirements.txt
       - name: Garde-fous (arrêt des agents, limites d'usage, coefficient de rachat)
         run: python tests/test_garde_fous.py
+      - name: Tests du brouillon eBay (sans réseau)
+        run: python tests/test_brouillon_ebay.py
 
   interface:
     name: Compilation de l'interface

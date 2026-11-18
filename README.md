@@ -98,6 +98,14 @@ Ces quatre scripts tournent à chaque push (onglet Actions).
 ```
 Sortie : taux de réussite par boutique (au moins 3 prix), durée d'une estimation, écart entre le prix conseillé et le prix vendu, identification correcte, cas d'échec, face aux objectifs des Specs. Les sessions d'agent sont aussi dans [`mesures/agent_runs.csv`](mesures/agent_runs.csv), les décisions et cas d'échec dans [`JOURNAL.md`](JOURNAL.md).
 
+## Brouillon eBay par un agent H (démo sur le Mac)
+Un agent H Company pilote **le Chrome de cet ordinateur**, où tu t'es connecté toi-même à eBay : ni mot de passe ni cookie ne quittent l'ordinateur. Il ouvre l'éditeur prérempli, dépose les photos (par un outil à nous, car ce mode n'a pas d'envoi de fichier), colle la description, règle le prix et **enregistre un brouillon**. Il ne publie jamais : tu cliques toi-même sur « Mettre en vente ». Réservé à la démo : il agit sur un seul compte eBay, la route est fermée sans clé de démo et absente du Space.
+1. `.venv/bin/pip install -r requirements-demo.txt` (une fois).
+2. `scripts/ebay_chrome.sh` : ouvre un Chrome dédié ; **connecte-toi à eBay dans cette fenêtre** et laisse-la ouverte.
+3. Lancer le serveur avec `EBAY_DRAFT_LOCAL=1` et `DEMO_KEY=<ta clé>`, ouvrir l'interface une fois avec `?cle=<ta clé>`.
+4. Après l'estimation, onglet eBay du bloc « Votre annonce » : bouton « Laisser un agent H préparer le brouillon eBay ».
+Tests sans réseau : `.venv/bin/python tests/test_brouillon_ebay.py`.
+
 ## Mettre en ligne
 Le serveur va sur un Space Hugging Face, l'interface sur Vercel. L'image du serveur est testée en local (démarre, lit les clés, répond).
 

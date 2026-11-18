@@ -263,3 +263,65 @@ export async function makeStudio(photo: Blob): Promise<Blob> {
   }
   return res.blob();
 }
+
+
+// --- Brouillon eBay préparé par un agent H dans le Chrome de l'ordinateur (démo seulement, voir agents/ebay_draft.py) ---
+export type DraftEvent =
+  | { type: "start"; photos: number }
+  | { type: "step"; label: string; steps?: number }
+  | {
+      type: "result";
+      status: "draft_saved" | "login_required" | "blocked" | "partial" | "cancelled";
+      photos_uploaded?: number;
+      description_filled?: boolean;
+      price_set?: boolean;
+      draft_url?: string | null;
+      note?: string;
+    }
+  | { type: "done" };
+
+// La fonction n'existe que sur le serveur de démo (EBAY_DRAFT_LOCAL=1) et avec la clé de démo dans le navigateur.
+export async function draftAvailable(): Promise<boolean> {
+  if (!demoKey()) return false;
+  try {
+    const res = await fetch(`${API_URL}/api/health`);
+    return res.ok && Boolean((await res.json()).brouillon_ebay);
+  } catch {
+    return false;
+  }
+}
+
+export async function startEbayDraft(
+  p: { photos: string[]; title: string; description: string; price: number; categoryId?: string | null; condition: string },
+  onEvent: (e: DraftEvent) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const body = new FormData();
+  const blobs = await Promise.all(p.photos.slice(0, 10).map(async (u) => downscale(await fetch(u).then((r) => r.blob()))));
+  blobs.forEach((b, i) => body.append("files", b, `photo-${i + 1}.jpg`));
+  body.append("title", p.title);
+  body.append("description", p.description);
+  body.append("price", String(p.price));
+  body.append("category_id", p.categoryId ?? "");
+  body.append("condition", p.condition);
+  body.append("key", demoKey());
+  const res = await fetch(`${API_URL}/api/ebay/draft`, { method: "POST", body, signal });
+  if (!res.ok || !res.body) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.detail || "Le brouillon n'a pas pu démarrer.");
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    let i: number;
+    while ((i = buf.indexOf("\n\n")) >= 0) {
+      const line = buf.slice(0, i).trim();
+      buf = buf.slice(i + 2);
+      if (line.startsWith("data:")) onEvent(JSON.parse(line.slice(5)) as DraftEvent);
+    }
+  }
+}

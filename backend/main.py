@@ -19,6 +19,8 @@ import asyncio
 import json
 import os
 import secrets
+import shutil
+import tempfile
 import threading
 import time
 from collections import defaultdict, deque
@@ -26,7 +28,7 @@ from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response, StreamingResponse
 import httpx
@@ -60,6 +62,11 @@ SEARCH_PER_HOUR = int(os.getenv("SEARCH_PER_HOUR") or "20")  # recherches par ad
 STUDIO_PER_HOUR = int(os.getenv("STUDIO_PER_HOUR") or "40")  # photos studio par adresse IP et par heure
 MAX_SEARCHES = int(os.getenv("MAX_SEARCHES") or "4")  # recherches en cours en même temps, toutes adresses confondues
 STUDIO_ENABLED = (os.getenv("STUDIO_ENABLED") or "1") == "1"
+# Brouillon eBay par un agent H dans le Chrome local de l'utilisateur : démo sur son ordinateur seulement, jamais sur le Space
+# (le serveur ne peut pas piloter un Chrome distant). Réservé à la clé de démo : il agit sur UN compte eBay.
+EBAY_DRAFT_LOCAL = (os.getenv("EBAY_DRAFT_LOCAL") or "0") == "1"
+_draft_running = False
+_draft_lock = threading.Lock()
 _hits: dict[tuple[str, str], deque] = defaultdict(deque)
 _hits_lock = threading.Lock()
 _running = 0
@@ -131,6 +138,7 @@ def health():
         "cle_demo": bool(os.getenv("DEMO_KEY")),
         "studio": STUDIO_ENABLED,
         "max_agents": MAX_PARALLEL,
+        "brouillon_ebay": EBAY_DRAFT_LOCAL,
     }
 
 
@@ -184,6 +192,90 @@ async def identify(files: list[UploadFile] = File(None), file: UploadFile = File
 
 # Le détourage occupe le processeur plusieurs secondes : une seule photo studio à la fois.
 _studio_slot = threading.Semaphore(1)
+
+
+@app.post("/api/ebay/draft")
+async def ebay_draft(
+    request: Request,
+    files: list[UploadFile] = File(...),
+    title: str = Form(..., min_length=2, max_length=80),
+    description: str = Form(..., min_length=10, max_length=5000),
+    price: float = Form(..., gt=0, lt=100000),
+    category_id: str = Form("", max_length=12),
+    condition: str = Form("Bon état", max_length=20),
+    key: str = Form("", max_length=100),
+):
+    """Un agent H prépare un BROUILLON eBay dans le Chrome local (photos, description, prix) et ne publie jamais.
+    Réponse : flux d'événements (progression, puis résultat)."""
+    if not EBAY_DRAFT_LOCAL:
+        raise HTTPException(404, "Cette fonction n'est pas activée sur ce serveur.")
+    if not _demo_key_ok(key or request.headers.get("x-demo-key", "")):
+        raise HTTPException(403, "Réservé à la démo : cette fonction agit sur un compte eBay précis.")
+    if not 1 <= len(files) <= 10:
+        raise HTTPException(422, "Entre 1 et 10 photos.")
+    blobs: list[tuple[bytes, str]] = []
+    for f in files:
+        data = await f.read()
+        ext = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}.get((f.content_type or "").lower())
+        if ext is None or not data or len(data) > 6 * 1024 * 1024:
+            raise HTTPException(422, "Photos JPEG, PNG ou WebP de 6 Mo au plus.")
+        blobs.append((data, ext))
+    from agents import ebay_draft
+
+    if not ebay_draft.chrome_ready():
+        raise HTTPException(409, "Le Chrome eBay n'est pas ouvert : lancez scripts/ebay_chrome.sh et connectez-vous à eBay.")
+
+    loop = asyncio.get_running_loop()
+    queue: asyncio.Queue = asyncio.Queue()
+    stop = threading.Event()
+    tmp = Path(tempfile.mkdtemp(prefix="snapncash-draft-"))
+    paths = []
+    for i, (data, ext) in enumerate(blobs, 1):
+        p = tmp / f"photo-{i}.{ext}"
+        p.write_bytes(data)
+        paths.append(p)
+    cond = condition if condition in listing.CONDITIONS else "Bon état"
+
+    def emit(ev: dict) -> None:
+        loop.call_soon_threadsafe(queue.put_nowait, ev)
+
+    def work() -> None:
+        try:
+            res = ebay_draft.run_draft(Client(), photos=paths, title=title, description=description, price=price,
+                                       category_id=category_id or None, condition=cond, emit=emit, stop=stop)
+            emit({"type": "result", **(res.model_dump() if res else {"status": "cancelled", "note": "Interrompu."})})
+        except Exception as e:  # la cause technique reste dans le journal du serveur, pas dans l'écran
+            print(f"[brouillon eBay] {type(e).__name__}: {e}")
+            emit({"type": "result", "status": "blocked", "note": "L'agent n'a pas pu démarrer. Vérifiez le Chrome eBay et réessayez."})
+        finally:
+            emit({"type": "done"})
+
+    async def stream():
+        global _draft_running
+        with _draft_lock:
+            busy = _draft_running
+            if not busy:
+                _draft_running = True
+        if busy:
+            shutil.rmtree(tmp, ignore_errors=True)
+            yield _sse({"type": "result", "status": "blocked", "note": "Un brouillon est déjà en cours de préparation."})
+            yield _sse({"type": "done"})
+            return
+        try:
+            yield _sse({"type": "start", "photos": len(paths)})
+            threading.Thread(target=work, daemon=True).start()
+            while True:
+                ev = await queue.get()
+                yield _sse(ev)
+                if ev["type"] == "done":
+                    break
+        finally:
+            stop.set()
+            shutil.rmtree(tmp, ignore_errors=True)  # les photos ne restent pas sur le disque
+            with _draft_lock:
+                _draft_running = False
+
+    return StreamingResponse(stream(), media_type="text/event-stream", headers=SSE_HEADERS)
 
 
 @app.post("/api/studio")
