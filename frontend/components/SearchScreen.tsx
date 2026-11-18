@@ -22,6 +22,7 @@ import {
 import { type GrenierItem, newId, updateItem, upsertItem } from "@/lib/grenier";
 import { type Condition, type ListingFormat, type Platform, ebayCondition, fallbackListing } from "@/lib/listing";
 import { PUBLISH_URLS, type Verdict, computeVerdict, priceZone } from "@/lib/verdict";
+import { ebayListingUrl } from "@/lib/ebayLink";
 import { CoinRain, CountUp } from "@/components/CashFx";
 
 type State = "attente" | "en_cours" | "ok" | "aucun_resultat" | "indisponible" | "hors_categorie";
@@ -535,7 +536,7 @@ function ListingPanel({
               <a
                 className="btn btn-quiet"
                 style={{ background: "#fff" }}
-                href={publish.url}
+                href={platform === "ebay" && ad ? ebayListingUrl({ title: ad.title, categoryId: ebayCategory?.id, condition }) : publish.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => { if (canTrack) onPublish(publish.name); }}
