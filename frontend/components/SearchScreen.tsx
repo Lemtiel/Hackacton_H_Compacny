@@ -57,6 +57,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
   const [failed, setFailed] = useState(false);
   const [refused, setRefused] = useState<string | null>(null); // recherche refusée par le serveur (limite d'usage)
   const [myPrice, setMyPrice] = useState<number | null>(null);
+  const [sharePhotos, setSharePhotos] = useState<string[]>(photos); // photos à partager : studio ou originale, comme affichées
   const idRef = useRef(newId());
   const shopRef = useRef<ShopBlock | null>(null);
   const [ebay, setEbay] = useState<EbayResult | null>(null);
@@ -195,6 +196,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
       {/* L'annonce, deuxième promesse du produit, juste après le prix (elle se rédige pendant la recherche). */}
       <ListingPanel
         input={input}
+        sharePhotos={sharePhotos}
         myPrice={myPrice}
         onPublish={(platform) => updateItem(idRef.current, { status: "en_vente", platform })}
         canTrack={done && !failed}
@@ -243,7 +245,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
         </div>
       )}
 
-      {photos.length > 0 && <StudioPhotos photos={photos} />}
+      {photos.length > 0 && <StudioPhotos photos={photos} onShareable={setSharePhotos} />}
 
       <div className="stack" style={{ marginTop: "2rem" }}>
         {done && !failed && <a href="/grenier" className="btn btn-quiet">Voir Mon grenier</a>}
@@ -390,11 +392,13 @@ function PriceSlider({ shop, verdict, value, onChange }: { shop: ShopBlock; verd
 
 function ListingPanel({
   input,
+  sharePhotos,
   myPrice,
   onPublish,
   canTrack,
 }: {
   input: SearchInput;
+  sharePhotos: string[];
   myPrice: number | null;
   onPublish: (platform: string) => void;
   canTrack: boolean;
@@ -407,6 +411,11 @@ function ListingPanel({
   const [copied, setCopied] = useState<"annonce" | "title" | "description" | null>(null);
   const [ebayCat, setEbayCat] = useState<EbayCategoryResult | null>(null);
   const ebayCatAsked = useRef(false);
+  const [canShare, setCanShare] = useState(false);
+  const [shareMsg, setShareMsg] = useState<string | null>(null);
+
+  // Le partage natif n'existe qu'en HTTPS (ou localhost) et sur les navigateurs qui le gèrent : sinon on ne montre pas le bouton.
+  useEffect(() => setCanShare(typeof navigator !== "undefined" && typeof navigator.share === "function"), []);
 
   // Catégorie eBay suggérée : demandée une seule fois, quand l'utilisateur ouvre l'onglet eBay.
   useEffect(() => {
@@ -449,6 +458,28 @@ function ListingPanel({
     }
   }
 
+  // Une seule feuille de partage du téléphone : photos + titre + description + prix. L'app qui la reçoit (eBay, Vinted, Notes,
+  // Photos, Messages...) prend ce qu'elle sait lire. Rien ne passe par notre serveur.
+  async function shareAd() {
+    if (!ad) return;
+    setShareMsg(null);
+    const text = `${ad.title}\n\n${ad.description}${myPrice !== null ? `\n\nPrix : ${euros(myPrice)}` : ""}`;
+    try {
+      const files = await Promise.all(
+        sharePhotos.map(async (u, i) => {
+          const blob = await fetch(u).then((r) => r.blob());
+          const ext = blob.type === "image/png" ? "png" : "jpg";
+          return new File([blob], `snapncash-photo-${i + 1}.${ext}`, { type: blob.type || "image/jpeg" });
+        }),
+      );
+      const withFiles = { files, title: ad.title, text };
+      if (files.length && navigator.canShare?.(withFiles)) await navigator.share(withFiles);
+      else await navigator.share({ title: ad.title, text }); // photos non partageables ici : le texte au moins
+    } catch (e) {
+      if ((e as Error).name !== "AbortError") setShareMsg("Le partage n'a pas abouti. Copiez le titre et la description, puis ajoutez vos photos à la main.");
+    }
+  }
+
   const ebayCategory = ebayCat?.state === "ok" ? ebayCat.categories[0] : null;
 
   return (
@@ -488,6 +519,11 @@ function ListingPanel({
             ) : (
               <button className="btn btn-primary" onClick={() => copy("annonce")}>{copied === "annonce" ? "Annonce copiée" : "Copier l'annonce"}</button>
             )}
+            {canShare && (
+              <button type="button" className="btn btn-quiet" style={{ background: "#fff" }} onClick={shareAd}>
+                Partager photos et annonce
+              </button>
+            )}
             {publish && (
               <a
                 className="btn btn-quiet"
@@ -501,6 +537,8 @@ function ListingPanel({
               </a>
             )}
           </div>
+
+          {shareMsg && <p className="notice warn" style={{ marginTop: "0.75rem" }}>{shareMsg}</p>}
 
           {/* Fiche eBay : ce qu'il faut remplir sur eBay, dans l'ordre. L'utilisateur publie lui-même. */}
           {platform === "ebay" && (
@@ -592,11 +630,16 @@ function EbayPanel({ result }: { result: EbayResult | null }) {
 }
 
 // Photos pour l'annonce, avec leur version studio (objet détouré sur fond clair, objet non modifié).
-function StudioPhotos({ photos }: { photos: string[] }) {
+function StudioPhotos({ photos, onShareable }: { photos: string[]; onShareable: (urls: string[]) => void }) {
   const [studio, setStudio] = useState<(string | null)[]>(photos.map(() => null));
   const [show, setShow] = useState<("studio" | "original")[]>(photos.map(() => "studio"));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Le bouton « Partager » de l'annonce envoie exactement ce qui est affiché ici.
+  useEffect(() => {
+    onShareable(photos.map((p, i) => (show[i] === "studio" && studio[i] ? studio[i]! : p)));
+  }, [photos, studio, show]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => () => studio.forEach((u) => u && URL.revokeObjectURL(u)), []); // eslint-disable-line react-hooks/exhaustive-deps
 
