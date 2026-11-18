@@ -15,13 +15,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 os.environ.setdefault("HAI_API_KEY", "cle-de-test")
 
 from agents import price_agent  # noqa: E402
+from types import SimpleNamespace  # noqa: E402
+
 from backend import main, pricing  # noqa: E402
 
 failed = 0
+total = 0
 
 
 def check(label, ok):
-    global failed
+    global failed, total
+    total += 1
     if not ok:
         failed += 1
     print(("OK     " if ok else "ÉCHEC  ") + label)
@@ -133,6 +137,28 @@ check("console à 300 € et plus : médiane × 0,74 (550 € → 407 €)", b["
 b = pricing.shop_block([150, 166, 180], "montre")
 check("catégorie inconnue : 0,59 par défaut", b["coef"] == 0.59 and b["buyback_estimate"] == 97.94)
 
-total = 18
+# 4. Une session coupée au délai qui a déjà rendu des offres valides : on les garde (Easy Cash, 18/11).
+from agents.price_agent import Offer  # noqa: E402
+
+
+def result(status, cancelled, offers):
+    return SimpleNamespace(status=status, cancelled=cancelled, offers=offers, duration_s=95.0, steps=12)
+
+
+good = [Offer(title="Console Nintendo Switch", price_eur=170, condition="Bon état", url="https://shop.example/switch-1"),
+        Offer(title="Console Nintendo Switch grise", price_eur=240, condition="Bon état", url="https://shop.example/switch-2")]
+p = main._site_payload("easycash", result("idle", True, good), "Nintendo Switch", "console", "Bon état")
+check("coupée au délai mais 2 offres valides rendues : site « ok », 2 prix gardés", p["state"] == "ok" and len(p["offers"]) == 2)
+p = main._site_payload("easycash", result("interrupted", True, []), "Nintendo Switch", "console", "Bon état")
+check("coupée sans aucune offre : « indisponible »", p["state"] == "indisponible")
+p = main._site_payload("easycash", result("failed", False, []), "Nintendo Switch", "console", "Bon état")
+check("session en échec sans offre : « indisponible »", p["state"] == "indisponible")
+bad = [Offer(title="Nintendo Switch Lite", price_eur=120, condition="Bon état", url="https://shop.example/lite")]
+p = main._site_payload("easycash", result("idle", True, bad), "Nintendo Switch", "console", "Bon état")
+check("coupée, mais offres d'un autre modèle : elles restent écartées (« aucun_resultat »)", p["state"] == "aucun_resultat" and p["offers"] == [])
+gc = [Offer(title="Console Nintendo Switch", price_eur=p_, condition="Occasion reconditionnée", url=f"https://gamecash.example/s{p_}") for p_ in (166, 174, 179, 194)]
+p = main._site_payload("gamecash", result("completed", False, gc), "Nintendo Switch", "console", "Bon état")
+check("Gamecash (« Occasion reconditionnée », sans grade) : 4 prix gardés, plus 0", p["state"] == "ok" and len(p["offers"]) == 4)
+
 print(f"{total - failed}/{total} vérifications correctes")
 sys.exit(1 if failed else 0)

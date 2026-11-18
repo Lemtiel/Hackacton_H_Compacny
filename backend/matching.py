@@ -174,14 +174,38 @@ def condition_grade(text: str) -> str | None:
         return "bon"
     if any(term in value for term in ("etat correct", "correct", "acceptable", "grade c")):
         return "correct"
+    # Libellé sans grade (Gamecash n'affiche que « Occasion reconditionné », relevé du 18/11) : lu comme un état moyen,
+    # donc compatible avec correct, bon et très bon, jamais avec « comme neuf » ni « pour pièces ». Hypothèse assumée.
+    if "occasion" in value or "reconditionne" in value:
+        return "bon"
     return None
+
+
+# Du moins bon au meilleur. Une boutique qui note autrement (Gamecash : pas de « Bon état ») doit rester utilisable :
+# on accepte le grade demandé ou son voisin, jamais deux crans d'écart (consigne trop stricte, issue #23, 18/11).
+GRADE_ORDER = ["pieces", "correct", "bon", "tres_bon", "comme_neuf"]
+
+
+def grades_compatible(target: str | None, grade: str | None) -> bool:
+    """Même grade ou grade voisin. « Pour pièces » ne se mélange avec rien d'autre. Grade illisible : refusé."""
+    if target is None:
+        return True
+    if grade is None:
+        return False
+    if target == "pieces" or grade == "pieces":
+        return target == grade
+    return abs(GRADE_ORDER.index(target) - GRADE_ORDER.index(grade)) <= 1
+
+
+MIN_EXACT = 3  # à partir de 3 offres exactement dans l'état demandé, les grades voisins ne sont pas nécessaires
 
 
 def filter_verified_offers(offers: list, target_condition: str | None = None) -> tuple[list, int]:
     """Garde uniquement les offres vérifiables et uniques.
 
     Une offre sans état affiché ou sans URL de fiche produit ne doit pas influencer
-    l'estimation, même si un agent l'a renvoyée malgré sa consigne.
+    l'estimation, même si un agent l'a renvoyée malgré sa consigne. L'état doit être celui demandé ou son
+    voisin ; s'il y a au moins MIN_EXACT offres exactement dans l'état demandé, on ne garde qu'elles.
     """
     kept = []
     seen_urls: set[str] = set()
@@ -195,7 +219,7 @@ def filter_verified_offers(offers: list, target_condition: str | None = None) ->
             continue
         if (
             not condition
-            or (target_grade is not None and condition_grade(condition) != target_grade)
+            or not grades_compatible(target_grade, condition_grade(condition))
             or parsed.scheme not in ("http", "https")
             or not parsed.netloc
             or parsed.path in ("", "/")
@@ -206,4 +230,8 @@ def filter_verified_offers(offers: list, target_condition: str | None = None) ->
             continue
         seen_urls.add(canonical)
         kept.append(offer)
+    if target_grade is not None:
+        exact = [o for o in kept if condition_grade(str(o.condition)) == target_grade]
+        if len(exact) >= MIN_EXACT:
+            kept = exact
     return kept, len(offers) - len(kept)

@@ -265,7 +265,10 @@ def _site_payload(site: str, r, product: str, category: str, condition: str = "B
     matched, rejected_model = matching.filter_offers(product, category, r.offers)
     kept, rejected_unverified = matching.filter_verified_offers(matched, condition)
     rejected = rejected_model + rejected_unverified
-    if r.cancelled or r.status in ("failed", "timed_out", "interrupted", "error"):
+    # Une session coupée au délai (ou en échec) mais qui a déjà rendu des offres : elles passent les mêmes contrôles que les
+    # autres (modèle, état, lien), on les garde. Test réel du 18/11 : Easy Cash rendait 2 offres « Bon état », jetées à tort.
+    broken = r.cancelled or r.status in ("failed", "timed_out", "interrupted", "error")
+    if broken and not r.offers:
         state = "indisponible"
     elif kept:
         state = "ok"

@@ -92,9 +92,32 @@ verified, rejected = filter_verified_offers([
     SimpleNamespace(condition="Correct", url="https://example.com/produit/iphone-15-vert"),
     SimpleNamespace(condition="Très bon état", url="https://example.com/produit/iphone-15-bleu"),
 ], "Bon état")
-if len(verified) != 1 or rejected != 5:
+if len(verified) != 3 or rejected != 3:  # « Correct » et « Très bon état » sont des voisins de « Bon état » : gardés
     failed += 1
-    print(f"ÉCHEC  offres vérifiables : attendu 1 gardée et 5 écartées, obtenu {len(verified)} et {rejected}")
+    print(f"ÉCHEC  offres vérifiables : attendu 3 gardées et 3 écartées, obtenu {len(verified)} et {rejected}")
+
+def offer(cond, n):
+    return SimpleNamespace(condition=cond, url=f"https://example.com/produit/switch-{n}")
+
+GRADE_CASES = [
+    # (état demandé, états des annonces, nombre gardé, pourquoi)
+    ("Bon état", ["Bon état", "Très bon état"], 2, "voisin accepté quand il manque des offres"),
+    ("Bon état", ["Bon état", "Correct", "Comme neuf"], 2, "à deux crans (Comme neuf) : refusé"),
+    ("Bon état", ["Bon état", "Bon état", "Bon état", "Très bon état"], 3, "3 offres exactes : les voisines ne servent plus"),
+    ("Bon état", ["Pour pièces", "Hors service"], 0, "pièces jamais mélangé avec un objet qui marche"),
+    ("Pour pièces", ["Pour pièces", "Bon état"], 1, "objet à pièces : seulement des pièces"),
+    ("Très bon état", ["Grade A", "Grade B", "Grade C"], 2, "libellés en grades : A et B gardés, C à deux crans écarté"),
+    ("Bon état", ["Occasion reconditionné"] * 3, 3, "Gamecash : libellé sans grade, lu comme un état moyen"),
+    ("Très bon état", ["Occasion reconditionné"], 1, "libellé sans grade : voisin d'un très bon état"),
+    ("Comme neuf", ["Occasion reconditionné"], 0, "libellé sans grade : pas assimilé à du comme neuf"),
+    ("Pour pièces", ["Occasion reconditionné"], 0, "libellé sans grade : jamais pour pièces"),
+    ("Bon état", ["État standard", "Qualité B+"], 0, "libellé illisible : refusé, on ne devine pas"),
+]
+for target, conds, expected, why in GRADE_CASES:
+    got, _ = filter_verified_offers([offer(c, i) for i, c in enumerate(conds)], target)
+    if len(got) != expected:
+        failed += 1
+        print(f"ÉCHEC  états {target!r} / {conds} : attendu {expected} gardée(s), obtenu {len(got)} ({why})")
 # Rebuts propres à eBay : pièces, magazines, boîtes vides (relevé du 18/11 sur « PlayStation 5 »).
 JUNK = [
     ("PlayStation 5", "PIECES DÉTACHÉES PARTS CONSOLE SONY PS5 PLAYSTATION 5", True),
@@ -112,5 +135,5 @@ for product, title, expected in JUNK:
     if is_junk_title(product, title) != expected:
         failed += 1
         print(f"ÉCHEC  rebut eBay {title!r} : attendu {'rebut' if expected else 'gardée'}")
-print(f"{len(CASES) + len(JUNK) - failed}/{len(CASES) + len(JUNK)} cas corrects")
+print(f"{len(CASES) + len(JUNK) + len(GRADE_CASES) + 1 - failed}/{len(CASES) + len(JUNK) + len(GRADE_CASES) + 1} cas corrects")
 sys.exit(1 if failed else 0)

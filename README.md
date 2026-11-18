@@ -83,9 +83,9 @@ Une recherche lance de vrais agents H : environ 80 s et des crédits par site.
 
 ## Tests
 ```bash
-.venv/bin/python tests/test_matching.py   # tri des annonces par modèle : 52 cas
-.venv/bin/python tests/test_ebay.py       # bloc eBay sur une réponse simulée : 14 vérifications
-.venv/bin/python tests/test_garde_fous.py # arrêt des agents, limites d'usage, coefficient de rachat par catégorie : 18 vérifications
+.venv/bin/python tests/test_matching.py   # tri des annonces par modèle et par état : 82 cas
+.venv/bin/python tests/test_ebay.py       # bloc eBay sur une réponse simulée : 19 vérifications
+.venv/bin/python tests/test_garde_fous.py # arrêt des agents, limites d'usage, coefficient de rachat par catégorie, offres gardées après délai : 23 vérifications
 .venv/bin/python -m agents.test_agents --site gamecash --product "Nintendo Switch" --category console   # agent réel
 ```
 Ces trois scripts tournent à chaque push (onglet Actions).
