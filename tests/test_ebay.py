@@ -97,5 +97,12 @@ check("filtre : ni neuf, ni pièces, ni reconditionné (revendeurs professionnel
       not any(i in q["filter"] for i in ("1000", "1500", "7000", "2000", "2010", "2020", "2030", "2500")))
 check("moins de 3 prix : pas de fourchette", ebay.ebay_block([100, 120]) is None)
 
+# Plancher de prix des consoles : les jeux, pièces et manettes à 10-135 € ne tirent pas le prix vers le bas.
+mix = [ebay.EbayItem(title=f"console {i}", price_eur=p) for i, p in enumerate([12, 15, 17, 20, 33, 94, 135, 414, 516, 618, 731, 782, 833, 925])]
+kept = ebay.drop_cheap_outliers(mix, "console", "PlayStation 5")
+check("console : les prix sous 40 % du 3e quartile sont écartés", min(i.price_eur for i in kept) >= 414 and len(kept) == 7)
+check("console : pas assez d'annonces, rien n'est écarté", len(ebay.drop_cheap_outliers(mix[:6], "console", "PlayStation 5")) == 6)
+check("smartphone : pas de plancher", len(ebay.drop_cheap_outliers(mix, "smartphone", "iPhone 13")) == len(mix))
+check("manette cherchée : pas de plancher (prix bas normaux)", len(ebay.drop_cheap_outliers(mix, "console", "manette PS5 DualSense")) == len(mix))
 print(f"{total - failed}/{total} vérifications correctes")
 sys.exit(1 if failed else 0)

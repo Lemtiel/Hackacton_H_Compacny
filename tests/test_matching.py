@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from types import SimpleNamespace
 
-from backend.matching import filter_verified_offers, reject_reason  # noqa: E402
+from backend.matching import filter_verified_offers, is_junk_title, reject_reason  # noqa: E402
 
 CASES = [
     # (objet cherché, catégorie, titre de l'annonce, gardée ?)
@@ -28,6 +28,15 @@ CASES = [
     ("Apple iPhone 12", "smartphone", "iPhone 12 mini 64 Go", False),
     ("Apple iPhone 12", "smartphone", "iPhone 13 128 Go", False),
     ("Apple iPhone 12", "smartphone", "Coque iPhone 12 silicone", False),
+    # Le numéro du modèle doit suivre son nom : « Tekken 5 » sur une annonce PlayStation 2 n'est pas une PS5.
+    ("PlayStation 5", "console", "Playstation 2 Magazine [n°99 J/A 2005] PS2 Black God of War Tekken 5", False),
+    ("PlayStation 5", "console", "Sony PlayStation 5 console 825GB CFI-1016A", True),
+    ("PlayStation 5", "console", "Sony PS5 Blu-Ray Edition Console - Blanc", True),
+    ("PlayStation 5", "console", "Console Sony Playstation 5 1 To", True),
+    ("PlayStation 5", "console", "Console Sony Playstation 5 Slim 1 To", False),  # Slim = déclinaison, autre modèle (règle existante)
+    ("Apple iPhone 12", "smartphone", "iPhone 12 128 Go reconditionné", True),
+    ("Google Pixel 7", "smartphone", "Pixel 7 128 Go Obsidian", True),
+    ("Google Pixel 7", "smartphone", "Pixel 6 Pro 7 jours en boutique", False),
     ("Apple iPhone 12 64 Go", "smartphone", "iPhone 12 64GB bleu", True),
     ("Apple iPhone 12 64 Go", "smartphone", "iPhone 12 128 Go bleu", False),
     ("Xiaomi Redmi Note 10S", "smartphone", "Xiaomi Redmi Note 10S 128 Go", True),
@@ -86,5 +95,22 @@ verified, rejected = filter_verified_offers([
 if len(verified) != 1 or rejected != 5:
     failed += 1
     print(f"ÉCHEC  offres vérifiables : attendu 1 gardée et 5 écartées, obtenu {len(verified)} et {rejected}")
-print(f"{len(CASES) - failed}/{len(CASES)} cas corrects")
+# Rebuts propres à eBay : pièces, magazines, boîtes vides (relevé du 18/11 sur « PlayStation 5 »).
+JUNK = [
+    ("PlayStation 5", "PIECES DÉTACHÉES PARTS CONSOLE SONY PS5 PLAYSTATION 5", True),
+    ("PlayStation 5", "PLAYSTATION 5 - PS5 BOITE vide uniquement - inner box - (CFI-1216A)", True),
+    ("PlayStation 5", "Sony PS5 réparation HDMI", True),
+    ("PlayStation 5", "POWER EJECT BUTTON EDS-020 SONY PS5 PLAYSTATION 5 CFI-1116A", True),
+    ("PlayStation 5", "Playstation PS2 Magazine n°99 Tekken 5", True),
+    ("PlayStation 5", "EA SPORTS FC 25 Football Sony PlayStation 5 PS5 PAL PEGI 3", True),
+    ("PlayStation 5", "Sony PlayStation 5 console 825GB CFI-1016A | FW 2.00", False),
+    ("PlayStation 5", "Sony PS5 Standard Edition 845Go + SSD 1To", False),
+    ("Nintendo Switch", "Nintendo Switch pour pièces, ne s'allume plus", True),
+    ("Nintendo Switch pour pièces", "Nintendo Switch pour pièces, ne s'allume plus", False),  # si l'utilisateur le cherche, on le garde
+]
+for product, title, expected in JUNK:
+    if is_junk_title(product, title) != expected:
+        failed += 1
+        print(f"ÉCHEC  rebut eBay {title!r} : attendu {'rebut' if expected else 'gardée'}")
+print(f"{len(CASES) + len(JUNK) - failed}/{len(CASES) + len(JUNK)} cas corrects")
 sys.exit(1 if failed else 0)

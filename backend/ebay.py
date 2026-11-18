@@ -118,6 +118,22 @@ def parse_items(payload: dict) -> list[EbayItem]:
     return items
 
 
+# Console : les parasites restants (jeux, pièces, manettes, casques) coûtent 10 à 135 €, les vraies consoles 300 € et plus.
+# Les mots-clés ne suffisent pas (relevé du 18/11 sur « PlayStation 5 » : 7 consoles sur 29 annonces gardées). On écarte donc,
+# pour les consoles seulement, ce qui coûte moins de 40 % du 3e quartile des prix gardés, quand il y a assez d'annonces.
+PRICE_FLOOR_RATIO = 0.4
+PRICE_FLOOR_MIN_ITEMS = 8
+
+
+def drop_cheap_outliers(items: list, category: str, product: str) -> list:
+    if category != "console" or len(items) < PRICE_FLOOR_MIN_ITEMS:
+        return items
+    if set(re.findall(r"[a-z0-9]+", _norm(product))) & ACCESSORY_WORDS:  # manette, casque : prix bas normaux
+        return items
+    q3 = statistics.quantiles([i.price_eur for i in items], n=4)[2]
+    return [i for i in items if i.price_eur >= PRICE_FLOOR_RATIO * q3]
+
+
 def ebay_block(prices: list[float]) -> Optional[dict]:
     """Fourchette = quartiles des prix gardés (min et max sous 4 prix), prix conseillé = médiane moins la décote."""
     prices = [p for p in prices if p > 0]
@@ -172,7 +188,12 @@ async def search(product: str, category: str, client: Optional[httpx.AsyncClient
             await client.aclose()
 
     # Même tri par modèle que pour les boutiques (Switch Lite écartée pour « Nintendo Switch », accessoires...).
-    kept, n_rejected = matching.filter_offers(product, category, items)
+    items_ok = [i for i in items if not matching.is_junk_title(product, i.title)]
+    kept, n_rejected = matching.filter_offers(product, category, items_ok)
+    n_rejected += len(items) - len(items_ok)
+    n_before = len(kept)
+    kept = drop_cheap_outliers(kept, category, product)
+    n_rejected += n_before - len(kept)
     block = ebay_block([i.price_eur for i in kept])
     shown = sorted(kept, key=lambda i: i.price_eur)
     if block:  # on montre les annonces dans la fourchette, pas les extrêmes écartés du calcul

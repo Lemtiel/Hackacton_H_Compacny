@@ -7,7 +7,9 @@ Une annonce est écartée si son titre :
 1. ne contient pas tous les mots du modèle cherché (la marque seule est facultative) ;
 2. contient un mot de déclinaison absent de la recherche (Lite, OLED, Pro, Max, Mini...) ;
 3. porte un numéro juste après le nom (« Switch 2 » pour « Switch ») ;
-4. désigne un accessoire (« Coque pour... », « Manette... »).
+4. désigne un accessoire (« Coque pour... », « Manette... ») ;
+5. sépare le nom de son numéro (« Playstation 2 Magazine... Tekken 5 » pour « PlayStation 5 »).
+Pour eBay seulement, `is_junk_title` écarte aussi pièces détachées, magazines et boîtes vides (test du 18/11 sur la PS5).
 """
 
 from __future__ import annotations
@@ -54,6 +56,23 @@ ALIASES: list[tuple[tuple[str, ...], list[tuple[str, ...]]]] = [
 ]
 
 UNITS = {"go", "to", "mo", "pouces", "pouce"}
+
+# Annonces qui ne vendent pas l'objet : pièces, magazines, boîtes vides. Relevé sur eBay le 18/11 pour « PlayStation 5 » :
+# 58 % des annonces gardées étaient de ce type (médiane 78,70 € pour une console à ~300 €). Appliqué aux annonces eBay
+# seulement : les boutiques ont leur propre rubrique « pour pièces » que l'utilisateur peut chercher.
+JUNK_WORDS = {
+    "piece", "pieces", "detache", "detachee", "detachees", "capot", "plasturgie", "epave", "hs",
+    "magazine", "magazines", "vide", "pegi", "reparation", "alimentation", "button", "bouton", "eject",
+}
+JUNK_PHRASES = ("inner box", "pour pieces", "boite seule", "boitier seul")
+
+
+def is_junk_title(product: str, title: str) -> bool:
+    """Vrai si le titre vend des pièces, un magazine ou une boîte vide, sauf si la recherche le demande."""
+    have = tokens(title)
+    wanted = set(tokens(product))
+    text = " ".join(have)
+    return any(w in have and w not in wanted for w in JUNK_WORDS) or any(p in text and p not in " ".join(tokens(product)) for p in JUNK_PHRASES)
 STOP = {"de", "du", "la", "le", "les", "des", "et", "avec", "en", "a", "d", "l"}
 
 
@@ -85,6 +104,9 @@ def reject_reason(product: str, category: str, title: str) -> str | None:
     if any(t in VARIANTS and t not in wanted for t in have):
         return "autre modèle"
 
+    if not _numbers_stick(need, have):
+        return "autre modèle"
+
     # « Nintendo Switch 2 » pour « Nintendo Switch » : un petit nombre collé au nom, sans unité.
     if not need[-1].isdigit() and need[-1] in have:
         i = have.index(need[-1])
@@ -103,6 +125,20 @@ def reject_reason(product: str, category: str, title: str) -> str | None:
     if (have[0] in starts and have[0] not in wanted) or ("pour" in have and "pour" not in wanted):
         return "accessoire"
     return None
+
+
+def _numbers_stick(need: list[str], have: list[str]) -> bool:
+    """Un petit numéro du modèle (« 5 » de « PlayStation 5 ») doit suivre son mot dans le titre, sauf équivalence (« PS5 »)."""
+    for i, n in enumerate(need):
+        if i == 0 or not n.isdigit() or int(n) > 20 or need[i - 1].isdigit() or need[i - 1] in UNITS:
+            continue
+        word = need[i - 1]
+        if any(a == word and b == n for a, b in zip(have, have[1:])):
+            continue
+        if any(all(k in need for k in key) and any(all(t in have for t in alt) for alt in alts) for key, alts in ALIASES):
+            continue
+        return False
+    return True
 
 
 def _has_model(need: list[str], have: list[str]) -> bool:
