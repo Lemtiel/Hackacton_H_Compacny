@@ -756,3 +756,9 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - Clé de démo : une virgule copiée avec l'adresse rendait la clé invalide ; l'app retire maintenant la ponctuation finale.
 - Bouton : fond blanc forcé illisible en mode sombre, et bouton muet tant que le prix n'était pas fixé. Corrigé et vérifié dans un navigateur de test.
 - Premier clic réel : requête reçue (200) mais l'agent restait à « étape 0 ». Cause : le Chrome dédié tournait sans aucun onglet, le pont `holo local browser` s'est arrêté. Correction : le serveur ouvre l'onglet eBay s'il manque et prévient si le pont s'arrête ; le script de lancement ouvre aussi l'onglet. Tests 22/22. Nouveau clic à faire par Jude.
+
+### Jeudi 19/11, 0h30 : caractéristiques obligatoires eBay remplies par l'agent
+- Demande de Jude : remplir Marque, Modèle, Couleur, Capacité de stockage (champs obligatoires de l'éditeur).
+- Outil `fill_item_specifics` : lit les lignes « - Libellé : valeur » du bloc CARACTÉRISTIQUES de la description, choisit seulement une valeur proposée par eBay (égalité, ou même fin : « iPhone 11 » donne « Apple iPhone 11 », jamais « iPhone 11 Pro »), laisse tel quel un champ déjà rempli.
+- Testé sur le brouillon réel : champs vidés puis remplis (Apple, Apple iPhone 11, Noir, 128 Go), relecture de la page ; second passage sans rien changer. Brouillon toujours non publié. Tests 25/25.
+- Non testé : un essai complet de l'agent avec cet outil, et les catégories où les libellés diffèrent (consoles, montres).

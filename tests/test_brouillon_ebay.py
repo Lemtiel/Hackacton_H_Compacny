@@ -46,6 +46,11 @@ except Exception:
 check("résultat : le statut « published » n'existe pas (jamais de publication)", published_refused)
 task = ebay_draft._task("Titre", "Description de test assez longue", 120)
 check("consigne : interdit de publier", "NEVER click" in task and "Mettre en vente" in task)
+from agents.ebay_draft import item_specifics
+_spec = item_specifics("Accroche.\n\nCARACTÉRISTIQUES\n- Marque : Apple\n- Modèle : iPhone 11\n- Couleur : noir\n- Capacité : 128 Go\n- État : Bon état\n\nÉTAT\n- pas une caractéristique : non")
+check("caractéristiques lues dans la description, sans l'état ni le bloc suivant", _spec == [("Marque", "Apple"), ("Modèle", "iPhone 11"), ("Couleur", "noir"), ("Capacité", "128 Go")])
+check("description sans caractéristiques : rien à remplir", item_specifics("Juste une phrase.") == [])
+check("consigne : les caractéristiques passent par l'outil", "fill_item_specifics" in task)
 check("consigne : l'enregistrement passe par l'outil, pas par un clic libre", "save_listing_draft" in task)
 check("consigne : arrêt sur connexion ou vérification", "login_required" in task and "Never type a password" in task)
 

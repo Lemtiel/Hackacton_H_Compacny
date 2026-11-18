@@ -16,6 +16,7 @@ import shutil
 import subprocess
 import threading
 import time
+import unicodedata
 from pathlib import Path
 from typing import Callable, Literal, Optional
 from urllib.parse import urlencode
@@ -70,13 +71,40 @@ def ensure_ebay_tab() -> bool:
         return False
 
 
+def _norm(text: str) -> str:
+    return unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode().lower().strip()
+
+
+def _key(label: str) -> str:
+    """eBay nomme ses champs en retirant tout caractère hors A-Z : « Modèle » devient « Modle »."""
+    return re.sub(r"[^A-Za-z]", "", label)
+
+
+def item_specifics(description: str) -> list[tuple[str, str]]:
+    """Les lignes « - Libellé : valeur » du bloc CARACTÉRISTIQUES (l'état a son propre champ eBay)."""
+    out, inside = [], False
+    for line in description.splitlines():
+        if line.strip().upper().startswith("CARACT"):
+            inside = True
+            continue
+        if inside and not line.strip().startswith("-"):
+            if line.strip():
+                break
+            continue
+        if inside and ":" in line:
+            label, value = (x.strip() for x in line.strip().lstrip("-").split(":", 1))
+            if label and value and _norm(label) != "etat":
+                out.append((label, value))
+    return out
+
+
 def _ebay_page(p):
     browser = p.chromium.connect_over_cdp(f"http://127.0.0.1:{DEBUG_PORT}")
     return next((pg for ctx in browser.contexts for pg in ctx.pages if "ebay." in pg.url), None)
 
 
 def _make_tools(paths: list[str], description: str, price: float):
-    """Trois outils exécutés sur l'ordinateur, branchés sur le Chrome local. Testés le 18/11 : l'agent seul n'envoie pas de fichier
+    """Outils exécutés sur l'ordinateur, branchés sur le Chrome local. Testés le 18/11 : l'agent seul n'envoie pas de fichier
     en mode « navigateur sur l'appareil » et échoue sur l'éditeur de description (cadre intégré) et sur le prix."""
     from hai_agents import tool
 
@@ -171,7 +199,70 @@ def _make_tools(paths: list[str], description: str, price: float):
             page.wait_for_timeout(2500)
             return "draft saved (not published)"
 
-    return [upload_listing_photos, fill_listing_description, set_listing_price, save_listing_draft]
+    @tool(
+        name="fill_item_specifics",
+        description=(
+            "Fills the empty item specifics of the eBay form ('CARACTÉRISTIQUES DE L'OBJET': Marque, Modèle, Couleur, Capacité "
+            "de stockage...) from the seller's description, choosing only values eBay offers. Call it exactly once. Returns "
+            "what was filled and what was left for the seller."
+        ),
+    )
+    def fill_item_specifics() -> str:
+        from playwright.sync_api import sync_playwright
+
+        wanted = item_specifics(description)
+        if not wanted:
+            return "nothing to fill: the description has no characteristics"
+        report = []
+        with sync_playwright() as p:
+            page = _ebay_page(p)
+            if page is None:
+                return "error: no eBay page is open in the browser"
+            fields = page.evaluate(
+                """() => [...document.querySelectorAll('input[name^="search-box-attributes"]')].map(i => {
+                    const key = i.name.replace('search-box-attributes', '');
+                    const b = [...document.querySelectorAll('button')].find(x => x.textContent.trim().replace(/[^A-Za-z]/g, '') === key);
+                    return [key, b ? b.textContent.trim() : null];
+                })"""
+            )
+            for label, value in wanted:
+                match = next(((k, l) for k, l in fields if l and k.lower().startswith(_key(label).lower())), None)
+                if match is None:
+                    report.append(f"{label}: no such field")
+                    continue
+                key, ebay_label = match
+                box = page.locator(f"input[name='search-box-attributes{key}']").first
+                # le bouton qui ouvre la liste porte aria-expanded et affiche la valeur déjà choisie (vérifié le 19/11)
+                opener = box.locator("xpath=ancestor::div[contains(concat(' ',normalize-space(@class),' '),' fake-menu-button ')][1]//button[@aria-expanded]").first
+                try:
+                    current = opener.inner_text(timeout=3000).strip()
+                    if current:
+                        report.append(f"{ebay_label}: already '{current}', unchanged")
+                        continue
+                    opener.scroll_into_view_if_needed()
+                    opener.click()
+                    page.wait_for_timeout(400)
+                    box.fill(value, timeout=5000)
+                    page.wait_for_timeout(1200)
+                    options = [o for o in page.locator("[role=menuitemradio], [role=option], [role=menuitemcheckbox]").all() if o.is_visible()]
+                    texts = [_norm(o.inner_text()) for o in options]
+                    want = _norm(value)
+                    # égalité, sinon même fin (« Apple iPhone 11 » pour « iPhone 11 »), jamais une simple inclusion (« iPhone 11 Pro »)
+                    pick = next((o for o, t in zip(options, texts) if t == want), None) or next(
+                        (o for o, t in zip(options, texts) if t.endswith(" " + want)), None)
+                    if pick is None:
+                        box.press("Escape")
+                        report.append(f"{ebay_label}: no matching eBay value for '{value}', left for the seller")
+                    else:
+                        chosen = pick.inner_text().strip()
+                        pick.click()
+                        report.append(f"{ebay_label}: {chosen}")
+                    page.wait_for_timeout(500)
+                except Exception as exc:  # un champ raté ne bloque pas les autres
+                    report.append(f"{ebay_label}: error ({type(exc).__name__})")
+        return "; ".join(report)
+
+    return [upload_listing_photos, fill_listing_description, set_listing_price, fill_item_specifics, save_listing_draft]
 
 
 def _task(title: str, description: str, price: float) -> str:
@@ -187,8 +278,9 @@ def _task(title: str, description: str, price: float) -> str:
         "immediately and answer status 'login_required'. Never type a password or a code and never try to get around a check.\n"
         "2. When the listing form is loaded, call the tool upload_listing_photos exactly once. Do not use the 'Charger à partir "
         "d'un ordinateur' button yourself: a native file dialog cannot be used.\n"
-        "3. Call the tool fill_listing_description exactly once, then the tool set_listing_price exactly once. Do not type the "
-        "description or the price yourself: use these tools, they work reliably on this form.\n"
+        "3. Call the tool fill_listing_description exactly once, then the tool set_listing_price exactly once, then the tool "
+        "fill_item_specifics exactly once. Do not type the description, the price or the item specifics yourself: use these "
+        "tools, they work reliably on this form.\n"
         "4. Check that the title field contains the title above and fix it if it does not. Close any small dark tooltip bubble "
         "that covers the form by clicking its close icon or an empty area.\n"
         "5. Call the tool save_listing_draft exactly once to save the listing as a draft. NEVER click 'Mettre en vente gratuitement', "
