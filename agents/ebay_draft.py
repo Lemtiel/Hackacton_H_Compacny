@@ -103,10 +103,29 @@ def _ebay_page(p):
     return next((pg for ctx in browser.contexts for pg in ctx.pages if "ebay." in pg.url), None)
 
 
-def _make_tools(paths: list[str], description: str, price: float):
+def _make_tools(paths: list[str], description: str, price: float, title: str = ""):
     """Outils exécutés sur l'ordinateur, branchés sur le Chrome local. Testés le 18/11 : l'agent seul n'envoie pas de fichier
     en mode « navigateur sur l'appareil » et échoue sur l'éditeur de description (cadre intégré) et sur le prix."""
     from hai_agents import tool
+
+    state = {"photos_sent": False}
+
+    @tool(
+        name="set_listing_title",
+        description="Sets the title field ('TITRE') of the eBay listing form to the seller's title. Call it exactly once.",
+    )
+    def set_listing_title() -> str:
+        from playwright.sync_api import sync_playwright
+
+        with sync_playwright() as p:
+            page = _ebay_page(p)
+            field = page.get_by_label("Titre de l'objet") if page else None
+            if field is None or field.count() == 0:
+                return "error: the title field is not on this page yet"
+            field.fill(title[:80])
+            field.press("Tab")
+            page.wait_for_timeout(500)
+            return f"title set: {field.input_value()}"
 
     @tool(
         name="upload_listing_photos",
@@ -125,13 +144,26 @@ def _make_tools(paths: list[str], description: str, price: float):
             inputs = page.locator("input[type=file]")
             if inputs.count() == 0:
                 return "error: no file upload field on this page yet; wait for the form to load and try again"
-            # eBay rouvre parfois le même brouillon (observé le 18/11 : 6 photos au lieu de 3) : on n'ajoute pas deux fois
+            if state["photos_sent"]:
+                return "photos already attached in this session, nothing added"
+            # eBay rouvre parfois un brouillon existant avec ses photos (observé le 19/11) : on les remplace par les nôtres
+            removed = ""
             counter = page.get_by_text(re.compile(r"^\d+/25$")).first
-            if counter.count() and int(counter.inner_text().split("/")[0]) >= len(paths):
-                return f"already {counter.inner_text()} photos in the draft, nothing added"
+            if counter.count() and int(counter.inner_text().split("/")[0]) > 0:
+                removed = f"removed the {counter.inner_text().split('/')[0]} photos of the reopened draft, then "
+                page.get_by_role("button", name="Sélectionner").first.click()
+                page.wait_for_timeout(800)
+                page.get_by_role("button", name="Tout supprimer").first.click()
+                page.wait_for_timeout(2000)
+            inputs = page.locator("input[type=file]")
             inputs.first.set_input_files(paths)
-            page.wait_for_timeout(1500)
-            return f"attached {len(paths)} photos"
+            state["photos_sent"] = True
+            for _ in range(20):
+                page.wait_for_timeout(1000)
+                c = page.get_by_text(re.compile(r"^\d+/25$")).first
+                if c.count() and int(c.inner_text().split("/")[0]) >= len(paths):
+                    break
+            return f"{removed}attached {len(paths)} photos"
 
     @tool(
         name="fill_listing_description",
@@ -148,9 +180,20 @@ def _make_tools(paths: list[str], description: str, price: float):
             frame = page.frame(name="se-rte-frame__summary") if page else None
             if frame is None:
                 return "error: the description editor is not on this page yet"
+            # Une frappe touche par touche doublait les sauts de ligne (observé le 19/11) : on insère le texte d'un seul coup,
+            # par la commande d'édition du navigateur, que l'éditeur d'eBay enregistre comme une saisie.
             frame.click("body")
-            page.keyboard.press("Meta+A")
-            page.keyboard.type(description)
+            frame.evaluate(
+                """(text) => {
+                    const ed = document.querySelector('[contenteditable=true]') || document.body;
+                    ed.focus();
+                    document.execCommand('selectAll', false, null);
+                    const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    const html = text.split('\\n').map((l) => l.trim() ? `<div>${esc(l)}</div>` : '<div><br></div>').join('');
+                    document.execCommand('insertHTML', false, html);
+                }""",
+                description,
+            )
             page.wait_for_timeout(600)
             first = description.splitlines()[0][:40]
             return "description filled" if first in frame.locator("body").inner_text() else "error: the description did not register"
@@ -235,9 +278,9 @@ def _make_tools(paths: list[str], description: str, price: float):
                 # le bouton qui ouvre la liste porte aria-expanded et affiche la valeur déjà choisie (vérifié le 19/11)
                 opener = box.locator("xpath=ancestor::div[contains(concat(' ',normalize-space(@class),' '),' fake-menu-button ')][1]//button[@aria-expanded]").first
                 try:
-                    current = opener.inner_text(timeout=3000).strip()
-                    if current:
-                        report.append(f"{ebay_label}: already '{current}', unchanged")
+                    current = _norm(opener.inner_text(timeout=3000))
+                    if current and (current == _norm(value) or current.endswith(" " + _norm(value))):
+                        report.append(f"{ebay_label}: already '{value}', unchanged")
                         continue
                     opener.scroll_into_view_if_needed()
                     opener.click()
@@ -262,7 +305,7 @@ def _make_tools(paths: list[str], description: str, price: float):
                     report.append(f"{ebay_label}: error ({type(exc).__name__})")
         return "; ".join(report)
 
-    return [upload_listing_photos, fill_listing_description, set_listing_price, fill_item_specifics, save_listing_draft]
+    return [set_listing_title, upload_listing_photos, fill_listing_description, set_listing_price, fill_item_specifics, save_listing_draft]
 
 
 def _task(title: str, description: str, price: float) -> str:
@@ -278,10 +321,10 @@ def _task(title: str, description: str, price: float) -> str:
         "immediately and answer status 'login_required'. Never type a password or a code and never try to get around a check.\n"
         "2. When the listing form is loaded, call the tool upload_listing_photos exactly once. Do not use the 'Charger à partir "
         "d'un ordinateur' button yourself: a native file dialog cannot be used.\n"
-        "3. Call the tool fill_listing_description exactly once, then the tool set_listing_price exactly once, then the tool "
+        "3. Call the tool set_listing_title exactly once, then fill_listing_description exactly once, then the tool set_listing_price exactly once, then the tool "
         "fill_item_specifics exactly once. Do not type the description, the price or the item specifics yourself: use these "
         "tools, they work reliably on this form.\n"
-        "4. Check that the title field contains the title above and fix it if it does not. Close any small dark tooltip bubble "
+        "4. Do not edit the title yourself: the tool did it. Close any small dark tooltip bubble "
         "that covers the form by clicking its close icon or an empty area.\n"
         "5. Call the tool save_listing_draft exactly once to save the listing as a draft. NEVER click 'Mettre en vente gratuitement', "
         "'Mettre en vente', 'Publier' or any button that publishes the listing.\n"
@@ -302,7 +345,7 @@ def run_draft(client, *, photos: list[Path], title: str, description: str, price
     handle = client.start_session(
         agent=AGENT,
         messages=_task(title, description, price),
-        tools=_make_tools(paths, description, price),
+        tools=_make_tools(paths, description, price, title),
         answer_schema=DraftResult,
         max_steps=70,
         max_time_s=MAX_SECONDS,

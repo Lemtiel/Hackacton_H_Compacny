@@ -63,6 +63,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
   const [myPrice, setMyPrice] = useState<number | null>(null);
   const [sharePhotos, setSharePhotos] = useState<string[]>(photos); // photos à partager : studio ou originale, comme affichées
   const idRef = useRef(newId());
+  const ensureStudioRef = useRef<EnsureStudio | null>(null);
   const shopRef = useRef<ShopBlock | null>(null);
   const [ebay, setEbay] = useState<EbayResult | null>(null);
   const ebayRef = useRef<EbayResult | null>(null);
@@ -203,6 +204,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
       <ListingPanel
         input={input}
         sharePhotos={sharePhotos}
+        ensureStudio={ensureStudioRef}
         myPrice={myPrice}
         onPublish={(platform) => updateItem(idRef.current, { status: "en_vente", platform })}
         canTrack={done && !failed}
@@ -256,7 +258,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
         </div>
       )}
 
-      {photos.length > 0 && <StudioPhotos photos={photos} onShareable={setSharePhotos} />}
+      {photos.length > 0 && <StudioPhotos photos={photos} onShareable={setSharePhotos} ensureRef={ensureStudioRef} />}
 
       <div className="stack" style={{ marginTop: "2rem" }}>
         {done && !failed && <a href="/grenier" className="btn btn-quiet">Voir Mon grenier</a>}
@@ -404,12 +406,14 @@ function PriceSlider({ shop, verdict, value, onChange }: { shop: ShopBlock; verd
 function ListingPanel({
   input,
   sharePhotos,
+  ensureStudio,
   myPrice,
   onPublish,
   canTrack,
 }: {
   input: SearchInput;
   sharePhotos: string[];
+  ensureStudio: React.MutableRefObject<EnsureStudio | null>;
   myPrice: number | null;
   onPublish: (platform: string) => void;
   canTrack: boolean;
@@ -426,7 +430,7 @@ function ListingPanel({
   const [shareMsg, setShareMsg] = useState<string | null>(null);
   // Brouillon eBay par un agent H (démo seulement : serveur de démo + clé de démo)
   const [draftOn, setDraftOn] = useState(false);
-  const [draft, setDraft] = useState<{ running: boolean; label: string; result: Extract<DraftEvent, { type: "result" }> | null; error: string | null } | null>(null);
+  const [draft, setDraft] = useState<{ running: boolean; label: string; result: Extract<DraftEvent, { type: "result" }> | null; error: string | null; note?: string | null } | null>(null);
   useEffect(() => { draftAvailable().then(setDraftOn); }, []);
 
   // Le partage natif n'existe qu'en HTTPS (ou localhost) et sur les navigateurs qui le gèrent : sinon on ne montre pas le bouton.
@@ -504,10 +508,18 @@ function ListingPanel({
       setDraft({ running: false, label: "", result: null, error: "Attendez la fin de l'estimation : le prix de l'annonce en dépend." });
       return;
     }
-    setDraft({ running: true, label: "Envoi des photos à l'agent…", result: null, error: null });
+    setDraft({ running: true, label: "Préparation des photos studio…", result: null, error: null, note: null });
     try {
+      // eBay reçoit les photos studio : on crée d'abord celles qui manquent
+      const prepared = ensureStudio.current
+        ? await ensureStudio.current((label) => setDraft((d) => (d ? { ...d, label } : d)))
+        : { urls: sharePhotos, failed: 0 };
+      const note = prepared.failed
+        ? `${prepared.failed} photo${prepared.failed > 1 ? "s" : ""} studio n'${prepared.failed > 1 ? "ont" : "a"} pas pu être créée${prepared.failed > 1 ? "s" : ""} : l'originale part à sa place.`
+        : null;
+      setDraft((d) => (d ? { ...d, label: "Envoi des photos à l'agent…", note } : d));
       await startEbayDraft(
-        { photos: sharePhotos, title: ad.title, description: ad.description, price: myPrice, categoryId: ebayCategory?.id, condition },
+        { photos: prepared.urls, title: ad.title, description: ad.description, price: myPrice, categoryId: ebayCategory?.id, condition },
         (e) => {
           if (e.type === "step") setDraft((d) => (d ? { ...d, label: e.label } : d));
           if (e.type === "result") setDraft((d) => (d ? { ...d, running: false, result: e } : d));
@@ -585,7 +597,12 @@ function ListingPanel({
           {platform === "ebay" && draft && (
             <div className="panel" style={{ marginTop: "0.9rem", background: "var(--bg)" }} aria-live="polite">
               <h3 style={{ margin: 0 }}>Brouillon eBay par un agent</h3>
-              {draft.running && <p className="small" style={{ margin: "0.4rem 0 0" }}>{draft.label}. Regardez la fenêtre Chrome eBay : l&apos;agent y travaille. Il ne publie jamais.</p>}
+              {draft.running && (
+                <p className="small" style={{ margin: "0.4rem 0 0" }}>
+                  {draft.label.endsWith("…") ? draft.label : `${draft.label}. Regardez la fenêtre Chrome eBay : l'agent y travaille. Il ne publie jamais.`}
+                </p>
+              )}
+              {draft.note && <p className="small" style={{ margin: "0.4rem 0 0" }}>{draft.note}</p>}
               {draft.error && <p className="notice error" style={{ marginTop: "0.5rem" }}>{draft.error}</p>}
               {draft.result && draft.result.status === "draft_saved" && (
                 <p style={{ margin: "0.4rem 0 0" }}>
@@ -692,7 +709,9 @@ function EbayPanel({ result }: { result: EbayResult | null }) {
 }
 
 // Photos pour l'annonce, avec leur version studio (objet détouré sur fond clair, objet non modifié).
-function StudioPhotos({ photos, onShareable }: { photos: string[]; onShareable: (urls: string[]) => void }) {
+export type EnsureStudio = (onProgress: (label: string) => void) => Promise<{ urls: string[]; failed: number }>;
+
+function StudioPhotos({ photos, onShareable, ensureRef }: { photos: string[]; onShareable: (urls: string[]) => void; ensureRef?: React.MutableRefObject<EnsureStudio | null> }) {
   const [studio, setStudio] = useState<(string | null)[]>(photos.map(() => null));
   const [show, setShow] = useState<("studio" | "original")[]>(photos.map(() => "studio"));
   const [busy, setBusy] = useState(false);
@@ -720,6 +739,31 @@ function StudioPhotos({ photos, onShareable }: { photos: string[]; onShareable: 
       }
     }
     setBusy(false);
+  }
+
+  // Pour le brouillon eBay : crée les versions studio manquantes, garde l'originale là où l'utilisateur l'a choisie.
+  if (ensureRef) {
+    ensureRef.current = async (onProgress) => {
+      const urls: string[] = [];
+      let failed = 0;
+      for (let i = 0; i < photos.length; i++) {
+        if (show[i] === "original") urls.push(photos[i]);
+        else if (studio[i]) urls.push(studio[i]!);
+        else {
+          onProgress(`Création de la photo studio ${i + 1} sur ${photos.length}…`);
+          try {
+            const out = await makeStudio(await fetch(photos[i]).then((r) => r.blob()));
+            const url = URL.createObjectURL(out);
+            setStudio((st) => st.map((v, j) => (j === i ? url : v)));
+            urls.push(url);
+          } catch {
+            failed += 1;
+            urls.push(photos[i]);
+          }
+        }
+      }
+      return { urls, failed };
+    };
   }
 
   const done = studio.some(Boolean);

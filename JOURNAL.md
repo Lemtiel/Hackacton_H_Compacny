@@ -767,3 +767,11 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - Lancé par la route `/api/ebay/draft` (même chemin que le bouton), 3 photos, prix 141 €. Statut `draft_saved` en 126 s, 14 étapes. eBay a créé un nouveau brouillon (`draftId=5339447252121`).
 - Vérifié sur la page rouverte : 3 photos, titre exact, description de 20 lignes, prix 141,00 €, Marque Apple, Modèle Apple iPhone 11, Couleur Noir, Capacité 128 Go ; éditeur toujours ouvert avec « Mettre en vente gratuitement », donc non publié.
 - Brouillons de test à supprimer dans eBay : Nintendo Switch, iPhone 11 (`5339246164121`, photos en double), iPhone 11 (`5339447252121`, propre).
+
+### Jeudi 19/11, 1h30 : photos studio dans le brouillon eBay
+- Demande de Jude : eBay reçoit les photos studio. Au clic sur « Laisser un agent H… », l'app crée d'abord les versions studio manquantes (une photo remise en « Originale » reste originale ; un échec studio envoie l'originale avec un message).
+- Essai 1 par l'interface : eBay a rouvert un brouillon existant ; l'outil photos a vu « déjà 3 photos » et n'a rien envoyé, le titre est resté l'ancien. Le brouillon a mélangé deux annonces. (La reconnaissance avait aussi donné iPhone 13 : mon test ne corrigeait pas le modèle.)
+- Corrections : l'outil photos vide un brouillon rouvert (« Sélectionner » puis « Tout supprimer ») et envoie les nôtres, une seule fois par session ; nouvel outil `set_listing_title` ; les caractéristiques remplacent une valeur différente (testé : iPhone 11 vers iPhone 13).
+- Essai 2 par l'interface (clic sur le bouton, navigateur de test) : 2 photos studio créées, brouillon enregistré en 174 s. Vérifié sur la page : 2 photos studio (objet détouré sur fond clair) à la place de l'ancienne, titre, prix 141 €, caractéristiques justes, non publié.
+- Description : la frappe touche par touche doublait les sauts de ligne. Remplacée par une insertion d'un bloc ; vérifié après enregistrement et réouverture (texte gardé, caractères spéciaux compris).
+- Non refait : un essai complet de l'agent après ce dernier changement de description.
