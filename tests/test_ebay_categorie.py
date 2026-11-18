@@ -147,5 +147,15 @@ check("informatique sans bonne suggestion : pas de catégorie inventée (aucune 
 check("catégories par défaut = catégories cibles",
       all(v["id"] in ebay.TARGET_IDS[k] for k, v in ebay.DEFAULT_CATEGORY.items()))
 
+# --- Réponses réelles de l'API Taxonomy du 18/11 (fichier de Kevin, PR #28, plus 3 cas ajoutés) ---
+REAL = json.loads((Path(__file__).resolve().parent / "ebay_categories_reelles.json").read_text(encoding="utf-8"))
+for case in REAL["cas"]:
+    got = ebay.pick_categories(case["suggestions"], case["categorie"], case["objet"])
+    check(f"réel, {case['objet']} ({case['categorie']}) : bonne catégorie en tête", bool(got) and got[0]["id"] == case["attendu"])
+    check(f"réel, {case['objet']} : ni pièces ni collection proposées",
+          not any("piece" in ebay._norm(c["path"]) or "collection" in ebay._norm(c["path"]) for c in got))
+redmi = next(c for c in REAL["cas"] if c["objet"] == "Redmi Note 10S")["suggestions"]
+check("eBay brut se trompait sur Redmi (1re suggestion : pièces)", "pièces" in redmi[0]["path"])
+
 print(f"{total - failed}/{total} vérifications correctes")
 sys.exit(1 if failed else 0)

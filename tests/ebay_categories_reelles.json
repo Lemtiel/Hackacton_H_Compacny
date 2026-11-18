@@ -1,0 +1,650 @@
+{
+ "_source": "API Taxonomy d'eBay, get_category_suggestions, arbre 71 (EBAY_FR), appel réel du 18/11/2026. Seuls l'identifiant, le nom et le chemin des catégories sont gardés. Cas iMac, Galaxy Tab S8 et Xbox Series S ajoutés le 18/11 (même appel, mêmes champs gardés) : l'ordre d'eBay y est faux (Xbox : Jeux avant Consoles) ou n'y contient pas la bonne catégorie (Tab S8 : aucune tablette ; iMac : portables avant Macs de bureau).",
+ "cas": [
+  {
+   "objet": "Nintendo Switch",
+   "categorie": "console",
+   "attendu": "139971",
+   "suggestions": [
+    {
+     "id": "139971",
+     "name": "Consoles",
+     "path": "Jeux vidéo, consoles > Consoles"
+    },
+    {
+     "id": "139973",
+     "name": "Jeux",
+     "path": "Jeux vidéo, consoles > Jeux"
+    },
+    {
+     "id": "182179",
+     "name": "Supports, fixations",
+     "path": "Jeux vidéo, consoles > Accessoires > Supports, fixations"
+    },
+    {
+     "id": "171833",
+     "name": "Pièces de rechange, outils",
+     "path": "Jeux vidéo, consoles > Pièces de rechange, outils"
+    },
+    {
+     "id": "171831",
+     "name": "Etuis, housses, sacs",
+     "path": "Jeux vidéo, consoles > Accessoires > Etuis, housses, sacs"
+    },
+    {
+     "id": "182175",
+     "name": "Boîtes de jeu originales",
+     "path": "Jeux vidéo, consoles > Boîtes de jeu originales"
+    },
+    {
+     "id": "171858",
+     "name": "Chargeurs, stations d'accueil",
+     "path": "Jeux vidéo, consoles > Accessoires > Chargeurs, stations d'accueil"
+    },
+    {
+     "id": "171813",
+     "name": "Batteries",
+     "path": "Jeux vidéo, consoles > Accessoires > Batteries"
+    },
+    {
+     "id": "171821",
+     "name": "Casques",
+     "path": "Jeux vidéo, consoles > Accessoires > Casques"
+    },
+    {
+     "id": "171826",
+     "name": "Ensembles d'accessoires",
+     "path": "Jeux vidéo, consoles > Accessoires > Ensembles d'accessoires"
+    }
+   ]
+  },
+  {
+   "objet": "iPhone 13 128 Go",
+   "categorie": "smartphone",
+   "attendu": "9355",
+   "suggestions": [
+    {
+     "id": "9355",
+     "name": "Téléphones mobiles",
+     "path": "Téléphonie, mobilité > Téléphones mobiles"
+    },
+    {
+     "id": "43304",
+     "name": "Téléphones mobiles: pièces",
+     "path": "Téléphonie, mobilité > Téléphones mobiles: pièces"
+    },
+    {
+     "id": "20349",
+     "name": "Etuis, housses, coques",
+     "path": "Téléphonie, mobilité > Tél. mobiles: accessoires > Etuis, housses, coques"
+    }
+   ]
+  },
+  {
+   "objet": "Zelda Breath of the Wild",
+   "categorie": "jeu_video",
+   "attendu": "139973",
+   "suggestions": [
+    {
+     "id": "38583",
+     "name": "Articles de jeux vidéo",
+     "path": "Jeux vidéo, consoles > Articles de jeux vidéo"
+    },
+    {
+     "id": "139973",
+     "name": "Jeux",
+     "path": "Jeux vidéo, consoles > Jeux"
+    },
+    {
+     "id": "182180",
+     "name": "Toys to Life",
+     "path": "Jeux vidéo, consoles > Accessoires > Toys to Life"
+    },
+    {
+     "id": "156595",
+     "name": "Guides de stratégie, triche",
+     "path": "Jeux vidéo, consoles > Guides de stratégie, triche"
+    },
+    {
+     "id": "75708",
+     "name": "TV, film, jeux vidéo",
+     "path": "Jouets et jeux > Figurines, statues > TV, film, jeux vidéo"
+    },
+    {
+     "id": "117042",
+     "name": "Manettes, périphériques de jeu",
+     "path": "Jeux vidéo, consoles > Accessoires > Manettes, périphériques de jeu"
+    },
+    {
+     "id": "118",
+     "name": "Autres",
+     "path": "Collections > Objets publicitaires > Publicités papier > Autres"
+    },
+    {
+     "id": "171831",
+     "name": "Etuis, housses, sacs",
+     "path": "Jeux vidéo, consoles > Accessoires > Etuis, housses, sacs"
+    },
+    {
+     "id": "46752",
+     "name": "Livres",
+     "path": "Livres, BD, revues > Collections > Livres"
+    },
+    {
+     "id": "169291",
+     "name": "Femme : sacs, sacs à main",
+     "path": "Vêtements, accessoires > Femme : vêtements, accessoires > Femme : sacs, sacs à main"
+    }
+   ]
+  },
+  {
+   "objet": "PS5",
+   "categorie": "console",
+   "attendu": "139971",
+   "suggestions": [
+    {
+     "id": "139971",
+     "name": "Consoles",
+     "path": "Jeux vidéo, consoles > Consoles"
+    },
+    {
+     "id": "32643",
+     "name": "Autres",
+     "path": "Collections > Autres"
+    },
+    {
+     "id": "38583",
+     "name": "Articles de jeux vidéo",
+     "path": "Jeux vidéo, consoles > Articles de jeux vidéo"
+    },
+    {
+     "id": "22669",
+     "name": "Autres",
+     "path": "Instruments de musique > Guitares, basses, accessoires > Pièces, accessoires > Pédales à effets > Autres"
+    },
+    {
+     "id": "139973",
+     "name": "Jeux",
+     "path": "Jeux vidéo, consoles > Jeux"
+    },
+    {
+     "id": "49230",
+     "name": "Autres",
+     "path": "Jeux vidéo, consoles > Accessoires > Autres"
+    },
+    {
+     "id": "43304",
+     "name": "Téléphones mobiles: pièces",
+     "path": "Téléphonie, mobilité > Téléphones mobiles: pièces"
+    },
+    {
+     "id": "33164",
+     "name": "Anti-âge et antirides",
+     "path": "Beauté, bien-être, parfums > Soins de la peau > Anti-âge et antirides"
+    },
+    {
+     "id": "20349",
+     "name": "Etuis, housses, coques",
+     "path": "Téléphonie, mobilité > Tél. mobiles: accessoires > Etuis, housses, coques"
+    },
+    {
+     "id": "32834",
+     "name": "Connecteurs, câbles vidéo",
+     "path": "Image, son > Accessoires image, son > Connecteurs, câbles vidéo"
+    }
+   ]
+  },
+  {
+   "objet": "Manette DualSense",
+   "categorie": "console",
+   "attendu": "117042",
+   "suggestions": [
+    {
+     "id": "117042",
+     "name": "Manettes, périphériques de jeu",
+     "path": "Jeux vidéo, consoles > Accessoires > Manettes, périphériques de jeu"
+    },
+    {
+     "id": "171668",
+     "name": "Façades, coques, autocollants",
+     "path": "Jeux vidéo, consoles > Accessoires > Façades, coques, autocollants"
+    },
+    {
+     "id": "171833",
+     "name": "Pièces de rechange, outils",
+     "path": "Jeux vidéo, consoles > Pièces de rechange, outils"
+    },
+    {
+     "id": "139971",
+     "name": "Consoles",
+     "path": "Jeux vidéo, consoles > Consoles"
+    },
+    {
+     "id": "43304",
+     "name": "Téléphones mobiles: pièces",
+     "path": "Téléphonie, mobilité > Téléphones mobiles: pièces"
+    },
+    {
+     "id": "139973",
+     "name": "Jeux",
+     "path": "Jeux vidéo, consoles > Jeux"
+    }
+   ]
+  },
+  {
+   "objet": "Sony DualSense",
+   "categorie": "console",
+   "attendu": "117042",
+   "suggestions": [
+    {
+     "id": "117042",
+     "name": "Manettes, périphériques de jeu",
+     "path": "Jeux vidéo, consoles > Accessoires > Manettes, périphériques de jeu"
+    },
+    {
+     "id": "171858",
+     "name": "Chargeurs, stations d'accueil",
+     "path": "Jeux vidéo, consoles > Accessoires > Chargeurs, stations d'accueil"
+    },
+    {
+     "id": "38583",
+     "name": "Articles de jeux vidéo",
+     "path": "Jeux vidéo, consoles > Articles de jeux vidéo"
+    }
+   ]
+  },
+  {
+   "objet": "iPad Air 4",
+   "categorie": "tablette",
+   "attendu": "171485",
+   "suggestions": [
+    {
+     "id": "171485",
+     "name": "Tablettes, liseuses",
+     "path": "Informatique, réseaux > Tablettes, liseuses"
+    },
+    {
+     "id": "43304",
+     "name": "Téléphones mobiles: pièces",
+     "path": "Téléphonie, mobilité > Téléphones mobiles: pièces"
+    },
+    {
+     "id": "180235",
+     "name": "Tablettes: pièces",
+     "path": "Informatique, réseaux > Tablettes: pièces"
+    },
+    {
+     "id": "176973",
+     "name": "Etuis, housses, coques",
+     "path": "Informatique, réseaux > Tablettes, liseuses: accessoires > Etuis, housses, coques"
+    },
+    {
+     "id": "58540",
+     "name": "Films protecteurs d'écran",
+     "path": "Téléphonie, mobilité > Tél. mobiles: accessoires > Films protecteurs d'écran"
+    },
+    {
+     "id": "168061",
+     "name": "Autres",
+     "path": "Informatique, réseaux > Ordinateur: composants, pièces > Portables: pièces de rechange > Autres"
+    },
+    {
+     "id": "16145",
+     "name": "Autres",
+     "path": "Informatique, réseaux > Ordinateur: composants, pièces > Autres"
+    },
+    {
+     "id": "123422",
+     "name": "Câbles, adaptateurs",
+     "path": "Téléphonie, mobilité > Tél. mobiles: accessoires > Câbles, adaptateurs"
+    }
+   ]
+  },
+  {
+   "objet": "MacBook Air M1",
+   "categorie": "informatique",
+   "attendu": "177",
+   "suggestions": [
+    {
+     "id": "168061",
+     "name": "Autres",
+     "path": "Informatique, réseaux > Ordinateur: composants, pièces > Portables: pièces de rechange > Autres"
+    },
+    {
+     "id": "43304",
+     "name": "Téléphones mobiles: pièces",
+     "path": "Téléphonie, mobilité > Téléphones mobiles: pièces"
+    },
+    {
+     "id": "177",
+     "name": "Ordinateurs portables",
+     "path": "Informatique, réseaux > Portables, netbooks > Ordinateurs portables"
+    },
+    {
+     "id": "111422",
+     "name": "Macs portables",
+     "path": "Informatique, réseaux > Portables, netbooks > Macs portables"
+    },
+    {
+     "id": "14295",
+     "name": "Batteries de portable",
+     "path": "Informatique, réseaux > Accessoires ordinateur > Batteries de portable"
+    },
+    {
+     "id": "31569",
+     "name": "Ecrans/panneaux LCD portable",
+     "path": "Informatique, réseaux > Ordinateur: composants, pièces > Portables: pièces de rechange > Ecrans/panneaux LCD portable"
+    },
+    {
+     "id": "162075",
+     "name": "Ordinateurs",
+     "path": "Informatique, réseaux > Informatique vintage > Ordinateurs"
+    },
+    {
+     "id": "16145",
+     "name": "Autres",
+     "path": "Informatique, réseaux > Ordinateur: composants, pièces > Autres"
+    },
+    {
+     "id": "33963",
+     "name": "Claviers, pavés numériques",
+     "path": "Informatique, réseaux > Claviers, souris, pointeurs > Claviers, pavés numériques"
+    }
+   ]
+  },
+  {
+   "objet": "Redmi Note 10S",
+   "categorie": "smartphone",
+   "attendu": "9355",
+   "suggestions": [
+    {
+     "id": "43304",
+     "name": "Téléphones mobiles: pièces",
+     "path": "Téléphonie, mobilité > Téléphones mobiles: pièces"
+    },
+    {
+     "id": "20349",
+     "name": "Etuis, housses, coques",
+     "path": "Téléphonie, mobilité > Tél. mobiles: accessoires > Etuis, housses, coques"
+    },
+    {
+     "id": "38681",
+     "name": "Téléphones, TV, cinéma",
+     "path": "Collections > Téléphones, TV, cinéma"
+    },
+    {
+     "id": "168061",
+     "name": "Autres",
+     "path": "Informatique, réseaux > Ordinateur: composants, pièces > Portables: pièces de rechange > Autres"
+    },
+    {
+     "id": "9355",
+     "name": "Téléphones mobiles",
+     "path": "Téléphonie, mobilité > Téléphones mobiles"
+    },
+    {
+     "id": "123422",
+     "name": "Câbles, adaptateurs",
+     "path": "Téléphonie, mobilité > Tél. mobiles: accessoires > Câbles, adaptateurs"
+    }
+   ]
+  },
+  {
+   "objet": "Samsung Galaxy S21",
+   "categorie": "smartphone",
+   "attendu": "9355",
+   "suggestions": [
+    {
+     "id": "20349",
+     "name": "Etuis, housses, coques",
+     "path": "Téléphonie, mobilité > Tél. mobiles: accessoires > Etuis, housses, coques"
+    },
+    {
+     "id": "43304",
+     "name": "Téléphones mobiles: pièces",
+     "path": "Téléphonie, mobilité > Téléphones mobiles: pièces"
+    },
+    {
+     "id": "9355",
+     "name": "Téléphones mobiles",
+     "path": "Téléphonie, mobilité > Téléphones mobiles"
+    },
+    {
+     "id": "58540",
+     "name": "Films protecteurs d'écran",
+     "path": "Téléphonie, mobilité > Tél. mobiles: accessoires > Films protecteurs d'écran"
+    }
+   ]
+  },
+  {
+   "objet": "Joy-Con Nintendo",
+   "categorie": "console",
+   "attendu": "117042",
+   "suggestions": [
+    {
+     "id": "117042",
+     "name": "Manettes, périphériques de jeu",
+     "path": "Jeux vidéo, consoles > Accessoires > Manettes, périphériques de jeu"
+    },
+    {
+     "id": "171833",
+     "name": "Pièces de rechange, outils",
+     "path": "Jeux vidéo, consoles > Pièces de rechange, outils"
+    },
+    {
+     "id": "43304",
+     "name": "Téléphones mobiles: pièces",
+     "path": "Téléphonie, mobilité > Téléphones mobiles: pièces"
+    },
+    {
+     "id": "139971",
+     "name": "Consoles",
+     "path": "Jeux vidéo, consoles > Consoles"
+    },
+    {
+     "id": "260000",
+     "name": "Lots mixtes",
+     "path": "Jeux vidéo, consoles > Lots mixtes"
+    },
+    {
+     "id": "139973",
+     "name": "Jeux",
+     "path": "Jeux vidéo, consoles > Jeux"
+    },
+    {
+     "id": "171858",
+     "name": "Chargeurs, stations d'accueil",
+     "path": "Jeux vidéo, consoles > Accessoires > Chargeurs, stations d'accueil"
+    }
+   ]
+  },
+  {
+   "objet": "Dell XPS 13",
+   "categorie": "informatique",
+   "attendu": "177",
+   "suggestions": [
+    {
+     "id": "177",
+     "name": "Ordinateurs portables",
+     "path": "Informatique, réseaux > Portables, netbooks > Ordinateurs portables"
+    },
+    {
+     "id": "16145",
+     "name": "Autres",
+     "path": "Informatique, réseaux > Ordinateur: composants, pièces > Autres"
+    },
+    {
+     "id": "168061",
+     "name": "Autres",
+     "path": "Informatique, réseaux > Ordinateur: composants, pièces > Portables: pièces de rechange > Autres"
+    },
+    {
+     "id": "31519",
+     "name": "Housses, sacoches de portable",
+     "path": "Informatique, réseaux > Accessoires ordinateur > Housses, sacoches de portable"
+    },
+    {
+     "id": "31568",
+     "name": "Claviers de portable",
+     "path": "Informatique, réseaux > Ordinateur: composants, pièces > Portables: pièces de rechange > Claviers de portable"
+    },
+    {
+     "id": "80053",
+     "name": "Ecrans",
+     "path": "Informatique, réseaux > Ecrans, projecteurs, access. > Ecrans"
+    },
+    {
+     "id": "14295",
+     "name": "Batteries de portable",
+     "path": "Informatique, réseaux > Accessoires ordinateur > Batteries de portable"
+    },
+    {
+     "id": "31569",
+     "name": "Ecrans/panneaux LCD portable",
+     "path": "Informatique, réseaux > Ordinateur: composants, pièces > Portables: pièces de rechange > Ecrans/panneaux LCD portable"
+    },
+    {
+     "id": "131486",
+     "name": "CPU: ventilateurs/dissipateurs",
+     "path": "Informatique, réseaux > Ordinateur: composants, pièces > Ventilation, refroidissement > CPU: ventilateurs/dissipateurs"
+    },
+    {
+     "id": "123422",
+     "name": "Câbles, adaptateurs",
+     "path": "Téléphonie, mobilité > Tél. mobiles: accessoires > Câbles, adaptateurs"
+    }
+   ]
+  },
+  {
+   "objet": "iMac 24 pouces",
+   "categorie": "informatique",
+   "attendu": "111418",
+   "suggestions": [
+    {
+     "id": "111418",
+     "name": "Macs de bureau",
+     "path": "Informatique, réseaux > PC de bureau, tout-en-un > Macs de bureau"
+    },
+    {
+     "id": "177",
+     "name": "Ordinateurs portables",
+     "path": "Informatique, réseaux > Portables, netbooks > Ordinateurs portables"
+    },
+    {
+     "id": "16145",
+     "name": "Autres",
+     "path": "Informatique, réseaux > Ordinateur: composants, pièces > Autres"
+    },
+    {
+     "id": "175678",
+     "name": "Matériel, kits de nettoyage",
+     "path": "Informatique, réseaux > Accessoires ordinateur > Matériel, kits de nettoyage"
+    },
+    {
+     "id": "179",
+     "name": "PC de bureau",
+     "path": "Informatique, réseaux > PC de bureau, tout-en-un > PC de bureau"
+    },
+    {
+     "id": "168061",
+     "name": "Autres",
+     "path": "Informatique, réseaux > Ordinateur: composants, pièces > Portables: pièces de rechange > Autres"
+    },
+    {
+     "id": "111422",
+     "name": "Macs portables",
+     "path": "Informatique, réseaux > Portables, netbooks > Macs portables"
+    }
+   ]
+  },
+  {
+   "objet": "Samsung Galaxy Tab S8",
+   "categorie": "tablette",
+   "attendu": "171485",
+   "suggestions": [
+    {
+     "id": "43304",
+     "name": "Téléphones mobiles: pièces",
+     "path": "Téléphonie, mobilité > Téléphones mobiles: pièces"
+    },
+    {
+     "id": "180235",
+     "name": "Tablettes: pièces",
+     "path": "Informatique, réseaux > Tablettes: pièces"
+    },
+    {
+     "id": "176979",
+     "name": "Films protecteurs d'écran",
+     "path": "Informatique, réseaux > Tablettes, liseuses: accessoires > Films protecteurs d'écran"
+    },
+    {
+     "id": "176973",
+     "name": "Etuis, housses, coques",
+     "path": "Informatique, réseaux > Tablettes, liseuses: accessoires > Etuis, housses, coques"
+    },
+    {
+     "id": "20349",
+     "name": "Etuis, housses, coques",
+     "path": "Téléphonie, mobilité > Tél. mobiles: accessoires > Etuis, housses, coques"
+    },
+    {
+     "id": "176982",
+     "name": "Autres",
+     "path": "Informatique, réseaux > Tablettes, liseuses: accessoires > Autres"
+    },
+    {
+     "id": "171485",
+     "name": "Tablettes, liseuses",
+     "path": "Informatique, réseaux > Tablettes, liseuses"
+    },
+    {
+     "id": "31519",
+     "name": "Housses, sacoches de portable",
+     "path": "Informatique, réseaux > Accessoires ordinateur > Housses, sacoches de portable"
+    },
+    {
+     "id": "58540",
+     "name": "Films protecteurs d'écran",
+     "path": "Téléphonie, mobilité > Tél. mobiles: accessoires > Films protecteurs d'écran"
+    }
+   ]
+  },
+  {
+   "objet": "Xbox Series S",
+   "categorie": "console",
+   "attendu": "139971",
+   "suggestions": [
+    {
+     "id": "139973",
+     "name": "Jeux",
+     "path": "Jeux vidéo, consoles > Jeux"
+    },
+    {
+     "id": "139971",
+     "name": "Consoles",
+     "path": "Jeux vidéo, consoles > Consoles"
+    },
+    {
+     "id": "171833",
+     "name": "Pièces de rechange, outils",
+     "path": "Jeux vidéo, consoles > Pièces de rechange, outils"
+    },
+    {
+     "id": "32643",
+     "name": "Autres",
+     "path": "Collections > Autres"
+    },
+    {
+     "id": "27386",
+     "name": "Cartes: graphiques, vidéo",
+     "path": "Informatique, réseaux > Ordinateur: composants, pièces > Cartes: graphiques, vidéo"
+    },
+    {
+     "id": "182179",
+     "name": "Supports, fixations",
+     "path": "Jeux vidéo, consoles > Accessoires > Supports, fixations"
+    }
+   ]
+  }
+ ]
+}
