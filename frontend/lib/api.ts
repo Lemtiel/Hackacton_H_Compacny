@@ -57,9 +57,37 @@ export type ShopBlock = {
 };
 
 // Jusqu'à 3 photos du même objet (face, dos ou étiquette, détail), envoyées ensemble.
+// Réduit une photo avant l'envoi : un iPhone prend du 4032×3024 (3 Mo), trois photos font 9 Mo, trop pour un Wi-Fi ou un
+// partage de connexion (requête coupée en route : « Failed to fetch », relevé le 18/11). 1600 px suffisent pour reconnaître
+// l'objet. Si la réduction échoue, on envoie la photo d'origine.
+export async function downscale(file: Blob, maxSide = 1600, quality = 0.85): Promise<Blob> {
+  try {
+    const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const scale = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
+    if (scale === 1 && file.size < 1_000_000) {
+      bmp.close();
+      return file;
+    }
+    const w = Math.round(bmp.width * scale);
+    const h = Math.round(bmp.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bmp, 0, 0, w, h);
+    bmp.close();
+    const out = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+    return out && out.size < file.size ? out : file;
+  } catch {
+    return file;
+  }
+}
+
 export async function identifyPhotos(files: File[]): Promise<Identification> {
   const body = new FormData();
-  files.slice(0, 3).forEach((f) => body.append("files", f));
+  const small = await Promise.all(files.slice(0, 3).map((f) => downscale(f)));
+  small.forEach((b, i) => body.append("files", b, `photo-${i + 1}.jpg`));
   const res = await fetch(`${API_URL}/api/identify`, { method: "POST", body });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.detail || "L'identification a échoué. Tapez le nom de l'objet.");
@@ -225,7 +253,7 @@ export async function fetchEbayCategory(product: string, category?: Category): P
 // Studio photo : l'objet détouré, posé sur un fond clair. L'objet n'est pas modifié.
 export async function makeStudio(photo: Blob): Promise<Blob> {
   const body = new FormData();
-  body.append("file", photo, "photo.jpg");
+  body.append("file", await downscale(photo), "photo.jpg");
   const key = demoKey();
   const res = await fetch(`${API_URL}/api/studio`, { method: "POST", body, headers: key ? { "X-Demo-Key": key } : undefined });
   if (!res.ok) {
