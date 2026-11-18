@@ -568,3 +568,4 @@ aucune. Certideal et Swappie ont renvoyé des grades différents malgré la cons
 le filtre déterministe des états côté serveur. Cash Converters est resté en file chez H et a été forcé
 avant de naviguer ; le budget de 70/90 secondes démarre donc désormais au début réel de la navigation,
 avec un délai de file séparé. Environ 755 000 tokens ont été consommés pour ce test complet.
+Fusion du 18/11 : contributions de l'équipe intégrées à `interface` (calibrage du rachat, issue #11 ; estimations multi-sources de Josia : consigne d'agent plus stricte, état, boîte, accessoires et détails transmis aux agents, jusqu'à 10 sessions en parallèle par défaut). Conflit résolu dans le verdict (libellés de Josia et compteur animé). Page « Confidentialité » corrigée : H Company reçoit maintenant aussi l'état, la boîte, les accessoires et les détails saisis. Tests : tri 52/52, eBay 14/14, compilation OK.

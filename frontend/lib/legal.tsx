@@ -118,7 +118,7 @@ export const LEGAL_PAGES: LegalPage[] = [
             un visage, sur notre serveur, avant tout envoi. Les photos sont traitées en mémoire puis effacées.
           </li>
           <li>
-            <strong>Le nom de l&apos;objet et son état.</strong> Ils servent à chercher les prix et à rédiger l&apos;annonce.
+            <strong>Le nom de l&apos;objet, son état, ses accessoires et vos précisions.</strong> Ils servent à chercher des prix comparables et à rédiger l&apos;annonce.
           </li>
           <li>
             <strong>Votre historique (Mon grenier) et vos réglages.</strong> Ils restent dans votre navigateur, sur cet appareil.
@@ -129,7 +129,7 @@ export const LEGAL_PAGES: LegalPage[] = [
         <ul>
           <li>Hugging Face et les fournisseurs de modèles qu&apos;il sélectionne : les photos guidées, pour la reconnaissance ; la description de l&apos;objet, pour l&apos;annonce.</li>
           <li>fal.ai (modèle Bria) : une photo, seulement si vous créez sa version studio.</li>
-          <li>H Company : le nom de l&apos;objet, pour que nos agents relèvent les prix. Les captures de leur navigation suivent la politique de conservation de H Company.</li>
+          <li>H Company : le nom de l&apos;objet, son état, la présence de la boîte, les accessoires et les détails que vous saisissez, pour que nos agents relèvent des prix comparables. N&apos;y écrivez aucune information personnelle. Les captures de leur navigation suivent la politique de conservation de H Company.</li>
           <li>eBay : le nom de l&apos;objet, pour sa recherche officielle.</li>
           <li>Vercel et Hugging Face : l&apos;hébergement de l&apos;app.</li>
         </ul>
