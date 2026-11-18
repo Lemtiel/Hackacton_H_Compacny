@@ -189,8 +189,23 @@ async def search(product: str, category: str, client: Optional[httpx.AsyncClient
 # On ne garde que l'identifiant, le nom et le chemin de la catégorie. Seul l'identifiant de l'arbre des catégories
 # d'EBAY_FR reste en mémoire (une donnée de configuration, pas une annonce).
 # Limite eBay : get_category_suggestions n'existe pas en sandbox.
+#
+# eBay rend jusqu'à 10 suggestions, et la première est souvent fausse pour nos objets (appel réel du 18/11 :
+# « Téléphones mobiles: pièces » pour Redmi Note 10S, « coques » pour Galaxy S21, « pièces de rechange »
+# pour MacBook Air M1). rank_categories les trie donc avec notre catégorie (notre code, sans IA).
 
 MAX_CATEGORIES = 3
+
+# Catégorie eBay de référence de chacune de nos catégories (identifiants relevés dans les réponses réelles
+# du 18/11, arbre 71 d'EBAY_FR), et la famille eBay où chercher.
+REFERENCE_CATEGORIES = {
+    "smartphone": {"id": "9355", "name": "Téléphones mobiles", "path": "Téléphonie, mobilité > Téléphones mobiles"},
+    "console": {"id": "139971", "name": "Consoles", "path": "Jeux vidéo, consoles > Consoles"},
+    "jeu_video": {"id": "139973", "name": "Jeux", "path": "Jeux vidéo, consoles > Jeux"},
+    "tablette": {"id": "171485", "name": "Tablettes, liseuses", "path": "Informatique, réseaux > Tablettes, liseuses"},
+    "informatique": {"id": "177", "name": "Ordinateurs portables",
+                     "path": "Informatique, réseaux > Portables, netbooks > Ordinateurs portables"},
+}
 
 _tree_id: Optional[str] = None
 
@@ -226,13 +241,48 @@ def parse_categories(payload: dict) -> list[dict]:
         )
         path = [a["categoryName"] for a in ancestors] + [cat["categoryName"]]
         out.append({"id": str(cat["categoryId"]), "name": cat["categoryName"], "path": " > ".join(path)})
-        if len(out) == MAX_CATEGORIES:
-            break
     return out
 
 
-async def suggest_category(product: str, client: Optional[httpx.AsyncClient] = None) -> dict:
-    """Rend {state, categories}. state : ok | aucun_resultat | indisponible (sandbox)."""
+def is_accessory(product: str) -> bool:
+    """L'objet est lui-même un accessoire : « Manette DualSense », « Sony DualSense », « Joy-Con », « Coque iPhone »."""
+    toks = matching.tokens(product)
+    return bool(toks) and (toks[0] in matching.ACCESSORY_START or any(t in matching.CONTROLLER_WORDS for t in toks))
+
+
+def rank_categories(suggestions: list[dict], product: str, category: Optional[str]) -> list[dict]:
+    """Trie les suggestions d'eBay pour notre objet. Rend 3 catégories au plus, la meilleure en premier.
+
+    1. On écarte les catégories de pièces détachées et de collection : un objet en panne se publie dans sa
+       catégorie normale, avec l'état « pour pièces ».
+    2. On écarte les accessoires, sauf si l'objet en est un lui-même.
+    3. Avec notre catégorie : on ne garde que la famille eBay de l'objet (Téléphonie, Jeux vidéo, Informatique),
+       la catégorie de référence passe en premier, et elle sert de secours s'il ne reste rien.
+    """
+    accessory = is_accessory(product)
+    ref = REFERENCE_CATEGORIES.get(category or "")
+    root = ref["path"].split(" > ")[0] if ref else None
+    kept = []
+    for c in suggestions:
+        segments = [" ".join(matching.tokens(s)) for s in c["path"].split(" > ")]
+        if any("piece" in s for s in segments) or "collections" in segments:
+            continue
+        if not accessory and any("accessoire" in s for s in segments):
+            continue
+        if root and not c["path"].startswith(root + " > "):
+            continue
+        kept.append(c)
+    if ref and not accessory:
+        kept.sort(key=lambda c: c["id"] != ref["id"])  # tri stable : la référence en tête, le reste dans l'ordre d'eBay
+        if not kept:
+            kept = [dict(ref)]
+    return kept[:MAX_CATEGORIES]
+
+
+async def suggest_category(product: str, category: Optional[str] = None,
+                           client: Optional[httpx.AsyncClient] = None) -> dict:
+    """Rend {state, categories}. state : ok | aucun_resultat | indisponible (sandbox).
+    category : notre catégorie (smartphone, console...), pour trier les suggestions d'eBay."""
     if not configured():
         raise EbayNotConfigured()
     if _host() == HOSTS["sandbox"]:
@@ -249,7 +299,7 @@ async def suggest_category(product: str, client: Optional[httpx.AsyncClient] = N
         )
         if r.status_code != 200:
             raise EbayError(f"suggestion de catégorie refusée ({r.status_code})")
-        categories = parse_categories(r.json())
+        categories = rank_categories(parse_categories(r.json()), product, category)
     except (httpx.HTTPError, ValueError) as e:  # ValueError : réponse qui n'est pas du JSON
         raise EbayError(type(e).__name__) from e
     finally:
