@@ -601,3 +601,25 @@ README : section « Mesurer », section « Mettre en ligne » (variables du Spac
 - **Test réel de `backend/ebay.py`** (API Browse, EBAY_FR) : Nintendo Switch 54 annonces lues, 45 gardées (même modèle), médiane 135,90 €, prix conseillé 122 € (94 à 144 €). iPhone 13 64 annonces, 64 gardées, médiane 273 €, prix conseillé 246 € (226 à 266 €). Vérifié aussi dans l'app (écran « Vendre seul (eBay) » : 122 €).
 - **Point faible :** les annonces « reconditionné » (revendeurs sur eBay) se mêlent aux occasions de particuliers sur l'iPhone et tirent le prix vers le haut. À filtrer ou à signaler avant de parler de prix « entre particuliers ».
 - **Rappel déploiement :** `EBAY_CLIENT_ID` et `EBAY_CLIENT_SECRET` à ajouter dans les secrets du Space. Toute évolution qui stocke des données eBay côté serveur oblige à revoir l'exemption.
+
+### Mercredi 18/11, après-midi : coefficient de rachat par catégorie (Sebastian, issue #11)
+
+Le coefficient unique de 0,59 (7 objets, 17/11) surestimait les jeux et se trompait sur les consoles.
+Mesure étendue à 30 objets chez Easy Cash, dans les 5 catégories de l'app : même modèle, même capacité,
+même état (« bon état »), rachat ÷ prix de vente, médiane par catégorie.
+
+Valeurs retenues : informatique 0,67 · smartphone 0,60 · tablette 0,50 · jeu vidéo 0,43 · console 0,44
+sous 300 € et 0,74 à partir de 300 € (PS5, Xbox Series X) · 0,59 par défaut. Méthode, tableau, limites
+et objets écartés : `docs/calibrage-rachat.md`. Mesures : `mesures/calibrage_rachat_easycash_30_objets.csv`.
+
+Code : `backend/pricing.py` (fonction `buyback_coef`), catégorie transmise par `backend/main.py` et
+`agents/mesure_objets.py`, page « Comment ça marche » mise à jour.
+
+Ajouté sans être branché : `agents/buyback_agent.py`, un agent qui lit l'offre de rachat réelle d'Easy Cash,
+avec la table en secours (cotation manuelle sur les modèles récents). Faisabilité par enseigne dans le document.
+
+**Testé :** `tests/test_garde_fous.py` 18/18 (dont 5 nouvelles vérifications sur la table), `test_matching.py`
+52/52, `test_ebay.py` 14/14 ; l'agent de rachat hors réseau avec une API H simulée.
+**Pas testé :** l'agent de rachat en réel (le poste utilisé n'atteint pas l'API H) ; l'interface n'a pas été
+relancée (seul un texte de « Comment ça marche » change). Limites : Easy Cash seulement, 3 objets en tablette
+et en informatique.
