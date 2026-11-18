@@ -356,7 +356,7 @@ async def search(
                     remaining -= 1
                     prices += [o["price_eur"] for o in ev["offers"]]
                     yield _sse(ev)
-                    yield _sse({"type": "shop_block", "block": pricing.shop_block(prices)})
+                    yield _sse({"type": "shop_block", "block": pricing.shop_block(prices, category)})
                 else:
                     yield _sse(ev)
             yield _sse({"type": "done"})
