@@ -751,3 +751,8 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - **Essai 3 (tous les outils) : statut `draft_saved` en 93 s, 12 étapes.** Vérifié indépendamment du récit de l'agent : brouillon rouvert par son identifiant (`draftId=5339246164121`), éditeur toujours ouvert avec le bouton « Mettre en vente gratuitement » (donc non publié), titre exact, description de 20 lignes, prix 141,00 € (l'acheteur paierait 147,34 € avec les frais de protection), 6 photos (3 en double, dues à l'essai 2).
 - **Non vérifié :** la liste des brouillons dans eBay (le Hub vendeur n'est pas activé sur le compte : `/sh/lst/drafts` renvoie à l'accueil) ; le bouton de l'interface (testé par appel direct à la route, pas par un clic dans l'app) ; une 2e exécution à partir d'un brouillon vierge ; les conditions d'eBay sur l'automatisation d'un compte vendeur.
 - **À nettoyer dans eBay :** deux brouillons de test (« Nintendo Switch console » et « Apple iPhone 11 ») ; celui de l'iPhone a 3 photos en double.
+
+### Mercredi 18/11, 23h55 : bouton « agent H » testé depuis l'interface par Jude
+- Clé de démo : une virgule copiée avec l'adresse rendait la clé invalide ; l'app retire maintenant la ponctuation finale.
+- Bouton : fond blanc forcé illisible en mode sombre, et bouton muet tant que le prix n'était pas fixé. Corrigé et vérifié dans un navigateur de test.
+- Premier clic réel : requête reçue (200) mais l'agent restait à « étape 0 ». Cause : le Chrome dédié tournait sans aucun onglet, le pont `holo local browser` s'est arrêté. Correction : le serveur ouvre l'onglet eBay s'il manque et prévient si le pont s'arrête ; le script de lancement ouvre aussi l'onglet. Tests 22/22. Nouveau clic à faire par Jude.

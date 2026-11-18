@@ -57,6 +57,19 @@ def chrome_ready() -> bool:
         return False
 
 
+def ensure_ebay_tab() -> bool:
+    """Le Chrome dédié peut tourner sans aucun onglet (observé le 18/11) : on en ouvre un sur eBay si besoin."""
+    try:
+        tabs = httpx.get(f"http://127.0.0.1:{DEBUG_PORT}/json/list", timeout=3).json()
+        if any(t.get("type") == "page" and "ebay." in t.get("url", "") for t in tabs):
+            return True
+        httpx.put(f"http://127.0.0.1:{DEBUG_PORT}/json/new?https://www.ebay.fr/", timeout=5)
+        time.sleep(2)
+        return True
+    except Exception:
+        return False
+
+
 def _ebay_page(p):
     browser = p.chromium.connect_over_cdp(f"http://127.0.0.1:{DEBUG_PORT}")
     return next((pg for ctx in browser.contexts for pg in ctx.pages if "ebay." in pg.url), None)
@@ -191,6 +204,9 @@ def run_draft(client, *, photos: list[Path], title: str, description: str, price
     from agents.price_agent import AGENT
 
     paths = [str(p) for p in photos[:MAX_PHOTOS]]
+    if not ensure_ebay_tab():
+        emit({"type": "error", "message": "Le Chrome eBay ne répond pas. Relancez scripts/ebay_chrome.sh."})
+        return None
     handle = client.start_session(
         agent=AGENT,
         messages=_task(title, description, price),
@@ -214,6 +230,10 @@ def run_draft(client, *, photos: list[Path], title: str, description: str, price
     try:
         for _ in handle.stream(wait_for_seconds=3):
             if stop.is_set() or time.monotonic() - t0 > MAX_SECONDS + 30:
+                handle.cancel()
+                return None
+            if bridge.poll() is not None:
+                emit({"type": "error", "message": "Le pont vers le Chrome eBay s'est arrêté. Relancez scripts/ebay_chrome.sh et réessayez."})
                 handle.cancel()
                 return None
             steps = handle.status().steps
