@@ -412,7 +412,7 @@ function ListingPanel({
   useEffect(() => {
     if (platform !== "ebay" || ebayCatAsked.current) return;
     ebayCatAsked.current = true;
-    fetchEbayCategory(product).then(setEbayCat);
+    fetchEbayCategory(product, category).then(setEbayCat);
   }, [platform, product]);
 
   // L'annonce se rédige en parallèle des agents : elle est prête quand les prix arrivent.

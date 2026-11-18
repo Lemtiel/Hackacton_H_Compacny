@@ -204,9 +204,9 @@ export type EbayCategoryResult = {
   categories: EbayCategory[];
 };
 
-export async function fetchEbayCategory(product: string): Promise<EbayCategoryResult> {
+export async function fetchEbayCategory(product: string, category?: Category): Promise<EbayCategoryResult> {
   try {
-    const res = await fetch(`${API_URL}/api/ebay/category?product=${encodeURIComponent(product)}`);
+    const res = await fetch(`${API_URL}/api/ebay/category?product=${encodeURIComponent(product)}${category ? `&category=${category}` : ""}`);
     if (!res.ok) return { state: "indisponible", categories: [] };
     return (await res.json()) as EbayCategoryResult;
   } catch {

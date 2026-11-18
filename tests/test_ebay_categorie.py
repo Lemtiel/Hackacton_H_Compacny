@@ -115,5 +115,37 @@ check("6 requêtes pour 4 suggestions, arbre demandé une seule fois",
 check("sandbox : indisponible, sans appel réseau", sandbox == {"state": "indisponible", "categories": []})
 check("sans clés : EbayNotConfigured (la route rend « non_configure »)", not_configured)
 
+# --- Choix de la catégorie selon celle de l'app (cas relevés sur l'API réelle le 18/11) ---
+def c(cat_id, path):
+    parts = path.split(" > ")
+    return {"id": cat_id, "name": parts[-1], "path": path}
+
+
+COQUES = c("20349", "Téléphonie, mobilité > Tél. mobiles: accessoires > Etuis, housses, coques")
+PIECES = c("43304", "Téléphonie, mobilité > Téléphones mobiles: pièces")
+MOBILES = c("9355", "Téléphonie, mobilité > Téléphones mobiles")
+JEUX = c("139973", "Jeux vidéo, consoles > Jeux")
+CONSOLES = c("139971", "Jeux vidéo, consoles > Consoles")
+MANETTES = c("117042", "Jeux vidéo, consoles > Accessoires > Manettes, périphériques de jeu")
+FILMS_TAB = c("1", "Informatique, réseaux > Tablettes, liseuses: accessoires > Films protecteurs d'écran")
+ETUIS_TAB = c("2", "Informatique, réseaux > Tablettes, liseuses: accessoires > Etuis, housses, coques")
+
+ids = lambda cats: [x["id"] for x in cats]
+check("iPhone : « Téléphones mobiles » passe devant coques et pièces",
+      ids(ebay.pick_categories([COQUES, PIECES, MOBILES], "smartphone", "iPhone 13"))[0] == "9355")
+check("Xbox : « Consoles » passe devant « Jeux »", ids(ebay.pick_categories([JEUX, CONSOLES], "console", "Xbox Series S"))[0] == "139971")
+check("jeu vidéo : « Jeux » reste en tête", ids(ebay.pick_categories([JEUX, CONSOLES], "jeu_video", "FIFA 23 PS5"))[0] == "139973")
+tab = ebay.pick_categories([PIECES, FILMS_TAB, ETUIS_TAB], "tablette", "Samsung Galaxy Tab S8")
+check("tablette absente des suggestions : catégorie par défaut, sans pièces ni accessoires", ids(tab) == ["171485"])
+check("accessoire (manette) : l'ordre d'eBay est gardé, accessoires acceptés",
+      ids(ebay.pick_categories([MANETTES, PIECES, CONSOLES], "console", "manette PS5 DualSense"))[0] == "117042")
+check("accessoire (casque) : pas de catégorie console imposée",
+      ebay.pick_categories([c("171821", "Jeux vidéo, consoles > Accessoires > Casques"), CONSOLES], "console", "Casque Xbox")[0]["id"] == "171821")
+check("catégorie de l'app inconnue : ordre d'eBay, 3 au plus", ids(ebay.pick_categories([COQUES, PIECES, MOBILES, JEUX], None, "iPhone 13")) == ["20349", "43304", "9355"])
+check("informatique sans bonne suggestion : pas de catégorie inventée (aucune par défaut)",
+      "informatique" not in ebay.DEFAULT_CATEGORY and ebay.pick_categories([PIECES], "informatique", "MacBook Air") == [PIECES])
+check("catégories par défaut = catégories cibles",
+      all(v["id"] in ebay.TARGET_IDS[k] for k, v in ebay.DEFAULT_CATEGORY.items()))
+
 print(f"{total - failed}/{total} vérifications correctes")
 sys.exit(1 if failed else 0)

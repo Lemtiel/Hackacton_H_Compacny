@@ -23,6 +23,7 @@ import threading
 import time
 from collections import defaultdict, deque
 from pathlib import Path
+from typing import Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
@@ -226,10 +227,13 @@ async def ebay_prices(
 
 
 @app.get("/api/ebay/category")
-async def ebay_category(product: str = Query(..., min_length=2, max_length=120)):
+async def ebay_category(
+    product: str = Query(..., min_length=2, max_length=120),
+    category: Optional[str] = Query(None, max_length=20),
+):
     # Aide à la publication : catégorie suggérée par eBay (API Taxonomy). L'utilisateur publie lui-même.
     try:
-        return await ebay.suggest_category(product)
+        return await ebay.suggest_category(product, category)
     except ebay.EbayNotConfigured:
         return {"state": "non_configure", "categories": []}
     except ebay.EbayError:
