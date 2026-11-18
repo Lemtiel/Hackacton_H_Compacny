@@ -91,6 +91,8 @@ check("annonces affichées dans la fourchette", all(b["listed_low"] <= i["price_
 check("jeton réutilisé au 2e appel (3 requêtes, pas 4)", len(calls) == 3 and res2["state"] == "ok")
 q = calls[1].url.params
 check("filtre : prix fixe, euros, France, occasion", all(s in q["filter"] for s in ("FIXED_PRICE", "priceCurrency:EUR", "itemLocationCountry:FR", "3000")))
+check("filtre : ni neuf, ni pièces, ni reconditionné (revendeurs professionnels)",
+      not any(i in q["filter"] for i in ("1000", "1500", "7000", "2000", "2010", "2020", "2030", "2500")))
 check("moins de 3 prix : pas de fourchette", ebay.ebay_block([100, 120]) is None)
 
 print(f"{14 - failed}/14 vérifications correctes")

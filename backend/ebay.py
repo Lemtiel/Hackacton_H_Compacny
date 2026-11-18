@@ -38,8 +38,10 @@ MIN_PRICES = 3        # en dessous, pas de fourchette : trop peu d'annonces pour
 MAX_ITEMS_SHOWN = 10  # annonces affichées avec leur lien
 TIMEOUT_S = 10.0
 
-# Occasion et reconditionné. Exclus : neuf (1000, 1500) et « pour pièces » (7000).
-USED_CONDITION_IDS = "2000|2010|2020|2030|2500|3000|4000|5000|6000"
+# Occasion seule : 3000 (occasion), 4000 (très bon), 5000 (bon), 6000 (acceptable). Exclus : neuf (1000, 1500), « pour pièces »
+# (7000) et reconditionné (2000 à 2030, 2500), vendu par des professionnels : mesuré le 18/11, il fait monter le prix conseillé
+# d'un iPhone 13 de 222 à 242 € alors que le bloc parle de « vendre seul ».
+USED_CONDITION_IDS = "3000|4000|5000|6000"
 
 HOSTS = {"production": "https://api.ebay.com", "sandbox": "https://api.sandbox.ebay.com"}
 SCOPE = "https://api.ebay.com/oauth/api_scope"
