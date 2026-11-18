@@ -102,8 +102,10 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
           }));
         } else if (ev.type === "site_result") {
           const base = ev.state === "ok" ? `${ev.offers.length} prix relevé${ev.offers.length > 1 ? "s" : ""}` : ev.state === "aucun_resultat" ? "Aucune offre de ce modèle" : "Site indisponible";
+          const near = ev.offers.filter((o) => o.condition_match && o.condition_match !== "exact").length;
+          const nearLabel = ev.state === "ok" && near ? ` (dont ${near} dans un état voisin ou non précisé)` : "";
           const rejected = ev.n_rejected ? `, ${ev.n_rejected} écartée${ev.n_rejected > 1 ? "s" : ""} (non comparable ou invérifiable)` : "";
-          setRows((r) => r.map((s) => (s.key === ev.site ? { ...s, state: ev.state, label: base + rejected, elapsed: ev.duration_s ?? s.elapsed, offers: ev.offers } : s)));
+          setRows((r) => r.map((s) => (s.key === ev.site ? { ...s, state: ev.state, label: base + nearLabel + rejected, elapsed: ev.duration_s ?? s.elapsed, offers: ev.offers } : s)));
         } else if (ev.type === "site_shot") {
           setRows((r) => r.map((s) => (s.key === ev.site ? { ...s, shot: shotUrl(ev.shot) } : s)));
         } else if (ev.type === "shop_block") {
@@ -216,7 +218,12 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
               </summary>
               {s.offers.map((o, i) => (
                 <div key={i} className="offer">
-                  <span>{o.url ? <a href={o.url} target="_blank" rel="noopener noreferrer">{o.title}</a> : o.title}{o.condition ? <span className="small">, {o.condition}</span> : null}</span>
+                  <span>
+                    {o.url ? <a href={o.url} target="_blank" rel="noopener noreferrer">{o.title}</a> : o.title}
+                    {o.condition ? <span className="small">, {o.condition}</span> : null}
+                    {o.condition_match === "proche" ? <span className="small muted"> (état voisin)</span> : null}
+                    {o.condition_match === "inconnu" ? <span className="small muted"> (état non précisé)</span> : null}
+                  </span>
                   <span className="num">{euros(o.price_eur)}</span>
                 </div>
               ))}

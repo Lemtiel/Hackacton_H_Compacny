@@ -676,3 +676,25 @@ Fait :
 - **Décision de Jude : « les 2 »** : (1) garder l'aide actuelle pour vendredi et présenter le 1 clic comme la suite ; (2) améliorer l'aide avec un bouton de partage.
 - **Bouton « Partager photos et annonce »** (`SearchScreen.tsx`) : une feuille de partage native du téléphone avec les photos affichées (version studio ou originale), le titre, la description et le prix. Rien ne passe par notre serveur. Le bouton n'apparaît que si le navigateur sait partager (HTTPS ou `localhost`).
 - **Testé :** TypeScript OK ; dans Chrome sur `localhost` avec un partage simulé : la feuille reçoit bien le fichier `snapncash-photo-1.jpg` (image/jpeg), le titre et la description. **Pas testé :** la vraie feuille de partage d'un iPhone, et surtout **ce que l'app eBay fait d'un partage de photos et de texte** (je ne sais pas si elle l'accepte). Sur `http://10.40.5.83:3000` le bouton **n'apparaît pas** (adresse non sécurisée) : il se teste sur Vercel ou le Space, une fois déployés.
+
+### Mercredi 18/11, après-midi : l'état classe les offres au lieu de les exclure (issue #23, Tristan)
+Constat du test de 10h30 (Nintendo Switch, « Bon état ») : Gamecash 0 prix, car il n'affiche pas le libellé « Bon état » ; Cash Converters 1 prix. Une seule boutique sur 4 atteignait 3 prix, ce qui bloque l'objectif de la mesure (#8). Certideal et Swappie notent aussi à leur façon (Correct, Très bon état, Parfait état, Premium).
+
+**Décision (validée par Tristan, à relire par Jude) : l'état sert à classer, plus à exclure.**
+- Une boutique avec au moins 3 offres au même état : rien ne change, les autres états restent écartés.
+- Sinon, on complète avec les offres à un cran d'écart (au-dessus ou en dessous), puis avec celles dont la boutique n'affiche pas d'état. Chaque offre porte `condition_match` (`exact`, `proche`, `inconnu`), et l'interface l'indique (« état voisin », « état non précisé »).
+- Toujours écartés : deux crans d'écart ou plus, « pour pièces » face à un objet qui marche (et l'inverse), offre sans fiche produit, doublon.
+- Table des libellés élargie dans `backend/matching.py` (`GRADE_LABELS`) : Très bon, Excellent, Parfait état, Premium, Satisfaisant, Grade A/B/C, etc.
+- Consigne de l'agent (`agents/price_agent.py`, règle 2) : copier l'état tel qu'affiché, compléter par les états voisins s'il manque des offres, laisser l'état vide si la boutique n'en montre pas. À coordonner avec le chantier « vitesse des agents », qui touche la même consigne.
+
+Limite : mélanger des états voisins peut décaler un peu la médiane (un « très bon état » est plus cher). Le décalage reste visible à l'écran et ne joue qu'en l'absence de 3 offres au même état.
+**Testé :** `tests/test_matching.py` 74/74 (22 nouveaux cas : libellés, complément par états voisins, boutique sans état, pour pièces), `test_ebay.py` 14/14, `test_ebay_categorie.py` 13/13, `test_garde_fous.py` 18/18, TypeScript compile. `_site_payload` vérifié à la main sur des offres simulées de Gamecash.
+**Pas testé :** une vraie recherche avec les agents H (pas de clé dans cette session). À refaire : la Switch sur les 4 boutiques, et vérifier que Gamecash rend de nouveau des prix.
+
+### Mercredi 18/11, 20h : deux corrections de l'issue #23 en parallèle, fusion cassée réparée
+- **Doublon de travail :** Tristan (PR #26, fusionnée dans `main`) et moi (commit `db09156`, poussé sur `interface`) avons corrigé l'issue #23 chacun de notre côté. La version de Tristan est plus complète : les offres sont **classées** (exact, proche, sans état) au lieu d'être filtrées, la correspondance s'affiche dans l'interface, la table des libellés est plus large. **Je garde la sienne.** Ma variante (`grades_compatible`, libellé sans grade lu comme « bon ») est retirée.
+- **Dégât constaté :** la fusion de `main` dans `interface` à 15h38 (`9168309`) a empilé les deux versions dans `backend/matching.py` : fichier **invalide** (erreur de syntaxe), vérification automatique **rouge** sur `interface` et sur la PR #27. Réparé : `matching.py`, `price_agent.py` et `test_matching.py` repartent de la version saine de `main`.
+- **Conservé de mon côté (ne chevauche pas Tristan) :** correctifs PS5 (`is_junk_title`, `_numbers_stick`, plancher de prix des consoles dans `ebay.py`) ; garde « offres valides d'une session coupée au délai » dans `_site_payload` ; catégorie eBay (`pick_categories`) ; bouton de partage ; publication assistée.
+- **Tests après réparation :** tri 92/92 (cas de Tristan + rebuts eBay), eBay 19/19, catégorie 22/22, garde-fous 23/23, TypeScript et import du serveur OK.
+- **À coordonner :** la PR #28 de Kevin corrige aussi le classement des catégories eBay (`rank_categories`), comme mon `pick_categories` de la PR #27. Les deux modifient `backend/ebay.py` et `/api/ebay/category` : à fusionner l'un après l'autre, en choisissant une seule implémentation. À régler avec Kevin avant de fusionner la PR #27.
+- **Leçon :** quand une même issue est assignée, une seule personne la prend ; une fusion automatique propre peut donner un fichier invalide, donc lancer les tests après chaque fusion de branche.

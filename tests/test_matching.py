@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from types import SimpleNamespace
 
-from backend.matching import filter_verified_offers, is_junk_title, reject_reason  # noqa: E402
+from backend.matching import condition_grade, filter_verified_offers, is_junk_title, rank_by_condition, reject_reason  # noqa: E402
 
 CASES = [
     # (objet cherché, catégorie, titre de l'annonce, gardée ?)
@@ -84,40 +84,66 @@ for product, category, title, keep in CASES:
         failed += 1
         print(f"ÉCHEC  {product!r} / {title!r} : attendu {'gardée' if keep else 'écartée'}, obtenu {reason or 'gardée'}")
 
-verified, rejected = filter_verified_offers([
-    SimpleNamespace(condition="Bon état", url="https://example.com/produit/iphone-15"),
-    SimpleNamespace(condition="Bon état", url="https://example.com/produit/iphone-15"),  # doublon
-    SimpleNamespace(condition=None, url="https://example.com/produit/iphone-15-noir"),
-    SimpleNamespace(condition="Très bon état", url="https://example.com/"),
-    SimpleNamespace(condition="Correct", url="https://example.com/produit/iphone-15-vert"),
-    SimpleNamespace(condition="Très bon état", url="https://example.com/produit/iphone-15-bleu"),
-], "Bon état")
-if len(verified) != 3 or rejected != 3:  # « Correct » et « Très bon état » sont des voisins de « Bon état » : gardés
-    failed += 1
-    print(f"ÉCHEC  offres vérifiables : attendu 3 gardées et 3 écartées, obtenu {len(verified)} et {rejected}")
+def offer(condition, slug):
+    return SimpleNamespace(condition=condition, url=f"https://example.com/produit/{slug}" if slug else "https://example.com/")
 
-def offer(cond, n):
-    return SimpleNamespace(condition=cond, url=f"https://example.com/produit/switch-{n}")
 
-GRADE_CASES = [
-    # (état demandé, états des annonces, nombre gardé, pourquoi)
-    ("Bon état", ["Bon état", "Très bon état"], 2, "voisin accepté quand il manque des offres"),
-    ("Bon état", ["Bon état", "Correct", "Comme neuf"], 2, "à deux crans (Comme neuf) : refusé"),
-    ("Bon état", ["Bon état", "Bon état", "Bon état", "Très bon état"], 3, "3 offres exactes : les voisines ne servent plus"),
-    ("Bon état", ["Pour pièces", "Hors service"], 0, "pièces jamais mélangé avec un objet qui marche"),
-    ("Pour pièces", ["Pour pièces", "Bon état"], 1, "objet à pièces : seulement des pièces"),
-    ("Très bon état", ["Grade A", "Grade B", "Grade C"], 2, "libellés en grades : A et B gardés, C à deux crans écarté"),
-    ("Bon état", ["Occasion reconditionné"] * 3, 3, "Gamecash : libellé sans grade, lu comme un état moyen"),
-    ("Très bon état", ["Occasion reconditionné"], 1, "libellé sans grade : voisin d'un très bon état"),
-    ("Comme neuf", ["Occasion reconditionné"], 0, "libellé sans grade : pas assimilé à du comme neuf"),
-    ("Pour pièces", ["Occasion reconditionné"], 0, "libellé sans grade : jamais pour pièces"),
-    ("Bon état", ["État standard", "Qualité B+"], 0, "libellé illisible : refusé, on ne devine pas"),
-]
-for target, conds, expected, why in GRADE_CASES:
-    got, _ = filter_verified_offers([offer(c, i) for i, c in enumerate(conds)], target)
-    if len(got) != expected:
+checks = 0
+
+
+def check(label, got, expected):
+    global failed, checks
+    checks += 1
+    if got != expected:
         failed += 1
-        print(f"ÉCHEC  états {target!r} / {conds} : attendu {expected} gardée(s), obtenu {len(got)} ({why})")
+        print(f"ÉCHEC  {label} : attendu {expected!r}, obtenu {got!r}")
+
+
+# Libellés des boutiques ramenés aux cinq états (Certideal, Swappie : notes d'agent du 18/11)
+for label, grade in [
+    ("Bon état", "bon"), ("Très bon état", "tres_bon"), ("Très bon", "tres_bon"), ("Excellent", "tres_bon"),
+    ("Correct", "correct"), ("État correct", "correct"), ("Parfait état", "comme_neuf"), ("Premium", "comme_neuf"),
+    ("Comme neuf", "comme_neuf"), ("Grade B", "bon"), ("Grade A", "tres_bon"), ("Pour pièces", "pieces"),
+    ("Occasion", None), ("", None),
+]:
+    check(f"libellé {label!r}", condition_grade(label), grade)
+
+# Issue #23 : assez d'offres au même état -> les autres états sont écartés, comme avant
+ranked, rejected = rank_by_condition([
+    offer("Bon état", "a"), offer("Bon état", "b"), offer("Grade B", "c"),
+    offer("Très bon état", "d"), offer(None, "e"),
+], "Bon état")
+check("3 offres au même état", [m for _, m in ranked], ["exact", "exact", "exact"])
+check("3 offres au même état, écartées", rejected, 2)
+
+# Issue #23 : une seule offre au même état -> on complète avec les états voisins, puis les offres sans état
+ranked, rejected = rank_by_condition([
+    offer("Bon état", "a"),
+    offer("Très bon état", "b"),       # voisin au-dessus
+    offer("Correct", "c"),             # voisin en dessous
+    offer("Premium", "d"),             # deux crans au-dessus : écartée
+    offer("Pour pièces", "e"),         # jamais comparable à un objet qui marche
+    offer(None, "f"),                  # boutique sans état affiché
+    offer("Bon état", "a"),            # doublon
+    offer("Bon état", None),           # pas de fiche produit
+], "Bon état")
+check("complément par états voisins", [m for _, m in ranked], ["exact", "proche", "proche"])
+check("complément par états voisins, écartées", rejected, 5)
+
+# Gamecash (18/11) : aucun état affiché -> les offres restent, marquées « inconnu », au lieu de 0 prix
+ranked, rejected = rank_by_condition([offer(None, "a"), offer("", "b"), offer("Occasion", "c")], "Bon état")
+check("boutique sans état", [m for _, m in ranked], ["inconnu", "inconnu", "inconnu"])
+check("boutique sans état, écartées", rejected, 0)
+
+# Objet « pour pièces » : seules les offres pour pièces comptent
+ranked, rejected = rank_by_condition([offer("Pour pièces", "a"), offer("État correct", "b")], "Pour pièces")
+check("pour pièces", [m for _, m in ranked], ["exact"])
+
+# Compatibilité : filter_verified_offers rend les offres seules
+verified, rejected = filter_verified_offers([offer("Bon état", "a"), offer("Correct", "b")], "Bon état")
+check("filter_verified_offers", (len(verified), rejected), (2, 0))
+
+
 # Rebuts propres à eBay : pièces, magazines, boîtes vides (relevé du 18/11 sur « PlayStation 5 »).
 JUNK = [
     ("PlayStation 5", "PIECES DÉTACHÉES PARTS CONSOLE SONY PS5 PLAYSTATION 5", True),
@@ -132,8 +158,8 @@ JUNK = [
     ("Nintendo Switch pour pièces", "Nintendo Switch pour pièces, ne s'allume plus", False),  # si l'utilisateur le cherche, on le garde
 ]
 for product, title, expected in JUNK:
-    if is_junk_title(product, title) != expected:
-        failed += 1
-        print(f"ÉCHEC  rebut eBay {title!r} : attendu {'rebut' if expected else 'gardée'}")
-print(f"{len(CASES) + len(JUNK) + len(GRADE_CASES) + 1 - failed}/{len(CASES) + len(JUNK) + len(GRADE_CASES) + 1} cas corrects")
+    check(f"rebut eBay : {title[:45]}", is_junk_title(product, title), expected)
+
+total = len(CASES) + checks
+print(f"{total - failed}/{total} cas corrects")
 sys.exit(1 if failed else 0)
