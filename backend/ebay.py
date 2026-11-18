@@ -8,6 +8,9 @@ Règles (CLAUDE.md, règles 4 et 5) :
 
 Limite connue : l'API Browse rend les annonces EN COURS, donc des prix demandés et non des prix de vente.
 D'où la décote appliquée à la médiane.
+
+Aide à la publication (suggest_category) : catégorie eBay suggérée par l'API Taxonomy, avec le même jeton
+applicatif. Aucun compte utilisateur : c'est l'utilisateur qui publie son annonce sur eBay.
 """
 
 from __future__ import annotations
@@ -179,3 +182,77 @@ async def search(product: str, category: str, client: Optional[httpx.AsyncClient
         "n_rejected": n_rejected,
         "duration_s": round(time.monotonic() - t0, 2),
     }
+
+
+# --- Aide à la publication : catégorie eBay suggérée (API Taxonomy) ---
+# Même jeton applicatif que la recherche (scope api_scope) : aucun compte utilisateur, c'est lui qui publie.
+# On ne garde que l'identifiant, le nom et le chemin de la catégorie. Seul l'identifiant de l'arbre des catégories
+# d'EBAY_FR reste en mémoire (une donnée de configuration, pas une annonce).
+# Limite eBay : get_category_suggestions n'existe pas en sandbox.
+
+MAX_CATEGORIES = 3
+
+_tree_id: Optional[str] = None
+
+
+async def _category_tree_id(client: httpx.AsyncClient, token: str) -> str:
+    global _tree_id
+    if _tree_id:
+        return _tree_id
+    r = await client.get(
+        f"{_host()}/commerce/taxonomy/v1/get_default_category_tree_id",
+        headers={"Authorization": f"Bearer {token}"},
+        params={"marketplace_id": "EBAY_FR"},
+    )
+    if r.status_code != 200:
+        raise EbayError(f"arbre des catégories refusé ({r.status_code})")
+    tree = r.json().get("categoryTreeId")
+    if not tree:
+        raise EbayError("arbre des catégories absent")
+    _tree_id = str(tree)
+    return _tree_id
+
+
+def parse_categories(payload: dict) -> list[dict]:
+    """Rend [{id, name, path}], dans l'ordre d'eBay. path va de la racine à la catégorie : « Jeux vidéo > Consoles »."""
+    out = []
+    for s in payload.get("categorySuggestions") or []:
+        cat = s.get("category") or {}
+        if not (cat.get("categoryId") and cat.get("categoryName")):
+            continue
+        ancestors = sorted(
+            (a for a in s.get("categoryTreeNodeAncestors") or [] if a.get("categoryName") and a.get("categoryTreeNodeLevel", 1) >= 1),
+            key=lambda a: a.get("categoryTreeNodeLevel", 0),
+        )
+        path = [a["categoryName"] for a in ancestors] + [cat["categoryName"]]
+        out.append({"id": str(cat["categoryId"]), "name": cat["categoryName"], "path": " > ".join(path)})
+        if len(out) == MAX_CATEGORIES:
+            break
+    return out
+
+
+async def suggest_category(product: str, client: Optional[httpx.AsyncClient] = None) -> dict:
+    """Rend {state, categories}. state : ok | aucun_resultat | indisponible (sandbox)."""
+    if not configured():
+        raise EbayNotConfigured()
+    if _host() == HOSTS["sandbox"]:
+        return {"state": "indisponible", "categories": []}
+    own = client is None
+    client = client or httpx.AsyncClient(timeout=TIMEOUT_S)
+    try:
+        token = await _get_token(client)
+        tree = await _category_tree_id(client, token)
+        r = await client.get(
+            f"{_host()}/commerce/taxonomy/v1/category_tree/{tree}/get_category_suggestions",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"q": product},
+        )
+        if r.status_code != 200:
+            raise EbayError(f"suggestion de catégorie refusée ({r.status_code})")
+        categories = parse_categories(r.json())
+    except (httpx.HTTPError, ValueError) as e:  # ValueError : réponse qui n'est pas du JSON
+        raise EbayError(type(e).__name__) from e
+    finally:
+        if own:
+            await client.aclose()
+    return {"state": "ok" if categories else "aucun_resultat", "categories": categories}

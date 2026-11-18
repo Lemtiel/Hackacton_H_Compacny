@@ -601,3 +601,40 @@ README : section « Mesurer », section « Mettre en ligne » (variables du Spac
 - **Test réel de `backend/ebay.py`** (API Browse, EBAY_FR) : Nintendo Switch 54 annonces lues, 45 gardées (même modèle), médiane 135,90 €, prix conseillé 122 € (94 à 144 €). iPhone 13 64 annonces, 64 gardées, médiane 273 €, prix conseillé 246 € (226 à 266 €). Vérifié aussi dans l'app (écran « Vendre seul (eBay) » : 122 €).
 - **Point faible :** les annonces « reconditionné » (revendeurs sur eBay) se mêlent aux occasions de particuliers sur l'iPhone et tirent le prix vers le haut. À filtrer ou à signaler avant de parler de prix « entre particuliers ».
 - **Rappel déploiement :** `EBAY_CLIENT_ID` et `EBAY_CLIENT_SECRET` à ajouter dans les secrets du Space. Toute évolution qui stocke des données eBay côté serveur oblige à revoir l'exemption.
+
+### Mercredi 18/11, après-midi : coefficient de rachat par catégorie (Sebastian, issue #11)
+
+Le coefficient unique de 0,59 (7 objets, 17/11) surestimait les jeux et se trompait sur les consoles.
+Mesure étendue à 30 objets chez Easy Cash, dans les 5 catégories de l'app : même modèle, même capacité,
+même état (« bon état »), rachat ÷ prix de vente, médiane par catégorie.
+
+Valeurs retenues : informatique 0,67 · smartphone 0,60 · tablette 0,50 · jeu vidéo 0,43 · console 0,44
+sous 300 € et 0,74 à partir de 300 € (PS5, Xbox Series X) · 0,59 par défaut. Méthode, tableau, limites
+et objets écartés : `docs/calibrage-rachat.md`. Mesures : `mesures/calibrage_rachat_easycash_30_objets.csv`.
+
+Code : `backend/pricing.py` (fonction `buyback_coef`), catégorie transmise par `backend/main.py` et
+`agents/mesure_objets.py`, page « Comment ça marche » mise à jour.
+
+Ajouté sans être branché : `agents/buyback_agent.py`, un agent qui lit l'offre de rachat réelle d'Easy Cash,
+avec la table en secours (cotation manuelle sur les modèles récents). Faisabilité par enseigne dans le document.
+
+**Testé :** `tests/test_garde_fous.py` 18/18 (dont 5 nouvelles vérifications sur la table), `test_matching.py`
+52/52, `test_ebay.py` 14/14 ; l'agent de rachat hors réseau avec une API H simulée.
+**Pas testé :** l'agent de rachat en réel (le poste utilisé n'atteint pas l'API H) ; l'interface n'a pas été
+relancée (seul un texte de « Comment ça marche » change). Limites : Easy Cash seulement, 3 objets en tablette
+et en informatique.
+
+### Mercredi 18/11, fin d'après-midi : aide à la publication sur eBay (Kevin)
+Chantier commencé par Jude, rien de poussé : repris par Kevin, branche `publication-ebay`.
+
+**Décision : publication assistée, pas de publication par l'API Sell.** Publier à la place de l'utilisateur sort des Specs (« Publication automatique des annonces » exclue, utilisation anonyme sans compte). Il faudrait aussi le compte eBay de l'utilisateur (OAuth), héberger les photos (règle 5) et revoir l'exemption eBay accordée sur « rien de conservé ». Gardée en roadmap, à reprendre seulement si Jude change les Specs.
+
+Fait :
+- `backend/ebay.py` : `suggest_category`, catégorie suggérée par l'API Taxonomy d'eBay (`get_category_suggestions` sur l'arbre d'EBAY_FR), avec le même jeton applicatif que la recherche. On ne garde que l'identifiant, le nom et le chemin (3 suggestions au plus). Seul l'identifiant de l'arbre reste en mémoire. eBay ne propose pas cet appel en sandbox : état `indisponible`.
+- Route `GET /api/ebay/category?product=` dans `backend/main.py`. Sans clés : `non_configure`.
+- Interface, onglet eBay du bloc annonce : bouton « Copier le titre » (eBay a deux champs séparés), puis une fiche « Ensuite, sur eBay » dans l'ordre du formulaire : titre, catégorie suggérée, état à choisir (« Occasion », ou « pour pièces »), photos, description (bouton pour la copier seule), prix choisi en « Achat immédiat » (nos prix eBay viennent d'annonces à prix fixe). La catégorie n'est demandée qu'à l'ouverture de l'onglet eBay, une seule fois. Les autres onglets ne changent pas.
+- Règle 4 respectée : la catégorie eBay s'affiche telle quelle, elle ne passe pas dans le modèle de texte. Rien n'est conservé, ni sur le serveur ni dans Mon grenier.
+- Mentions : page « Comment ça marche », pages légales (données envoyées à eBay, sous-traitants) et `docs/produit/comment-ca-marche-mentions.md`.
+
+**Testé :** `tests/test_ebay_categorie.py` 13/13 sur réponse simulée (chemin de la catégorie, champs gardés, jeton et arbre réutilisés, aucune suggestion, erreur eBay, sandbox, sans clés), ajouté à la CI. `test_ebay.py` 14/14, `test_matching.py` 52/52, `test_garde_fous.py` 18/18. TypeScript compile. Route réelle sans clés : `non_configure`. Dans le navigateur (ordinateur et téléphone) : fiche affichée sans catégorie, puis avec une catégorie simulée ; état « Pour pièces » traduit ; titre et description copiés séparément (presse-papiers simulé, car le navigateur de test le refuse).
+**Pas testé :** l'appel réel à l'API Taxonomy (le poste de Kevin n'a pas les clés eBay) ; le copier-coller sur un vrai téléphone ; les libellés exacts du formulaire eBay (« Occasion », « pour pièces »), à vérifier en ouvrant eBay.

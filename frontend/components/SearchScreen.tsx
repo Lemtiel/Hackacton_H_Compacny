@@ -4,12 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import {
   CATEGORY_LABELS,
   type Category,
+  type EbayCategoryResult,
   type EbayResult,
   type Offer,
   type SearchEvent,
   type ShopBlock,
   euros,
   fetchEbay,
+  fetchEbayCategory,
   generateListing,
   isDemo,
   makeStudio,
@@ -18,7 +20,7 @@ import {
   shotUrl,
 } from "@/lib/api";
 import { type GrenierItem, newId, updateItem, upsertItem } from "@/lib/grenier";
-import { type Condition, type ListingFormat, type Platform, fallbackListing } from "@/lib/listing";
+import { type Condition, type ListingFormat, type Platform, ebayCondition, fallbackListing } from "@/lib/listing";
 import { PUBLISH_URLS, type Verdict, computeVerdict, priceZone } from "@/lib/verdict";
 import { CoinRain, CountUp } from "@/components/CashFx";
 
@@ -402,7 +404,16 @@ function ListingPanel({
   const [ads, setAds] = useState<ListingFormat[] | null>(null);
   const [adState, setAdState] = useState<"loading" | "ok" | "fallback">("loading");
   const [adError, setAdError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"annonce" | "title" | "description" | null>(null);
+  const [ebayCat, setEbayCat] = useState<EbayCategoryResult | null>(null);
+  const ebayCatAsked = useRef(false);
+
+  // Catégorie eBay suggérée : demandée une seule fois, quand l'utilisateur ouvre l'onglet eBay.
+  useEffect(() => {
+    if (platform !== "ebay" || ebayCatAsked.current) return;
+    ebayCatAsked.current = true;
+    fetchEbayCategory(product).then(setEbayCat);
+  }, [platform, product]);
 
   // L'annonce se rédige en parallèle des agents : elle est prête quand les prix arrivent.
   function writeListing() {
@@ -425,16 +436,20 @@ function ListingPanel({
     setAds((list) => list?.map((a) => (a.key === platform ? { ...a, [field]: value } : a)) ?? null);
   }
 
-  async function copy() {
+  // eBay a deux champs séparés (titre puis description) : on peut copier l'un ou l'autre.
+  async function copy(what: "annonce" | "title" | "description") {
     if (!ad) return;
+    const text = what === "title" ? ad.title : what === "description" ? ad.description : `${ad.title}\n\n${ad.description}`;
     try {
-      await navigator.clipboard.writeText(`${ad.title}\n\n${ad.description}`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+      await navigator.clipboard.writeText(text);
+      setCopied(what);
+      setTimeout(() => setCopied((c) => (c === what ? null : c)), 2500);
     } catch {
       /* presse-papiers refusé : le texte reste sélectionnable */
     }
   }
+
+  const ebayCategory = ebayCat?.state === "ok" ? ebayCat.categories[0] : null;
 
   return (
     <div className="panel">
@@ -465,10 +480,14 @@ function ListingPanel({
           <input id="ad-title" className="field field-white" value={ad.title} onChange={(e) => editAd("title", e.target.value)} />
           <label htmlFor="ad-desc" className="label">Description</label>
           <textarea id="ad-desc" className="listing" style={{ marginTop: 0 }} value={ad.description} onChange={(e) => editAd("description", e.target.value)} />
-          {myPrice !== null && <p className="small" style={{ margin: "0 0 0.75rem" }}>Votre prix : <strong className="num">{euros(myPrice)}</strong>, à saisir sur le site.</p>}
+          {myPrice !== null && platform !== "ebay" && <p className="small" style={{ margin: "0 0 0.75rem" }}>Votre prix : <strong className="num">{euros(myPrice)}</strong>, à saisir sur le site.</p>}
 
           <div className="stack">
-            <button className="btn btn-primary" onClick={copy}>{copied ? "Annonce copiée" : "Copier l'annonce"}</button>
+            {platform === "ebay" ? (
+              <button className="btn btn-primary" onClick={() => copy("title")}>{copied === "title" ? "Titre copié" : "Copier le titre"}</button>
+            ) : (
+              <button className="btn btn-primary" onClick={() => copy("annonce")}>{copied === "annonce" ? "Annonce copiée" : "Copier l'annonce"}</button>
+            )}
             {publish && (
               <a
                 className="btn btn-quiet"
@@ -482,6 +501,37 @@ function ListingPanel({
               </a>
             )}
           </div>
+
+          {/* Fiche eBay : ce qu'il faut remplir sur eBay, dans l'ordre. L'utilisateur publie lui-même. */}
+          {platform === "ebay" && (
+            <div style={{ marginTop: "0.9rem" }}>
+              <p className="small" style={{ margin: "0 0 0.35rem", fontWeight: 600, color: "var(--ink)" }}>Ensuite, sur eBay</p>
+              <ol className="small" style={{ margin: 0, paddingLeft: "1.2rem", display: "grid", gap: "0.35rem" }}>
+                <li><strong>Titre</strong> : collez-le dans le premier champ.</li>
+                <li>
+                  <strong>Catégorie</strong> :{" "}
+                  {ebayCat === null
+                    ? "on la demande à eBay…"
+                    : ebayCategory
+                      ? <>{ebayCategory.path}, si eBay vous demande de choisir.</>
+                      : "celle qu'eBay propose pour votre titre."}
+                </li>
+                <li><strong>État</strong> : {ebayCondition(condition)}. L&apos;état précis est déjà dans la description.</li>
+                <li><strong>Photos</strong> : ajoutez celles de votre téléphone.</li>
+                <li>
+                  <strong>Description</strong> :{" "}
+                  <button type="button" className="link-btn" onClick={() => copy("description")}>
+                    {copied === "description" ? "description copiée" : "copiez-la ici"}
+                  </button>
+                  , puis collez-la.
+                </li>
+                <li>
+                  <strong>Prix</strong> : {myPrice !== null && <><strong className="num">{euros(myPrice)}</strong>, </>}
+                  en « Achat immédiat ». Nos prix eBay viennent d&apos;annonces à prix fixe.
+                </li>
+              </ol>
+            </div>
+          )}
           <p className="small" style={{ marginTop: "0.6rem" }}>
             {adState === "ok" ? "Annonce générée par IA. Relisez-la avant de publier. " : ""}
             C&apos;est vous qui publiez : on ne se connecte jamais à votre compte.

@@ -100,7 +100,7 @@ def measure(client: Client, obj: dict, slots: threading.Semaphore) -> tuple[dict
     total_s = round(time.monotonic() - t0, 1)
 
     prices = [o["price_eur"] for r in rows for o in r.pop("_offers")]
-    block = pricing.shop_block(prices)
+    block = pricing.shop_block(prices, category)
     found, ident_ok, ident_s = identify(obj.get("photos", ""), (obj.get("modele_attendu") or product).strip(), category)
     ref = float(obj["prix_vendu_eur"]) if (obj.get("prix_vendu_eur") or "").strip() else None
     summary = {

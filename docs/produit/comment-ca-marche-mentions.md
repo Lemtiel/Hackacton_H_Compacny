@@ -28,7 +28,7 @@ Un modèle d'intelligence artificielle identifie la marque, le modèle et l'éta
 
 Nous consultons uniquement les sites suivants, en même temps :
 
-- **eBay**, par son interface officielle (API) : annonces de particuliers et de professionnels.
+- **eBay**, par son interface officielle (API) : annonces de particuliers et de professionnels, et catégorie suggérée pour publier votre annonce sur eBay.
 - **Easy Cash**, **Gamecash**, **Troc.com** et **Cash Converters** : des agents d'IA de H Company parcourent leurs pages comme le ferait une personne, et notent les prix des objets d'occasion en vente.
 
 Cette comparaison n'est pas exhaustive. D'autres sites vendent des objets d'occasion et ne sont pas consultés. Un site qui ne répond pas en 90 secondes est affiché « indisponible », et l'estimation se fait sans lui. Les stocks d'occasion changent chaque jour : deux recherches peuvent donner des résultats différents.

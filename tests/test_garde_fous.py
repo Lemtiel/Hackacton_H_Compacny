@@ -119,10 +119,20 @@ check("avec la clé, la limite par IP ne bloque plus (seul le plafond global ré
 main._running = 0
 del os.environ["DEMO_KEY"]
 
-# 3. Coefficient de rachat mesuré (0,59) appliqué.
+# 3. Coefficient de rachat mesuré : 0,59 par défaut, puis par catégorie (docs/calibrage-rachat.md).
 b = pricing.shop_block([150, 166, 180])
 check("rachat = médiane × 0,59 (166 € → 97,94 €)", pricing.BUYBACK_COEF == 0.59 and b["buyback_estimate"] == 97.94)
+b = pricing.shop_block([150, 166, 180], "smartphone")
+check("smartphone : médiane × 0,60 (166 € → 99,60 €), coef renvoyé", b["buyback_estimate"] == 99.6 and b["coef"] == 0.60)
+b = pricing.shop_block([20, 25, 30], "jeu_video")
+check("jeu vidéo : médiane × 0,43 (25 € → 10,75 €)", b["buyback_estimate"] == 10.75)
+b = pricing.shop_block([100, 110, 120], "console")
+check("console sous 300 € : médiane × 0,44 (110 € → 48,40 €)", b["buyback_estimate"] == 48.4)
+b = pricing.shop_block([500, 550, 600], "console")
+check("console à 300 € et plus : médiane × 0,74 (550 € → 407 €)", b["buyback_estimate"] == 407.0)
+b = pricing.shop_block([150, 166, 180], "montre")
+check("catégorie inconnue : 0,59 par défaut", b["coef"] == 0.59 and b["buyback_estimate"] == 97.94)
 
-total = 13
+total = 18
 print(f"{total - failed}/{total} vérifications correctes")
 sys.exit(1 if failed else 0)
