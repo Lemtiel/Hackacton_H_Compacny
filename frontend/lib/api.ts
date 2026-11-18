@@ -125,10 +125,15 @@ export const shotUrl = (token: string) => `${API_URL}/api/shot/${encodeURICompon
 // Clé de démo : ouverte une fois avec ?cle=… dans l'adresse, gardée dans ce navigateur. Elle lève la limite par
 // adresse IP côté serveur (DEMO_KEY), pour que la démo ne soit pas bloquée par les autres personnes du même Wi-Fi.
 export function demoKey(): string {
+  // Une clé copiée depuis une phrase traîne souvent une virgule ou un point à la fin (« …?cle=abc, ») : on les retire,
+  // y compris sur la clé déjà gardée dans le navigateur.
+  const clean = (k: string | null) => (k ?? "").trim().replace(/[,.;:)\]]+$/, "");
   try {
-    const fromUrl = new URLSearchParams(window.location.search).get("cle");
+    const fromUrl = clean(new URLSearchParams(window.location.search).get("cle"));
     if (fromUrl) localStorage.setItem("snapncash.cle", fromUrl);
-    return localStorage.getItem("snapncash.cle") || "";
+    const stored = clean(localStorage.getItem("snapncash.cle"));
+    if (stored) localStorage.setItem("snapncash.cle", stored);
+    return stored;
   } catch {
     return "";
   }
