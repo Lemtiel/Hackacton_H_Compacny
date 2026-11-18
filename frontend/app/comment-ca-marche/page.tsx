@@ -11,7 +11,7 @@ export default function HowItWorks() {
       <h2>Les sites consultés</h2>
       <p className="muted">
         Nos agents IA visitent Easy Cash, Gamecash, Troc.com, Cash Converters, Certideal et Swappie, comme le ferait une personne, pour relever les prix des
-        objets en vente. Les prix eBay viennent de l&apos;API officielle d&apos;eBay. La comparaison n&apos;est pas exhaustive : d&apos;autres
+        objets en vente. Les prix eBay, et la catégorie suggérée pour publier sur eBay, viennent de l&apos;API officielle d&apos;eBay. La comparaison n&apos;est pas exhaustive : d&apos;autres
         sites vendent aussi ces objets.
       </p>
       <p className="muted">

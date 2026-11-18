@@ -16,6 +16,12 @@ const FORMATS: { key: Platform; name: string; title_max: number }[] = [
   { key: "generique", name: "Texte générique", title_max: 80 },
 ];
 
+// État à choisir dans le formulaire eBay. Un particulier y choisit « Occasion » (les états « reconditionné »
+// sont réservés aux vendeurs professionnels) ; l'état précis est déjà écrit dans la description.
+export function ebayCondition(condition: Condition): string {
+  return condition === "Pour pièces" ? "« Pour pièces détachées ou ne fonctionne pas »" : "« Occasion »";
+}
+
 // Secours sans IA, sans prix : le prix se saisit à part sur chaque site.
 export function fallbackListing(product: string, condition: Condition, box: boolean, accessories: string, details: string): ListingFormat[] {
   const boite = box ? "Vendu avec sa boîte d'origine." : "Vendu sans boîte d'origine.";

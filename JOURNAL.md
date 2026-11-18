@@ -623,3 +623,18 @@ avec la table en secours (cotation manuelle sur les modèles récents). Faisabil
 **Pas testé :** l'agent de rachat en réel (le poste utilisé n'atteint pas l'API H) ; l'interface n'a pas été
 relancée (seul un texte de « Comment ça marche » change). Limites : Easy Cash seulement, 3 objets en tablette
 et en informatique.
+
+### Mercredi 18/11, fin d'après-midi : aide à la publication sur eBay (Kevin)
+Chantier commencé par Jude, rien de poussé : repris par Kevin, branche `publication-ebay`.
+
+**Décision : publication assistée, pas de publication par l'API Sell.** Publier à la place de l'utilisateur sort des Specs (« Publication automatique des annonces » exclue, utilisation anonyme sans compte). Il faudrait aussi le compte eBay de l'utilisateur (OAuth), héberger les photos (règle 5) et revoir l'exemption eBay accordée sur « rien de conservé ». Gardée en roadmap, à reprendre seulement si Jude change les Specs.
+
+Fait :
+- `backend/ebay.py` : `suggest_category`, catégorie suggérée par l'API Taxonomy d'eBay (`get_category_suggestions` sur l'arbre d'EBAY_FR), avec le même jeton applicatif que la recherche. On ne garde que l'identifiant, le nom et le chemin (3 suggestions au plus). Seul l'identifiant de l'arbre reste en mémoire. eBay ne propose pas cet appel en sandbox : état `indisponible`.
+- Route `GET /api/ebay/category?product=` dans `backend/main.py`. Sans clés : `non_configure`.
+- Interface, onglet eBay du bloc annonce : bouton « Copier le titre » (eBay a deux champs séparés), puis une fiche « Ensuite, sur eBay » dans l'ordre du formulaire : titre, catégorie suggérée, état à choisir (« Occasion », ou « pour pièces »), photos, description (bouton pour la copier seule), prix choisi en « Achat immédiat » (nos prix eBay viennent d'annonces à prix fixe). La catégorie n'est demandée qu'à l'ouverture de l'onglet eBay, une seule fois. Les autres onglets ne changent pas.
+- Règle 4 respectée : la catégorie eBay s'affiche telle quelle, elle ne passe pas dans le modèle de texte. Rien n'est conservé, ni sur le serveur ni dans Mon grenier.
+- Mentions : page « Comment ça marche », pages légales (données envoyées à eBay, sous-traitants) et `docs/produit/comment-ca-marche-mentions.md`.
+
+**Testé :** `tests/test_ebay_categorie.py` 13/13 sur réponse simulée (chemin de la catégorie, champs gardés, jeton et arbre réutilisés, aucune suggestion, erreur eBay, sandbox, sans clés), ajouté à la CI. `test_ebay.py` 14/14, `test_matching.py` 52/52, `test_garde_fous.py` 18/18. TypeScript compile. Route réelle sans clés : `non_configure`. Dans le navigateur (ordinateur et téléphone) : fiche affichée sans catégorie, puis avec une catégorie simulée ; état « Pour pièces » traduit ; titre et description copiés séparément (presse-papiers simulé, car le navigateur de test le refuse).
+**Pas testé :** l'appel réel à l'API Taxonomy (le poste de Kevin n'a pas les clés eBay) ; le copier-coller sur un vrai téléphone ; les libellés exacts du formulaire eBay (« Occasion », « pour pièces »), à vérifier en ouvrant eBay.

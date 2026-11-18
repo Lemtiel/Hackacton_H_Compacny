@@ -33,7 +33,7 @@ export const LEGAL_PAGES: LegalPage[] = [
         <h2>Services utilisés</h2>
         <p>
           Navigation sur les sites de prix : Agent API de H Company. Reconnaissance des objets et rédaction des annonces : modèles d&apos;IA
-          via Hugging Face. Photos studio : modèle Bria, hébergé par fal.ai. Prix entre particuliers : API officielle d&apos;eBay.
+          via Hugging Face. Photos studio : modèle Bria, hébergé par fal.ai. Prix entre particuliers et catégorie suggérée pour publier sur eBay : API officielle d&apos;eBay.
         </p>
         <h2>Marques</h2>
         <p>
@@ -130,7 +130,7 @@ export const LEGAL_PAGES: LegalPage[] = [
           <li>Hugging Face et les fournisseurs de modèles qu&apos;il sélectionne : les photos guidées, pour la reconnaissance ; la description de l&apos;objet, pour l&apos;annonce.</li>
           <li>fal.ai (modèle Bria) : une photo, seulement si vous créez sa version studio.</li>
           <li>H Company : le nom de l&apos;objet, son état, la présence de la boîte, les accessoires et les détails que vous saisissez, pour que nos agents relèvent des prix comparables. N&apos;y écrivez aucune information personnelle. Les captures de leur navigation suivent la politique de conservation de H Company.</li>
-          <li>eBay : le nom de l&apos;objet, pour sa recherche officielle.</li>
+          <li>eBay : le nom de l&apos;objet, pour sa recherche officielle et pour suggérer la catégorie de votre annonce.</li>
           <li>Vercel et Hugging Face : l&apos;hébergement de l&apos;app.</li>
         </ul>
         <p>Certains de ces prestataires sont situés hors de l&apos;Union européenne, notamment aux États-Unis.</p>

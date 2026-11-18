@@ -4,6 +4,7 @@
   GET  /api/search     recherche des prix en boutique, résultats envoyés site par site (SSE)
   POST /api/listing    annonce rédigée en 4 formats (Vinted, Leboncoin, eBay, générique)
   GET  /api/ebay       bloc « Vendre seul » : annonces eBay en cours (API Browse), séparées des boutiques
+  GET  /api/ebay/category  catégorie eBay suggérée pour publier (API Taxonomy), sans compte utilisateur
   POST /api/studio     photo studio : objet détouré sur fond clair, objet non modifié
   GET  /api/shot/{id}  mode démo : dernière capture d'écran d'un agent, relayée sans être enregistrée
 
@@ -222,6 +223,17 @@ async def ebay_prices(
         return {"state": "non_configure", "block": None, "items": []}
     except ebay.EbayError:
         return {"state": "indisponible", "block": None, "items": []}
+
+
+@app.get("/api/ebay/category")
+async def ebay_category(product: str = Query(..., min_length=2, max_length=120)):
+    # Aide à la publication : catégorie suggérée par eBay (API Taxonomy). L'utilisateur publie lui-même.
+    try:
+        return await ebay.suggest_category(product)
+    except ebay.EbayNotConfigured:
+        return {"state": "non_configure", "categories": []}
+    except ebay.EbayError:
+        return {"state": "indisponible", "categories": []}
 
 
 @app.get("/api/shot/{token}")
