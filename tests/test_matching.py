@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from types import SimpleNamespace
 
-from backend.matching import condition_grade, filter_verified_offers, is_junk_title, rank_by_condition, reject_reason  # noqa: E402
+# from backend.matching import condition_grade, filter_verified_offers, is_junk_title, rank_by_condition, reject_reason  # noqa: E402
 
 CASES = [
     # (objet cherché, catégorie, titre de l'annonce, gardée ?)
