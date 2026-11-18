@@ -66,10 +66,12 @@ async def main():
 
 res, res2 = asyncio.run(main())
 failed = 0
+total = 0
 
 
 def check(label, ok):
-    global failed
+    global failed, total
+    total += 1
     if not ok:
         failed += 1
     print(("OK     " if ok else "ÉCHEC  ") + label)
@@ -95,5 +97,5 @@ check("filtre : ni neuf, ni pièces, ni reconditionné (revendeurs professionnel
       not any(i in q["filter"] for i in ("1000", "1500", "7000", "2000", "2010", "2020", "2030", "2500")))
 check("moins de 3 prix : pas de fourchette", ebay.ebay_block([100, 120]) is None)
 
-print(f"{14 - failed}/14 vérifications correctes")
+print(f"{total - failed}/{total} vérifications correctes")
 sys.exit(1 if failed else 0)
