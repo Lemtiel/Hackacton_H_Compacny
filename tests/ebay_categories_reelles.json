@@ -1,5 +1,5 @@
 {
- "_source": "API Taxonomy d'eBay, get_category_suggestions, arbre 71 (EBAY_FR), appel réel du 18/11/2026. Seuls l'identifiant, le nom et le chemin des catégories sont gardés.",
+ "_source": "API Taxonomy d'eBay, get_category_suggestions, arbre 71 (EBAY_FR), appel réel du 18/11/2026. Seuls l'identifiant, le nom et le chemin des catégories sont gardés. Cas iMac, Galaxy Tab S8 et Xbox Series S ajoutés le 18/11 (même appel, mêmes champs gardés) : l'ordre d'eBay y est faux (Xbox : Jeux avant Consoles) ou n'y contient pas la bonne catégorie (Tab S8 : aucune tablette ; iMac : portables avant Macs de bureau).",
  "cas": [
   {
    "objet": "Nintendo Switch",
@@ -512,6 +512,137 @@
      "id": "123422",
      "name": "Câbles, adaptateurs",
      "path": "Téléphonie, mobilité > Tél. mobiles: accessoires > Câbles, adaptateurs"
+    }
+   ]
+  },
+  {
+   "objet": "iMac 24 pouces",
+   "categorie": "informatique",
+   "attendu": "111418",
+   "suggestions": [
+    {
+     "id": "111418",
+     "name": "Macs de bureau",
+     "path": "Informatique, réseaux > PC de bureau, tout-en-un > Macs de bureau"
+    },
+    {
+     "id": "177",
+     "name": "Ordinateurs portables",
+     "path": "Informatique, réseaux > Portables, netbooks > Ordinateurs portables"
+    },
+    {
+     "id": "16145",
+     "name": "Autres",
+     "path": "Informatique, réseaux > Ordinateur: composants, pièces > Autres"
+    },
+    {
+     "id": "175678",
+     "name": "Matériel, kits de nettoyage",
+     "path": "Informatique, réseaux > Accessoires ordinateur > Matériel, kits de nettoyage"
+    },
+    {
+     "id": "179",
+     "name": "PC de bureau",
+     "path": "Informatique, réseaux > PC de bureau, tout-en-un > PC de bureau"
+    },
+    {
+     "id": "168061",
+     "name": "Autres",
+     "path": "Informatique, réseaux > Ordinateur: composants, pièces > Portables: pièces de rechange > Autres"
+    },
+    {
+     "id": "111422",
+     "name": "Macs portables",
+     "path": "Informatique, réseaux > Portables, netbooks > Macs portables"
+    }
+   ]
+  },
+  {
+   "objet": "Samsung Galaxy Tab S8",
+   "categorie": "tablette",
+   "attendu": "171485",
+   "suggestions": [
+    {
+     "id": "43304",
+     "name": "Téléphones mobiles: pièces",
+     "path": "Téléphonie, mobilité > Téléphones mobiles: pièces"
+    },
+    {
+     "id": "180235",
+     "name": "Tablettes: pièces",
+     "path": "Informatique, réseaux > Tablettes: pièces"
+    },
+    {
+     "id": "176979",
+     "name": "Films protecteurs d'écran",
+     "path": "Informatique, réseaux > Tablettes, liseuses: accessoires > Films protecteurs d'écran"
+    },
+    {
+     "id": "176973",
+     "name": "Etuis, housses, coques",
+     "path": "Informatique, réseaux > Tablettes, liseuses: accessoires > Etuis, housses, coques"
+    },
+    {
+     "id": "20349",
+     "name": "Etuis, housses, coques",
+     "path": "Téléphonie, mobilité > Tél. mobiles: accessoires > Etuis, housses, coques"
+    },
+    {
+     "id": "176982",
+     "name": "Autres",
+     "path": "Informatique, réseaux > Tablettes, liseuses: accessoires > Autres"
+    },
+    {
+     "id": "171485",
+     "name": "Tablettes, liseuses",
+     "path": "Informatique, réseaux > Tablettes, liseuses"
+    },
+    {
+     "id": "31519",
+     "name": "Housses, sacoches de portable",
+     "path": "Informatique, réseaux > Accessoires ordinateur > Housses, sacoches de portable"
+    },
+    {
+     "id": "58540",
+     "name": "Films protecteurs d'écran",
+     "path": "Téléphonie, mobilité > Tél. mobiles: accessoires > Films protecteurs d'écran"
+    }
+   ]
+  },
+  {
+   "objet": "Xbox Series S",
+   "categorie": "console",
+   "attendu": "139971",
+   "suggestions": [
+    {
+     "id": "139973",
+     "name": "Jeux",
+     "path": "Jeux vidéo, consoles > Jeux"
+    },
+    {
+     "id": "139971",
+     "name": "Consoles",
+     "path": "Jeux vidéo, consoles > Consoles"
+    },
+    {
+     "id": "171833",
+     "name": "Pièces de rechange, outils",
+     "path": "Jeux vidéo, consoles > Pièces de rechange, outils"
+    },
+    {
+     "id": "32643",
+     "name": "Autres",
+     "path": "Collections > Autres"
+    },
+    {
+     "id": "27386",
+     "name": "Cartes: graphiques, vidéo",
+     "path": "Informatique, réseaux > Ordinateur: composants, pièces > Cartes: graphiques, vidéo"
+    },
+    {
+     "id": "182179",
+     "name": "Supports, fixations",
+     "path": "Jeux vidéo, consoles > Accessoires > Supports, fixations"
     }
    ]
   }

@@ -155,7 +155,9 @@ def identify(imgs: "Image.Image | list[Image.Image]") -> Identification:
         raise PhotoError("Le modèle n'a pas rendu de réponse exploitable. Tapez le nom de l'objet.") from e
     if ident.category not in CATEGORIES:
         ident.category = "autre"
-    ident.product = " ".join(x for x in (ident.brand, ident.model) if x).strip()
+    # « Apple » + « Apple Watch » : la marque est déjà dans le modèle, on ne la répète pas (relevé du 18/11 : « Apple Apple Watch »).
+    brand, model = (ident.brand or "").strip(), (ident.model or "").strip()
+    ident.product = model if brand and model.lower().startswith(brand.lower()) else " ".join(x for x in (brand, model) if x)
     ident.kind = clean_hint(ident.kind)
     return ident
 

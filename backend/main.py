@@ -23,6 +23,7 @@ import threading
 import time
 from collections import defaultdict, deque
 from pathlib import Path
+from typing import Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
@@ -269,7 +270,10 @@ def _site_payload(site: str, r, product: str, category: str, condition: str = "B
     ranked, rejected_unverified = matching.rank_by_condition(matched, condition)
     kept = [o for o, _ in ranked]
     rejected = rejected_model + rejected_unverified
-    if r.cancelled or r.status in ("failed", "timed_out", "interrupted", "error"):
+    # Une session coupée au délai (ou en échec) mais qui a déjà rendu des offres : elles passent les mêmes contrôles que les
+    # autres (modèle, état, lien), on les garde. Test réel du 18/11 : Easy Cash rendait 2 offres « Bon état », jetées à tort.
+    broken = r.cancelled or r.status in ("failed", "timed_out", "interrupted", "error")
+    if broken and not r.offers:
         state = "indisponible"
     elif kept:
         state = "ok"
