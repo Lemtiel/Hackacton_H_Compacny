@@ -430,7 +430,7 @@ function ListingPanel({
     if (platform !== "ebay" || ebayCatAsked.current) return;
     ebayCatAsked.current = true;
     fetchEbayCategory(product, category).then(setEbayCat);
-  }, [platform, product]);
+  }, [platform, product, category]);
 
   // L'annonce se rédige en parallèle des agents : elle est prête quand les prix arrivent.
   function writeListing() {

@@ -233,16 +233,17 @@ export async function fetchEbay(product: string, category: string, signal?: Abor
   }
 }
 
-// Aide à la publication sur eBay : catégorie suggérée par eBay (API Taxonomy). L'utilisateur publie lui-même.
+// Aide à la publication sur eBay : catégorie suggérée par eBay (API Taxonomy), triée par le serveur avec notre
+// catégorie (pièces détachées et accessoires écartés). L'utilisateur publie lui-même.
 export type EbayCategory = { id: string; name: string; path: string };
 export type EbayCategoryResult = {
   state: "ok" | "aucun_resultat" | "indisponible" | "non_configure";
   categories: EbayCategory[];
 };
 
-export async function fetchEbayCategory(product: string, category?: Category): Promise<EbayCategoryResult> {
+export async function fetchEbayCategory(product: string, category: string): Promise<EbayCategoryResult> {
   try {
-    const res = await fetch(`${API_URL}/api/ebay/category?product=${encodeURIComponent(product)}${category ? `&category=${category}` : ""}`);
+    const res = await fetch(`${API_URL}/api/ebay/category?product=${encodeURIComponent(product)}&category=${encodeURIComponent(category)}`);
     if (!res.ok) return { state: "indisponible", categories: [] };
     return (await res.json()) as EbayCategoryResult;
   } catch {
