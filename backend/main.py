@@ -263,7 +263,9 @@ async def shot(token: str):
 def _site_payload(site: str, r, product: str, category: str, condition: str = "Bon état") -> dict:
     # Seules les annonces du même modèle comptent : les autres sont écartées par notre code.
     matched, rejected_model = matching.filter_offers(product, category, r.offers)
-    kept, rejected_unverified = matching.filter_verified_offers(matched, condition)
+    # L'état classe les offres au lieu de les exclure (issue #23) : même état d'abord, voisins s'il en manque.
+    ranked, rejected_unverified = matching.rank_by_condition(matched, condition)
+    kept = [o for o, _ in ranked]
     rejected = rejected_model + rejected_unverified
     # Une session coupée au délai (ou en échec) mais qui a déjà rendu des offres : elles passent les mêmes contrôles que les
     # autres (modèle, état, lien), on les garde. Test réel du 18/11 : Easy Cash rendait 2 offres « Bon état », jetées à tort.
@@ -277,7 +279,7 @@ def _site_payload(site: str, r, product: str, category: str, condition: str = "B
     return {
         "type": "site_result", "site": site, "state": state,
         "duration_s": r.duration_s, "steps": r.steps,
-        "offers": [o.model_dump() for o in kept] if state == "ok" else [],
+        "offers": [{**o.model_dump(), "condition_match": m} for o, m in ranked] if state == "ok" else [],
         "n_rejected": rejected if state != "indisponible" else 0,
     }
 

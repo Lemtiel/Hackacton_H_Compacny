@@ -669,3 +669,16 @@ Fait :
 - **Résultat réel (même consigne, 18/11) :** Nintendo Switch : Gamecash 0 → 3 à 4 prix sur 3 essais ; Easy Cash 1 à 2 prix, Cash Converters 0 à 1, Troc.com 0 (n'a aucune Switch ni aucun iPhone en stock). iPhone 13 : 4 boutiques sur 5 rendent des prix (8 prix : Cash Converters 3, Easy Cash 2, Swappie 2, Certideal 1), contre 1 sur 5 le matin.
 - **Tests :** tri et états 82/82 (13 nouveaux cas), garde-fous 23/23 (5 nouveaux : offres gardées après délai ; le total était écrit en dur, remplacé par un compteur), eBay 19/19, catégorie 22/22.
 - **Limites :** résultats variables d'un essai à l'autre (stock des boutiques, durée de l'agent) : 3 essais sur la Switch, 1 sur l'iPhone, pas une mesure. Mélanger des grades voisins décale un peu le prix : à ≥ 3 offres exactes ils ne servent plus. Une série de 9 sessions en parallèle a ralenti Certideal au point de dépasser le délai : la limite de 10 sessions du compte H (point 5 de la revue) reste à régler. **Troc.com** ne vend ni consoles ni smartphones en pratique : à retirer de ces catégories (économise une session par recherche), décision à prendre avec Josia.
+### Mercredi 18/11, après-midi : l'état classe les offres au lieu de les exclure (issue #23, Tristan)
+Constat du test de 10h30 (Nintendo Switch, « Bon état ») : Gamecash 0 prix, car il n'affiche pas le libellé « Bon état » ; Cash Converters 1 prix. Une seule boutique sur 4 atteignait 3 prix, ce qui bloque l'objectif de la mesure (#8). Certideal et Swappie notent aussi à leur façon (Correct, Très bon état, Parfait état, Premium).
+
+**Décision (validée par Tristan, à relire par Jude) : l'état sert à classer, plus à exclure.**
+- Une boutique avec au moins 3 offres au même état : rien ne change, les autres états restent écartés.
+- Sinon, on complète avec les offres à un cran d'écart (au-dessus ou en dessous), puis avec celles dont la boutique n'affiche pas d'état. Chaque offre porte `condition_match` (`exact`, `proche`, `inconnu`), et l'interface l'indique (« état voisin », « état non précisé »).
+- Toujours écartés : deux crans d'écart ou plus, « pour pièces » face à un objet qui marche (et l'inverse), offre sans fiche produit, doublon.
+- Table des libellés élargie dans `backend/matching.py` (`GRADE_LABELS`) : Très bon, Excellent, Parfait état, Premium, Satisfaisant, Grade A/B/C, etc.
+- Consigne de l'agent (`agents/price_agent.py`, règle 2) : copier l'état tel qu'affiché, compléter par les états voisins s'il manque des offres, laisser l'état vide si la boutique n'en montre pas. À coordonner avec le chantier « vitesse des agents », qui touche la même consigne.
+
+Limite : mélanger des états voisins peut décaler un peu la médiane (un « très bon état » est plus cher). Le décalage reste visible à l'écran et ne joue qu'en l'absence de 3 offres au même état.
+**Testé :** `tests/test_matching.py` 74/74 (22 nouveaux cas : libellés, complément par états voisins, boutique sans état, pour pièces), `test_ebay.py` 14/14, `test_ebay_categorie.py` 13/13, `test_garde_fous.py` 18/18, TypeScript compile. `_site_payload` vérifié à la main sur des offres simulées de Gamecash.
+**Pas testé :** une vraie recherche avec les agents H (pas de clé dans cette session). À refaire : la Switch sur les 4 boutiques, et vérifier que Gamecash rend de nouveau des prix.
