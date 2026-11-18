@@ -11,6 +11,7 @@ Ce module n'est chargé que par la route /api/ebay/draft (EBAY_DRAFT_LOCAL=1). D
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import threading
@@ -56,32 +57,108 @@ def chrome_ready() -> bool:
         return False
 
 
-def _make_upload_tool(paths: list[str]):
+def _ebay_page(p):
+    browser = p.chromium.connect_over_cdp(f"http://127.0.0.1:{DEBUG_PORT}")
+    return next((pg for ctx in browser.contexts for pg in ctx.pages if "ebay." in pg.url), None)
+
+
+def _make_tools(paths: list[str], description: str, price: float):
+    """Trois outils exécutés sur l'ordinateur, branchés sur le Chrome local. Testés le 18/11 : l'agent seul n'envoie pas de fichier
+    en mode « navigateur sur l'appareil » et échoue sur l'éditeur de description (cadre intégré) et sur le prix."""
     from hai_agents import tool
 
     @tool(
         name="upload_listing_photos",
         description=(
-            "Attaches the seller's prepared listing photos to the photo upload zone ('PHOTOS ET VIDÉO') of the eBay listing form "
-            "that is open in the browser. Call it exactly once, when that section is visible. Returns how many photos were attached."
+            "Attaches the seller's prepared listing photos to the photo zone ('PHOTOS ET VIDÉO') of the eBay listing form that is "
+            "open in the browser. Call it exactly once. Returns how many photos were attached."
         ),
     )
     def upload_listing_photos() -> str:
         from playwright.sync_api import sync_playwright
 
         with sync_playwright() as p:
-            browser = p.chromium.connect_over_cdp(f"http://127.0.0.1:{DEBUG_PORT}")
-            page = next((pg for ctx in browser.contexts for pg in ctx.pages if "ebay." in pg.url), None)
+            page = _ebay_page(p)
             if page is None:
                 return "error: no eBay page is open in the browser"
             inputs = page.locator("input[type=file]")
             if inputs.count() == 0:
-                return "error: no file upload field on this page yet; scroll to the photo section and try again"
+                return "error: no file upload field on this page yet; wait for the form to load and try again"
+            # eBay rouvre parfois le même brouillon (observé le 18/11 : 6 photos au lieu de 3) : on n'ajoute pas deux fois
+            counter = page.get_by_text(re.compile(r"^\d+/25$")).first
+            if counter.count() and int(counter.inner_text().split("/")[0]) >= len(paths):
+                return f"already {counter.inner_text()} photos in the draft, nothing added"
             inputs.first.set_input_files(paths)
             page.wait_for_timeout(1500)
             return f"attached {len(paths)} photos"
 
-    return upload_listing_photos
+    @tool(
+        name="fill_listing_description",
+        description=(
+            "Replaces the content of the DESCRIPTION editor of the eBay listing form with the seller's prepared description. "
+            "Call it exactly once. Returns a confirmation or an error."
+        ),
+    )
+    def fill_listing_description() -> str:
+        from playwright.sync_api import sync_playwright
+
+        with sync_playwright() as p:
+            page = _ebay_page(p)
+            frame = page.frame(name="se-rte-frame__summary") if page else None
+            if frame is None:
+                return "error: the description editor is not on this page yet"
+            frame.click("body")
+            page.keyboard.press("Meta+A")
+            page.keyboard.type(description)
+            page.wait_for_timeout(600)
+            first = description.splitlines()[0][:40]
+            return "description filled" if first in frame.locator("body").inner_text() else "error: the description did not register"
+
+    @tool(
+        name="set_listing_price",
+        description=(
+            "Sets the item price ('Prix de l'objet', format Achat immédiat) of the eBay listing form to the seller's price. "
+            "Call it exactly once. Returns the price now shown, or an error."
+        ),
+    )
+    def set_listing_price() -> str:
+        from playwright.sync_api import sync_playwright
+
+        with sync_playwright() as p:
+            page = _ebay_page(p)
+            if page is None:
+                return "error: no eBay page is open in the browser"
+            field = page.get_by_label("Prix de l'objet")
+            if field.count() == 0:
+                return "error: the price field is not on this page yet"
+            field.fill(f"{price:g}".replace(".", ","))
+            field.press("Tab")
+            page.wait_for_timeout(600)
+            return f"price set, the field now shows {field.input_value()}"
+
+    @tool(
+        name="save_listing_draft",
+        description=(
+            "Saves the eBay listing as a DRAFT by pressing the 'Enregistrer' button of the form. It never publishes the listing. "
+            "Call it exactly once, after the photos, the description and the price are in. Returns a confirmation or an error."
+        ),
+    )
+    def save_listing_draft() -> str:
+        from playwright.sync_api import sync_playwright
+
+        with sync_playwright() as p:
+            page = _ebay_page(p)
+            if page is None:
+                return "error: no eBay page is open in the browser"
+            button = page.get_by_role("button", name="Enregistrer", exact=True)
+            if button.count() == 0:
+                return "error: the 'Enregistrer' button is not on this page"
+            button.first.scroll_into_view_if_needed()
+            button.first.click()
+            page.wait_for_timeout(2500)
+            return "draft saved (not published)"
+
+    return [upload_listing_photos, fill_listing_description, set_listing_price, save_listing_draft]
 
 
 def _task(title: str, description: str, price: float) -> str:
@@ -95,13 +172,15 @@ def _task(title: str, description: str, price: float) -> str:
         "STEPS\n"
         "1. If a sign-in page, a security or identity check, a captcha or any verification request appears at any moment, stop "
         "immediately and answer status 'login_required'. Never type a password or a code and never try to get around a check.\n"
-        "2. When the form shows the section 'PHOTOS ET VIDÉO', call the tool upload_listing_photos exactly once, then wait until "
-        "photo thumbnails appear. Do not try the 'Charger à partir d'un ordinateur' button yourself: a native file dialog cannot be used.\n"
-        "3. Check that the title field contains the title above and fix it if it does not.\n"
-        "4. Click inside the DESCRIPTION editor, select any existing text, and type the description above.\n"
-        "5. In the PRIX section keep the format 'Achat immédiat' and set 'Prix de l'objet' to the price above.\n"
-        "6. NEVER click 'Mettre en vente gratuitement', 'Mettre en vente', 'Publier' or any button that publishes the listing. "
-        "Click 'Enregistrer' to save it as a draft if that button exists.\n"
+        "2. When the listing form is loaded, call the tool upload_listing_photos exactly once. Do not use the 'Charger à partir "
+        "d'un ordinateur' button yourself: a native file dialog cannot be used.\n"
+        "3. Call the tool fill_listing_description exactly once, then the tool set_listing_price exactly once. Do not type the "
+        "description or the price yourself: use these tools, they work reliably on this form.\n"
+        "4. Check that the title field contains the title above and fix it if it does not. Close any small dark tooltip bubble "
+        "that covers the form by clicking its close icon or an empty area.\n"
+        "5. Call the tool save_listing_draft exactly once to save the listing as a draft. NEVER click 'Mettre en vente gratuitement', "
+        "'Mettre en vente', 'Publier' or any button that publishes the listing.\n"
+        "6. Scroll up and check that photo thumbnails, the description and the price are visible, then answer.\n"
         "7. Answer with the structured result. draft_url is the URL of the page when you finish."
     )
 
@@ -115,7 +194,7 @@ def run_draft(client, *, photos: list[Path], title: str, description: str, price
     handle = client.start_session(
         agent=AGENT,
         messages=_task(title, description, price),
-        tools=[_make_upload_tool(paths)],
+        tools=_make_tools(paths, description, price),
         answer_schema=DraftResult,
         max_steps=70,
         max_time_s=MAX_SECONDS,

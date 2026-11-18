@@ -46,6 +46,7 @@ except Exception:
 check("résultat : le statut « published » n'existe pas (jamais de publication)", published_refused)
 task = ebay_draft._task("Titre", "Description de test assez longue", 120)
 check("consigne : interdit de publier", "NEVER click" in task and "Mettre en vente" in task)
+check("consigne : l'enregistrement passe par l'outil, pas par un clic libre", "save_listing_draft" in task)
 check("consigne : arrêt sur connexion ou vérification", "login_required" in task and "Never type a password" in task)
 
 # 3. Route
