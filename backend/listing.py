@@ -77,8 +77,16 @@ SYSTEM = (
     "3 à 5 lignes, puis une ligne de 3 à 5 mots-clés précédés de #.\n"
     "- leboncoin : titre de 50 caractères au plus ; description directe, vouvoiement, phrases courtes, "
     "état puis contenu de la vente, remise en main propre ou envoi possible.\n"
-    "- ebay : titre de 80 caractères au plus, mots-clés d'abord (marque, modèle, caractéristique, état) ; "
-    "description structurée en lignes « Libellé : valeur » (Marque, Modèle, État, Contenu), puis une phrase.\n"
+    "- ebay : titre de 80 caractères au plus, mots-clés d'abord : marque, modèle, type d'objet (smartphone, console, jeu...), "
+    "puis couleur ou capacité SI la fiche les donne, puis l'état. Pas de mot qui ne soit pas dans la fiche. "
+    "Description en texte brut (pas de markdown, pas de gras, pas d'émoji), en 4 blocs séparés par une ligne vide : "
+    "(1) une phrase d'accroche factuelle : l'objet, sa couleur ou sa capacité si la fiche les donne, son état ; "
+    "(2) la ligne CARACTÉRISTIQUES, puis une ligne « - Libellé : valeur » par fait connu (Marque, Modèle, Couleur, Capacité, État), "
+    "sans ligne pour ce qui n'est pas précisé ; "
+    "(3) la ligne ÉTAT, puis 2 à 3 phrases honnêtes sur l'état déclaré, avec chaque défaut cité tel que le vendeur l'a écrit, "
+    "et une phrase qui renvoie aux photos pour juger de l'état ; "
+    "(4) la ligne CONTENU DE LA VENTE, puis une ligne « - élément » par élément vendu (l'objet, la boîte d'origine si oui, "
+    "chaque accessoire cité), puis la phrase « Une question avant d'acheter ? Écrivez-moi. »\n"
     "- generique : titre de 80 caractères au plus ; description neutre de 3 à 4 phrases, utilisable partout."
 )
 

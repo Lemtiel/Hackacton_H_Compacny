@@ -120,6 +120,20 @@ app.add_middleware(
 )
 
 
+@app.get("/api/health")
+def health():
+    """Vérifie que les clés sont bien réglées (booléens seulement, jamais les valeurs) : à ouvrir après un déploiement."""
+    return {
+        "ok": True,
+        "agents_h": bool(os.getenv("HAI_API_KEY")),
+        "hugging_face": bool(os.getenv("HF_TOKEN")),
+        "ebay": ebay.configured(),
+        "cle_demo": bool(os.getenv("DEMO_KEY")),
+        "studio": STUDIO_ENABLED,
+        "max_agents": MAX_PARALLEL,
+    }
+
+
 @app.get("/")
 def index():
     return FileResponse(Path(__file__).parent / "static" / "index.html")
@@ -314,7 +328,7 @@ async def search(
         async def one():
             yield _sse({"type": "error", "message": message})
             yield _sse({"type": "done"})
-        return StreamingResponse(one(), media_type="text/event-stream", headers={"Cache-Control": "no-store"})
+        return StreamingResponse(one(), media_type="text/event-stream", headers=SSE_HEADERS)
 
     if not _demo_key_ok(key) and not _allow("search", _client_ip(request), SEARCH_PER_HOUR):
         return refuse("Vous avez lancé beaucoup d'estimations en peu de temps. Réessayez dans un moment.")
@@ -390,7 +404,11 @@ async def search(
             with _running_lock:
                 _running -= 1
 
-    return StreamingResponse(stream(), media_type="text/event-stream", headers={"Cache-Control": "no-store"})
+    return StreamingResponse(stream(), media_type="text/event-stream", headers=SSE_HEADERS)
+
+
+# X-Accel-Buffering : demande aux proxys (nginx, celui du Space) de ne pas retenir le flux, pour que les résultats arrivent boutique par boutique
+SSE_HEADERS = {"Cache-Control": "no-store", "X-Accel-Buffering": "no"}
 
 
 def _sse(ev: dict) -> str:

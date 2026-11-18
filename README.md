@@ -99,9 +99,23 @@ Ces quatre scripts tournent à chaque push (onglet Actions).
 Sortie : taux de réussite par boutique (au moins 3 prix), durée d'une estimation, écart entre le prix conseillé et le prix vendu, identification correcte, cas d'échec, face aux objectifs des Specs. Les sessions d'agent sont aussi dans [`mesures/agent_runs.csv`](mesures/agent_runs.csv), les décisions et cas d'échec dans [`JOURNAL.md`](JOURNAL.md).
 
 ## Mettre en ligne
-- **Serveur (Space Hugging Face) :** variables `HAI_API_KEY`, `HF_TOKEN`, `ALLOWED_ORIGINS` (adresse Vercel), `DEMO_KEY`, `DEMO_SHOTS=1`, et au besoin `HAI_MAX_PARALLEL`, `SEARCH_PER_HOUR`, `MAX_SEARCHES` (voir `.env.example`). Une clé H réservée à la démo évite de partager les 10 sessions du compte avec les mesures.
-- **Interface (Vercel) :** dossier `frontend/`, variable `NEXT_PUBLIC_API_URL` = adresse du Space.
-- **Démo :** ouvrir une fois l'interface avec `?cle=<DEMO_KEY>` pour lever la limite par adresse IP, et activer le mode démo dans Réglages.
+Le serveur va sur un Space Hugging Face, l'interface sur Vercel. L'image du serveur est testée en local (démarre, lit les clés, répond).
+
+**1. Serveur (Space Hugging Face)**
+1. Créer un jeton **avec droit d'écriture** sur huggingface.co/settings/tokens (celui du `.env` n'a que l'inférence).
+2. Créer le Space : New Space, SDK **Docker**, modèle « Blank », CPU basic, visibilité **Public** (l'interface Vercel doit pouvoir l'appeler).
+3. Envoyer le code : `scripts/deploy_space.sh <compte>/<nom-du-space>` (Git demande l'identifiant, puis le jeton d'écriture comme mot de passe).
+4. Dans Settings du Space, **Secrets** : `HAI_API_KEY`, `HF_TOKEN` (le jeton d'inférence), `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET`, `DEMO_KEY`.
+   **Variables** : `ALLOWED_ORIGINS` (adresse Vercel, voir 2), `DEMO_SHOTS=1`, `TRUSTED_PROXIES=1`, `SEARCH_PER_HOUR=200` (une salle partage une adresse IP).
+5. Ouvrir `https://<compte>-<nom-du-space>.hf.space/api/health` : tout doit être à `true`. Un Space inactif s'endort : l'ouvrir 5 minutes avant la démo.
+
+**2. Interface (Vercel)**
+1. `cd frontend && vercel login`, puis `vercel` (dossier racine : `frontend`).
+2. Variable d'environnement `NEXT_PUBLIC_API_URL` = adresse du Space (`https://<compte>-<nom-du-space>.hf.space`), puis `vercel --prod`.
+3. Reporter l'adresse Vercel dans `ALLOWED_ORIGINS` du Space (le Space redémarre).
+
+**3. Démo**
+Ouvrir l'interface une fois avec `?cle=<DEMO_KEY>` pour lever la limite par adresse IP, et activer le mode démo dans Réglages. Une clé H réservée à la démo évite de partager les sessions avec les mesures.
 
 ## Organisation du dépôt
 | Dossier ou fichier | Contenu |
