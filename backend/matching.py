@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from urllib.parse import urlsplit, urlunsplit
 
 # Marques : utiles à la recherche, mais souvent absentes des titres (« iPhone 12 64 Go »).
 BRANDS = {
@@ -121,4 +122,52 @@ def _has_model(need: list[str], have: list[str]) -> bool:
 def filter_offers(product: str, category: str, offers: list) -> tuple[list, int]:
     """Sépare les annonces gardées du nombre d'annonces écartées."""
     kept = [o for o in offers if reject_reason(product, category, o.title) is None]
+    return kept, len(offers) - len(kept)
+
+
+def condition_grade(text: str) -> str | None:
+    """Ramène les libellés usuels des boutiques aux cinq états de l'interface."""
+    value = " ".join(tokens(text))
+    if any(term in value for term in ("pour pieces", "hors service", "non fonctionnel", "hs")):
+        return "pieces"
+    if any(term in value for term in ("comme neuf", "parfait etat", "premium", "grade s")):
+        return "comme_neuf"
+    if any(term in value for term in ("tres bon etat", "excellent etat", "grade a")):
+        return "tres_bon"
+    if any(term in value for term in ("bon etat", "grade b")):
+        return "bon"
+    if any(term in value for term in ("etat correct", "correct", "acceptable", "grade c")):
+        return "correct"
+    return None
+
+
+def filter_verified_offers(offers: list, target_condition: str | None = None) -> tuple[list, int]:
+    """Garde uniquement les offres vérifiables et uniques.
+
+    Une offre sans état affiché ou sans URL de fiche produit ne doit pas influencer
+    l'estimation, même si un agent l'a renvoyée malgré sa consigne.
+    """
+    kept = []
+    seen_urls: set[str] = set()
+    target_grade = condition_grade(target_condition or "") if target_condition else None
+    for offer in offers:
+        condition = str(getattr(offer, "condition", "") or "").strip()
+        url = str(getattr(offer, "url", "") or "").strip()
+        try:
+            parsed = urlsplit(url)
+        except ValueError:
+            continue
+        if (
+            not condition
+            or (target_grade is not None and condition_grade(condition) != target_grade)
+            or parsed.scheme not in ("http", "https")
+            or not parsed.netloc
+            or parsed.path in ("", "/")
+        ):
+            continue
+        canonical = urlunsplit((parsed.scheme.lower(), parsed.netloc.lower(), parsed.path.rstrip("/"), parsed.query, ""))
+        if canonical in seen_urls:
+            continue
+        seen_urls.add(canonical)
+        kept.append(offer)
     return kept, len(offers) - len(kept)

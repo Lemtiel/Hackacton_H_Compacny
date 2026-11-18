@@ -511,3 +511,22 @@ catalogue d'Easy Cash et offre de rachat « bon état » de leur outil d'estimat
 offre de rachat, pas un prix de marché. Lu seul, il donne l'impression que l'app sous-évalue
 l'objet. Proposition : afficher le prix de marché en premier et renommer le bloc en
 « Offre de rachat typique (estimation basse) ».
+### Mercredi 18/11 : collecte de prix rendue stricte et commune aux deux parcours
+
+Décision de Tristan après les tests : les estimations mélangeaient parfois des variantes ou des états
+non comparables. Le parcours principal et l'espace revendeurs transmettent désormais aux agents le
+modèle, la capacité/variante, l'état et les détails fournis. Les agents doivent relever 3 à 8 offres
+vérifiées sur les boutiques autorisées, avec fiche produit et état visibles, sans inventer les données
+manquantes. Les offres sans URL de fiche, sans état ou en doublon sont écartées par le serveur.
+
+Les boutiques compatibles sont lancées simultanément, avec une limite configurable plafonnée à 10
+sessions H. Le coefficient de rachat reste à 0,40 : la proposition de recalibrage à 0,59 attend toujours
+la validation de Jude.
+
+Test fonctionnel : Apple iPhone 15 128 Go, « Bon état », cinq boutiques lancées ensemble. Après
+activation du magasin de certificats Windows avec `truststore`, les cinq sessions H sont accessibles.
+Easy Cash a rendu 2 offres strictement comparables à 414,99 € et 419,99 €. Troc.com n'en a trouvé
+aucune. Certideal et Swappie ont renvoyé des grades différents malgré la consigne : ce test a motivé
+le filtre déterministe des états côté serveur. Cash Converters est resté en file chez H et a été forcé
+avant de naviguer ; le budget de 70/90 secondes démarre donc désormais au début réel de la navigation,
+avec un délai de file séparé. Environ 755 000 tokens ont été consommés pour ce test complet.

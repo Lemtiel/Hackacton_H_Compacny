@@ -37,8 +37,9 @@ ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env")
 
 MAX_UPLOAD = 8 * 1024 * 1024
-# Le compte H autorise 3 sessions simultanées : au-delà, un site attend son tour.
-MAX_PARALLEL = int(os.getenv("HAI_MAX_PARALLEL", "3"))
+# Le compte H autorise jusqu'à 10 sessions simultanées. La variable permet de réduire
+# volontairement la consommation, mais jamais de dépasser cette limite contractuelle.
+MAX_PARALLEL = max(1, min(int(os.getenv("HAI_MAX_PARALLEL", "10")), 10))
 _slots = threading.Semaphore(MAX_PARALLEL)
 
 # Mode démo (pitch, vidéo) : captures d'écran des agents. Coupé par défaut (règle 9 : pas de capture des sites
@@ -193,9 +194,11 @@ async def shot(token: str):
     return Response(r.content, media_type=r.headers["content-type"], headers={"Cache-Control": "no-store"})
 
 
-def _site_payload(site: str, r, product: str, category: str) -> dict:
+def _site_payload(site: str, r, product: str, category: str, condition: str = "Bon état") -> dict:
     # Seules les annonces du même modèle comptent : les autres sont écartées par notre code.
-    kept, rejected = matching.filter_offers(product, category, r.offers)
+    matched, rejected_model = matching.filter_offers(product, category, r.offers)
+    kept, rejected_unverified = matching.filter_verified_offers(matched, condition)
+    rejected = rejected_model + rejected_unverified
     if r.cancelled or r.status in ("failed", "timed_out", "interrupted", "error"):
         state = "indisponible"
     elif kept:
@@ -216,9 +219,15 @@ async def search(
     category: str = Query("smartphone"),
     demo: bool = Query(False),
     hint: str = Query("", max_length=60),
+    condition: str = Query("Bon état", max_length=30),
+    box: bool | None = Query(None),
+    accessories: str = Query("", max_length=200),
+    details: str = Query("", max_length=400),
 ):
     if category not in CATEGORIES:
         raise HTTPException(422, "Catégorie inconnue.")
+    if condition not in listing.CONDITIONS:
+        raise HTTPException(422, "État inconnu.")
     shots = demo and DEMO_SHOTS
     hint = photo.clean_hint(hint)  # description générique (« manette PS5 ») pour élargir la recherche de l'agent
     if not os.getenv("HAI_API_KEY"):
@@ -239,13 +248,14 @@ async def search(
             try:
                 r = run_site(
                     client, site, product, category, log=lambda _m: None, hint=hint,
+                    condition=condition, box=box, accessories=accessories, details=details,
                     on_step=lambda s: emit({
                         "type": "site_step", "site": site, "elapsed_s": s["elapsed_s"],
                         "label": "démarrage du navigateur" if s["steps"] == 0 else f"navigue, étape {s['steps']}",
                     }),
                     on_shot=(lambda url: emit({"type": "site_shot", "site": site, "shot": _register_shot(url)})) if shots else None,
                 )
-                emit(_site_payload(site, r, product, category))
+                emit(_site_payload(site, r, product, category, condition))
             except Exception:
                 emit({"type": "site_result", "site": site, "state": "indisponible", "offers": []})
 
