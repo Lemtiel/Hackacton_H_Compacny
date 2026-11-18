@@ -1,4 +1,6 @@
-"""Catégorie eBay suggérée (aide à la publication) sur une réponse simulée de l'API Taxonomy (aucun appel réseau).
+"""Catégorie eBay suggérée (aide à la publication), sans appel réseau :
+- tri des suggestions sur 12 réponses réelles de l'API Taxonomy (tests/ebay_categories_reelles.json, 18/11) ;
+- appels simulés : jeton et arbre réutilisés, erreurs, sandbox, sans clés.
 
 Lancer : .venv/bin/python tests/test_ebay_categorie.py
 """
@@ -33,11 +35,13 @@ def suggestion(cat_id, name, ancestors):
 
 
 PAYLOAD = {"categoryTreeId": "71", "categoryTreeVersion": "999", "categorySuggestions": [
-    suggestion("139971", "Consoles", [("Jeux vidéo, consoles", 1), ("Root", 0)]),
-    suggestion("54968", "Accessoires", [("Jeux vidéo, consoles", 1)]),
+    suggestion("171833", "Pièces de rechange, outils", [("Jeux vidéo, consoles", 1)]),  # pièces : écartée
+    suggestion("139973", "Jeux", [("Jeux vidéo, consoles", 1)]),
+    suggestion("139971", "Consoles", [("Jeux vidéo, consoles", 1), ("Root", 0)]),  # référence de « console »
     {"category": {"categoryName": "sans identifiant"}},  # illisible : écartée
-    suggestion("139973", "Jeux vidéo", [("Jeux vidéo, consoles", 1)]),
-    suggestion("1", "En trop", []),  # au-delà de 3 suggestions
+    suggestion("182179", "Supports, fixations", [("Accessoires", 2), ("Jeux vidéo, consoles", 1)]),  # accessoire
+    suggestion("182175", "Boîtes de jeu originales", [("Jeux vidéo, consoles", 1)]),
+    suggestion("260000", "Lots mixtes", [("Jeux vidéo, consoles", 1)]),  # au-delà de 3 suggestions
 ]}
 
 calls = []
@@ -61,8 +65,8 @@ def handler(request: httpx.Request) -> httpx.Response:
 
 async def main():
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        res = await ebay.suggest_category("Nintendo Switch", client=client)
-        res2 = await ebay.suggest_category("Nintendo Switch", client=client)
+        res = await ebay.suggest_category("Nintendo Switch", "console", client=client)
+        res2 = await ebay.suggest_category("Nintendo Switch", "console", client=client)
         mode["suggestions"] = {"categorySuggestions": []}
         empty = await ebay.suggest_category("objet inconnu", client=client)
         mode["suggestions"] = None
@@ -100,7 +104,8 @@ def check(label, ok):
 cats = res["categories"]
 dump = json.dumps(res, ensure_ascii=False)
 check("état ok", res["state"] == "ok")
-check("3 suggestions au plus, l'illisible écartée", [c["id"] for c in cats] == ["139971", "54968", "139973"])
+check("pièces, accessoire et illisible écartés, référence en tête, 3 au plus",
+      [c["id"] for c in cats] == ["139971", "139973", "182175"])
 check("première suggestion : Consoles", cats[0]["name"] == "Consoles")
 check("chemin de la racine vers la catégorie, sans « Root »", cats[0]["path"] == "Jeux vidéo, consoles > Consoles")
 check("champs gardés : id, nom, chemin", all(set(c) == {"id", "name", "path"} for c in cats))
@@ -114,6 +119,30 @@ check("6 requêtes pour 4 suggestions, arbre demandé une seule fois",
       sum(1 for c in calls if c.url.path.endswith("get_default_category_tree_id")) == 1 and n_calls == 6)
 check("sandbox : indisponible, sans appel réseau", sandbox == {"state": "indisponible", "categories": []})
 check("sans clés : EbayNotConfigured (la route rend « non_configure »)", not_configured)
+
+# --- Tri sur les réponses réelles d'eBay (18/11) ---
+REAL = json.loads((Path(__file__).resolve().parent / "ebay_categories_reelles.json").read_text(encoding="utf-8"))
+for case in REAL["cas"]:
+    ranked = ebay.rank_categories(case["suggestions"], case["objet"], case["categorie"])
+    got = ranked[0]["path"] if ranked else "rien"
+    check(f"réel, {case['objet']} ({case['categorie']}) : {got}", bool(ranked) and ranked[0]["id"] == case["attendu"])
+    check(f"réel, {case['objet']} : ni pièces ni collection proposées",
+          not any("pièces" in c["path"].lower() or c["path"].startswith("Collections") for c in ranked))
+
+by_name = {c["objet"]: c for c in REAL["cas"]}
+redmi = by_name["Redmi Note 10S"]["suggestions"]
+check("eBay brut se trompait sur Redmi (1re suggestion : pièces)", "pièces" in redmi[0]["path"])
+check("Redmi sans « Téléphones mobiles » dans les suggestions : catégorie de référence en secours",
+      [c["id"] for c in ebay.rank_categories(redmi[:3], "Redmi Note 10S", "smartphone")] == ["9355"])
+check("accessoire sans suggestion utilisable : rien (pas de secours « Consoles »)",
+      ebay.rank_categories(redmi[:3], "Manette DualSense", "console") == [])
+check("sans notre catégorie : pièces et accessoires écartés, ordre d'eBay gardé",
+      [c["id"] for c in ebay.rank_categories(by_name["MacBook Air M1"]["suggestions"], "MacBook Air M1", None)][:2]
+      == ["177", "111422"])
+check("objet accessoire : « Joy-Con », « Sony DualSense », « Coque iPhone »",
+      all(ebay.is_accessory(p) for p in ("Joy-Con Nintendo", "Sony DualSense", "Coque iPhone 13")))
+check("objet non accessoire : « Nintendo Switch », « iPhone 13 », « Zelda »",
+      not any(ebay.is_accessory(p) for p in ("Nintendo Switch", "iPhone 13", "Zelda Breath of the Wild")))
 
 print(f"{total - failed}/{total} vérifications correctes")
 sys.exit(1 if failed else 0)

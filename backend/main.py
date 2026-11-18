@@ -226,10 +226,16 @@ async def ebay_prices(
 
 
 @app.get("/api/ebay/category")
-async def ebay_category(product: str = Query(..., min_length=2, max_length=120)):
-    # Aide à la publication : catégorie suggérée par eBay (API Taxonomy). L'utilisateur publie lui-même.
+async def ebay_category(
+    product: str = Query(..., min_length=2, max_length=120),
+    category: str | None = Query(None),
+):
+    # Aide à la publication : catégorie suggérée par eBay (API Taxonomy), triée avec notre catégorie.
+    # L'utilisateur publie lui-même.
+    if category is not None and category not in CATEGORIES:
+        raise HTTPException(422, "Catégorie inconnue.")
     try:
-        return await ebay.suggest_category(product)
+        return await ebay.suggest_category(product, category)
     except ebay.EbayNotConfigured:
         return {"state": "non_configure", "categories": []}
     except ebay.EbayError:
