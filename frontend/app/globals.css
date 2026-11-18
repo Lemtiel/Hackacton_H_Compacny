@@ -596,3 +596,384 @@ details.site-detail summary::-webkit-details-marker { display: none; }
 @media (prefers-reduced-transparency: reduce) {
   .tabbar { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
+
+/* =====================================================================
+   « Pop et cash » (18/11) : fond vivant, dégradé bleu vers vert, relief.
+   Couleurs du logo : bleu nuit (--ink), bleu (--action), vert argent (--ok).
+   ===================================================================== */
+:root {
+  --cash: #18a058;
+  --grad: linear-gradient(135deg, #1e6fd9 0%, #1c9bd1 48%, #18a058 100%);
+  --grad-soft: linear-gradient(135deg, #e7f0fd 0%, #e6f7ef 100%);
+  --card: #ffffff;
+  --shadow-card: 0 1px 2px rgba(5, 41, 93, 0.06), 0 8px 24px rgba(5, 41, 93, 0.08);
+  --shadow-pop: 0 10px 28px rgba(30, 111, 217, 0.32);
+}
+
+body {
+  background:
+    radial-gradient(60rem 30rem at 0% -10%, rgba(30, 111, 217, 0.10), transparent 60%),
+    radial-gradient(50rem 30rem at 100% 110%, rgba(24, 160, 88, 0.10), transparent 60%),
+    #f7fafe;
+  background-attachment: fixed;
+}
+
+/* Pluie d'objets en fond */
+.falling { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.falling-item {
+  position: absolute;
+  top: -12vh;
+  opacity: 0.09;
+  animation-name: fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.falling-item svg { width: 100%; height: 100%; display: block; }
+.falling-item[data-tone="ink"] { color: var(--ink); }
+.falling-item[data-tone="action"] { color: var(--action); }
+.falling-item[data-tone="ok"] { color: var(--cash); opacity: 0.12; }
+@keyframes fall {
+  from { transform: translateY(0) rotate(var(--rot)); }
+  to { transform: translateY(125vh) rotate(calc(var(--rot) + 50deg)); }
+}
+.page, .topbar, .tabbar { position: relative; z-index: 1; }
+.topbar, .tabbar { z-index: 20; }
+.topbar { position: sticky; }
+.tabbar { position: fixed; }
+
+/* Accueil */
+.hero { display: grid; gap: 0.6rem; margin-bottom: 1.5rem; }
+.hero-chip {
+  justify-self: start;
+  font-size: 0.78rem; font-weight: 700; letter-spacing: 0.02em;
+  padding: 0.35rem 0.75rem; border-radius: 999px;
+  background: var(--grad-soft); color: var(--ink);
+  border: 1px solid rgba(30, 111, 217, 0.15);
+}
+/* Slogan sur une seule ligne : la taille suit la largeur disponible (le texte occupe environ 15 fois la taille de police),
+   et le bloc déborde de la colonne sur grand écran pour garder un titre fort. */
+.hero {
+  text-align: center; justify-items: center;
+  width: min(calc(100vw - 32px), 52rem);
+  margin-left: calc(50% - min(calc(50vw - 16px), 26rem));
+}
+.hero-title {
+  margin: 0.5rem 0 0.25rem;
+  white-space: nowrap;
+  font-size: min(3.4rem, calc(min(100vw - 32px, 52rem) / 15));
+}
+.hero .lede { max-width: 34rem; }
+.hero-cash { color: var(--cash); }
+.hero .lede { margin: 0; }
+
+.examples { margin-top: 1.75rem; }
+.examples-title { font-size: 1.05rem; margin: 0 0 0.6rem; }
+.examples-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; }
+.example-card {
+  appearance: none; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  border-radius: 18px; padding: 0.85rem 0.7rem; cursor: pointer; font: inherit; text-align: left;
+  display: grid; gap: 0.35rem; box-shadow: var(--shadow-card);
+  transition: transform 160ms var(--ease-spring), box-shadow 160ms;
+}
+.example-card:hover { transform: translateY(-3px) rotate(-1deg); box-shadow: 0 14px 30px rgba(5, 41, 93, 0.14); }
+.example-card:active { transform: scale(0.97); }
+.example-card:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
+.example-art { width: 2.4rem; height: 2.4rem; border-radius: 12px; display: grid; place-items: center; background: var(--surface); color: var(--action); }
+.example-art svg { width: 1.5rem; height: 1.5rem; }
+.example-card[data-art="pad"] .example-art { color: var(--cash); }
+.example-name { font-weight: 600; font-size: 0.9rem; line-height: 1.2; }
+.example-price { font-weight: 800; font-size: 1.15rem; color: var(--cash); letter-spacing: -0.01em; }
+
+/* Boutons avec du relief */
+.btn { border-radius: 18px; }
+.btn-primary { background: var(--action); box-shadow: 0 6px 16px rgba(30, 111, 217, 0.28); }
+.btn-primary:hover { background: var(--action-press); }
+.btn-primary:active { background: var(--action-press); }
+.btn-primary:disabled { background: var(--line); box-shadow: none; filter: none; }
+.btn-quiet { background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow-card); }
+.btn-quiet:active { background: var(--surface); }
+.field { background: var(--card); border: 1px solid var(--line); box-shadow: inset 0 1px 2px rgba(5, 41, 93, 0.04); }
+.tips li { background: rgba(255, 255, 255, 0.7); border-radius: 12px; padding: 0.45rem 0.6rem; }
+
+/* Cartes et blocs */
+.panel { background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow-card); }
+.grenier-teaser { background: var(--ink); color: #fff; box-shadow: 0 8px 20px rgba(5, 41, 93, 0.22); }
+.grenier-teaser .small { color: rgba(255, 255, 255, 0.85); }
+.shot { background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow-card); }
+.notice { border-radius: 16px; }
+.chip[aria-pressed="true"] { background: var(--ink); box-shadow: 0 4px 12px rgba(5, 41, 93, 0.2); }
+
+/* Recherche : barre en dégradé avec reflet qui défile */
+.search-bar { height: 12px; background: var(--card); border: 1px solid var(--line); }
+.search-bar span {
+  background: var(--action);
+  position: relative;
+}
+.search-bar span::after {
+  content: ""; position: absolute; inset: 0;
+  background: repeating-linear-gradient(-45deg, rgba(255,255,255,0.25) 0 8px, transparent 8px 16px);
+  animation: stripes 900ms linear infinite;
+}
+@keyframes stripes { to { background-position: 22px 0; } }
+.search-bar span[data-done="true"] { background: var(--cash); }
+.search-bar span[data-done="true"]::after { display: none; }
+
+/* Verdict : carte en dégradé, montants qui défilent, pluie de pièces */
+.verdict-card { position: relative; overflow: hidden; background: var(--ink); box-shadow: 0 14px 32px rgba(5, 41, 93, 0.25); }
+.verdict-option[data-chosen="true"] { box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18); }
+.verdict-option[data-chosen="true"] .verdict-amount { color: var(--cash); }
+.coin-rain { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+.verdict-card > :not(.coin-rain) { position: relative; z-index: 1; }
+.coin {
+  position: absolute; top: -2.5rem;
+  width: 1.7rem; height: 1.7rem; border-radius: 50%;
+  display: grid; place-items: center;
+  font-weight: 800; font-size: 0.9rem; color: #0b5e35;
+  background: radial-gradient(circle at 35% 30%, #c9f7da, #3fcf86 55%, #18a058);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.2);
+  animation-name: coinfall; animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1); animation-fill-mode: both;
+}
+@keyframes coinfall {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translate(var(--drift), 22rem) rotate(300deg); opacity: 0; }
+}
+
+.slider-value { color: var(--ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  .falling-item { animation-play-state: paused; }
+  .search-bar span::after { animation: none; }
+  .example-card:hover { transform: none; }
+}
+@media (max-width: 420px) {
+  .examples-row { gap: 0.45rem; }
+  .example-card { padding: 0.7rem 0.55rem; }
+  .example-price { font-size: 1rem; }
+}
+/* Mon grenier : le total en « cash », dans une carte */
+.grenier-total { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 1.1rem 1.2rem; box-shadow: var(--shadow-card); }
+.grenier-total .verdict-price { color: var(--cash); }
+.grenier-item { background: rgba(255, 255, 255, 0.75); border-radius: 16px; padding: 0.9rem 0.9rem; margin-top: 0.5rem; border: 1px solid var(--line); }
+.grenier-list { border-top: 0; }
+
+/* Photos en plus (5 max) sous les 3 photos guidées */
+.extras { margin-top: 0.75rem; padding: 0.85rem; border-radius: var(--radius-m); background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow-card); }
+.extras-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+.extras-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(4.2rem, 1fr)); gap: 0.5rem; }
+.extra { position: relative; aspect-ratio: 1 / 1; border-radius: var(--radius-s); overflow: hidden; background: var(--surface); }
+.extra img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.extra-remove { position: absolute; top: 0.2rem; right: 0.2rem; width: 1.5rem; height: 1.5rem; border-radius: 50%; border: 0; background: rgba(5, 41, 93, 0.75); color: #fff; font-size: 1rem; line-height: 1; cursor: pointer; }
+.extra-add { aspect-ratio: 1 / 1; border-radius: var(--radius-s); border: 1.5px dashed var(--action); background: var(--bg); color: var(--action); font-size: 1.6rem; cursor: pointer; }
+.extra-add:focus-visible, .extra-remove:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
+
+/* =====================================================================
+   18/11 (suite) : titre en « sticker », barre du bas à 5 places, Réglages,
+   Compte, pages légales, mode sombre.
+   ===================================================================== */
+
+/* Titre encadré façon sticker : bord épais, ombre pleine décalée, étiquette de prix */
+.hero-card {
+  position: relative;
+  background: var(--card);
+  border: 2.5px solid var(--ink);
+  border-radius: 28px;
+  box-shadow: 6px 6px 0 var(--ink);
+  padding: 1.6rem 1.25rem 1.4rem;
+  transform: rotate(-0.6deg);
+  width: 100%;
+  display: grid; justify-items: center; gap: 0.5rem;
+}
+.hero-title { font-size: min(3.1rem, calc((min(100vw - 32px, 52rem) - 3.2rem) / 14.6)); }
+.hero-sticker {
+  display: inline-block;
+  background: var(--cash); color: #fff;
+  padding: 0 0.22em 0.04em; margin-right: 0.08em;
+  border-radius: 0.22em;
+  transform: rotate(-3deg);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.hero-tag {
+  position: absolute; top: -1.1rem; right: 1.2rem;
+  display: grid; grid-auto-flow: column; align-items: center; gap: 0.35rem;
+  background: #ffd84d; color: #05295d; font-weight: 800; font-size: 1.05rem;
+  padding: 0.3rem 0.75rem 0.3rem 0.5rem;
+  border: 2px solid var(--ink); border-radius: 10px 999px 999px 10px;
+  transform: rotate(8deg);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.hero-tag-hole { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--bg); border: 2px solid var(--ink); }
+@media (prefers-reduced-motion: reduce) { .hero-card, .hero-sticker, .hero-tag { transform: none; } }
+
+/* Barre du bas : Accueil, Grenier, bouton central Estimer, Compte, Réglages */
+.tabbar { gap: 0; justify-content: space-around; align-items: flex-end; padding-top: 0.35rem; }
+.tab { flex: 1 1 0; min-width: 0; padding: 0.25rem 0.2rem; }
+.tab-fab {
+  flex: 1 1 0; min-width: 0;
+  appearance: none; border: 0; background: none; cursor: pointer; font: inherit;
+  display: grid; justify-items: center; gap: 0.15rem; padding: 0;
+  color: var(--action); font-size: 0.75rem; font-weight: 700;
+  -webkit-tap-highlight-color: transparent;
+}
+.tab-fab-circle {
+  width: 3.6rem; height: 3.6rem; margin-top: -1.6rem;
+  border-radius: 50%; display: grid; place-items: center;
+  background: var(--action); color: #fff;
+  border: 3px solid var(--bg);
+  box-shadow: 0 8px 20px rgba(30, 111, 217, 0.4);
+  transition: transform 140ms var(--ease-spring);
+}
+.tab-fab:active .tab-fab-circle { transform: scale(0.92); }
+.tab-fab:focus-visible .tab-fab-circle { outline: 3px solid var(--sky); outline-offset: 2px; }
+
+/* Réglages */
+.settings-group { margin-top: 1.5rem; }
+.settings-group h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin: 0 0 0.5rem 0.25rem; }
+.settings-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  width: 100%; min-height: 3.2rem; padding: 0.7rem 1rem;
+  background: var(--card); color: var(--ink); text-decoration: none; font: inherit; text-align: left;
+  border: 1px solid var(--line); border-top-width: 0;
+  cursor: pointer;
+}
+.settings-group > .settings-row:first-of-type, .settings-group > h2 + .settings-row, .settings-group > p + .settings-row { border-top-width: 1px; border-radius: 16px 16px 0 0; }
+.settings-group > .settings-row:last-of-type { border-radius: 0 0 16px 16px; }
+.settings-group > h2 + .settings-row:last-of-type, .settings-group > p + .settings-row:last-of-type { border-radius: 16px; }
+.settings-row > span:first-child { display: grid; gap: 0.1rem; }
+.settings-hint { font-weight: 400; }
+.settings-value { color: var(--ink-soft); font-weight: 600; }
+.settings-note { margin: 0.4rem 0.25rem 0.6rem; }
+.settings-danger { color: #c62828; }
+.settings-row .seg { min-width: 12rem; }
+.settings-confirm { padding: 1rem; border-radius: 16px; background: var(--card); border: 1px solid #f1b4b4; }
+.settings-confirm p { margin: 0 0 0.75rem; }
+.settings-confirm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.btn-danger { background: #c62828; color: #fff; }
+.switch {
+  appearance: none; -webkit-appearance: none; flex: 0 0 auto;
+  width: 3.1rem; height: 1.85rem; border-radius: 999px; background: var(--line); position: relative; cursor: pointer;
+  transition: background-color 160ms;
+}
+.switch::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 1.4rem; height: 1.4rem; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); transition: transform 180ms var(--ease-spring);
+}
+.switch:checked { background: var(--cash); }
+.switch:checked::after { transform: translateX(1.25rem); }
+.switch:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
+
+/* Compte */
+.account-card { display: flex; gap: 1rem; align-items: center; padding: 1rem; border-radius: 20px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow-card); margin-top: 0.5rem; }
+.account-avatar { width: 3.2rem; height: 3.2rem; flex: 0 0 auto; border-radius: 50%; display: grid; place-items: center; background: var(--surface); color: var(--action); }
+.account-avatar svg { width: 1.8rem; height: 1.8rem; }
+.account-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; margin-top: 1rem; }
+.account-stats > div { display: grid; gap: 0.1rem; padding: 0.8rem; border-radius: 16px; background: var(--card); border: 1px solid var(--line); }
+.account-stat { font-size: 1.25rem; font-weight: 800; }
+.account-stat.cash { color: var(--cash); }
+
+/* Pages légales */
+.back-link { display: inline-block; margin-top: 0.5rem; font-weight: 600; text-decoration: none; }
+.legal-body { margin-top: 1rem; padding: 1.1rem 1.2rem; border-radius: 20px; background: var(--card); border: 1px solid var(--line); line-height: 1.6; }
+.legal-body h2 { font-size: 1.05rem; margin: 1.2rem 0 0.4rem; }
+.legal-body h2:first-child { margin-top: 0; }
+.legal-body p, .legal-body li { color: var(--ink); }
+.legal-body ul { padding-left: 1.2rem; display: grid; gap: 0.35rem; }
+.selectable { user-select: all; }
+
+/* Animations du fond coupées depuis Réglages */
+html[data-motion="off"] .falling { display: none; }
+
+/* ---------------- Mode sombre ---------------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1424; --surface: #142238; --surface-strong: #1b2d48; --card: #111d31;
+    --ink: #e8eef8; --ink-soft: #a3b5ce; --line: #253a5c;
+    --action: #4d94ff; --action-press: #3b7fe6; --ok: #34c47a; --cash: #3ccf85; --sky: #7cc4fa;
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1424; --surface: #142238; --surface-strong: #1b2d48; --card: #111d31;
+  --ink: #e8eef8; --ink-soft: #a3b5ce; --line: #253a5c;
+  --action: #4d94ff; --action-press: #3b7fe6; --ok: #34c47a; --cash: #3ccf85; --sky: #7cc4fa;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}
+/* Les règles ci-dessous s'appliquent au mode sombre, qu'il vienne du téléphone ou des Réglages. */
+:root[data-theme="dark"] body {
+  background: radial-gradient(60rem 30rem at 0% -10%, rgba(77, 148, 255, 0.12), transparent 60%), radial-gradient(50rem 30rem at 100% 110%, rgba(60, 207, 133, 0.10), transparent 60%), var(--bg);
+  background-attachment: fixed;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body {
+    background: radial-gradient(60rem 30rem at 0% -10%, rgba(77, 148, 255, 0.12), transparent 60%), radial-gradient(50rem 30rem at 100% 110%, rgba(60, 207, 133, 0.10), transparent 60%), var(--bg);
+    background-attachment: fixed;
+  }
+}
+
+:root[data-theme="dark"] .topbar, :root[data-theme="dark"] .tabbar { background: rgba(11, 20, 36, 0.78); box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06); }
+:root[data-theme="dark"] .seg button[aria-pressed="true"] { background: var(--surface-strong); box-shadow: none; }
+:root[data-theme="dark"] .listing, :root[data-theme="dark"] .field-white, :root[data-theme="dark"] .pro-fees { background: var(--card); color: var(--ink); }
+:root[data-theme="dark"] .notice.warn { background: #3a2a12; color: #ffd9a8; }
+:root[data-theme="dark"] .notice.error { background: #3a1616; color: #ffc2c2; }
+:root[data-theme="dark"] .zone-pill { background: #16304f; }
+:root[data-theme="dark"] .zone-pill[data-zone="rapide"], :root[data-theme="dark"] .status-pill[data-status="vendu"] { background: #12382a; }
+:root[data-theme="dark"] .zone-pill[data-zone="ambitieux"] { background: #3a2a12; }
+:root[data-theme="dark"] .status-pill[data-status="en_vente"] { background: #16304f; }
+:root[data-theme="dark"] .chip[aria-pressed="true"] { background: var(--action); border-color: var(--action); color: #fff; }
+:root[data-theme="dark"] .verdict-card, :root[data-theme="dark"] .grenier-teaser { background: #0f2c5c; }
+:root[data-theme="dark"] .verdict-option[data-chosen="true"] { background: #e8eef8; color: #05295d; }
+:root[data-theme="dark"] .verdict-option[data-chosen="true"] .small { color: #4b6584; }
+:root[data-theme="dark"] .tips li, :root[data-theme="dark"] .grenier-item { background: rgba(17, 29, 49, 0.8); }
+:root[data-theme="dark"] .agent-tile figcaption { background: rgba(11, 20, 36, 0.9); }
+:root[data-theme="dark"] .hero-card { box-shadow: 6px 6px 0 #000; border-color: #e8eef8; }
+:root[data-theme="dark"] .hero-sticker, :root[data-theme="dark"] .hero-tag { box-shadow: 3px 3px 0 #000; }
+:root[data-theme="dark"] .hero-tag { border-color: #000; }
+:root[data-theme="dark"] .settings-danger { color: #ff8a8a; }
+:root[data-theme="dark"] .falling-item { opacity: 0.14; }
+:root[data-theme="dark"] .example-art { background: var(--surface-strong); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .topbar, :root:not([data-theme="light"]) .tabbar { background: rgba(11, 20, 36, 0.78); box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06); }
+  :root:not([data-theme="light"]) .seg button[aria-pressed="true"] { background: var(--surface-strong); box-shadow: none; }
+  :root:not([data-theme="light"]) .listing, :root:not([data-theme="light"]) .field-white, :root:not([data-theme="light"]) .pro-fees { background: var(--card); color: var(--ink); }
+  :root:not([data-theme="light"]) .notice.warn { background: #3a2a12; color: #ffd9a8; }
+  :root:not([data-theme="light"]) .notice.error { background: #3a1616; color: #ffc2c2; }
+  :root:not([data-theme="light"]) .zone-pill { background: #16304f; }
+  :root:not([data-theme="light"]) .zone-pill[data-zone="rapide"], :root:not([data-theme="light"]) .status-pill[data-status="vendu"] { background: #12382a; }
+  :root:not([data-theme="light"]) .zone-pill[data-zone="ambitieux"] { background: #3a2a12; }
+  :root:not([data-theme="light"]) .status-pill[data-status="en_vente"] { background: #16304f; }
+  :root:not([data-theme="light"]) .chip[aria-pressed="true"] { background: var(--action); border-color: var(--action); color: #fff; }
+  :root:not([data-theme="light"]) .verdict-card, :root:not([data-theme="light"]) .grenier-teaser { background: #0f2c5c; }
+  :root:not([data-theme="light"]) .verdict-option[data-chosen="true"] { background: #e8eef8; color: #05295d; }
+  :root:not([data-theme="light"]) .verdict-option[data-chosen="true"] .small { color: #4b6584; }
+  :root:not([data-theme="light"]) .tips li, :root:not([data-theme="light"]) .grenier-item { background: rgba(17, 29, 49, 0.8); }
+  :root:not([data-theme="light"]) .agent-tile figcaption { background: rgba(11, 20, 36, 0.9); }
+  :root:not([data-theme="light"]) .hero-card { box-shadow: 6px 6px 0 #000; border-color: #e8eef8; }
+  :root:not([data-theme="light"]) .hero-sticker, :root:not([data-theme="light"]) .hero-tag { box-shadow: 3px 3px 0 #000; }
+  :root:not([data-theme="light"]) .hero-tag { border-color: #000; }
+  :root:not([data-theme="light"]) .settings-danger { color: #ff8a8a; }
+  :root:not([data-theme="light"]) .falling-item { opacity: 0.14; }
+  :root:not([data-theme="light"]) .example-art { background: var(--surface-strong); }
+}
+
+/* Logo : version claire (contour bleu nuit) ou sombre (contour clair), selon le thème */
+.logo-dark { display: none; }
+:root[data-theme="dark"] .logo-light { display: none; }
+:root[data-theme="dark"] .logo-dark { display: block; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .logo-light { display: none; }
+  :root:not([data-theme="light"]) .logo-dark { display: block; }
+}
+.tips li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 420px) { .tips { font-size: 0.8rem; } .tips li { gap: 0.5rem; } }
+/* Le bouton central dépasse de la barre : plus de marge en bas de page pour ne rien masquer */
+.page { padding-bottom: calc(8.5rem + env(safe-area-inset-bottom)); }
+
+/* Cartes d'exemple : prix boutique en discret, l'action en avant */
+.example-shop { color: var(--ink-soft); }
+.example-shop .num { font-weight: 700; color: var(--ink); }
+.example-cta { font-weight: 700; color: var(--action); font-size: 0.9rem; }
+
+/* Boutiques consultées, en petit sous la barre */
+.search-sources { margin: 0; }

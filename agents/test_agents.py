@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 from hai_agents import Client
 
 from agents.price_agent import AGENT, RunResult, run_site
-from agents.sites import CATEGORIES, SITES
+from agents.sites import CATEGORIES, SITES, sites_for
 
 ROOT = Path(__file__).resolve().parent.parent
 LOG = ROOT / "mesures" / "agent_runs.csv"
@@ -43,7 +43,7 @@ def log(msg: str) -> None:
 def append_log(r: RunResult) -> None:
     LOG.parent.mkdir(exist_ok=True)
     new = not LOG.exists()
-    with LOG.open("a", newline="") as f:
+    with LOG.open("a", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=FIELDS)
         if new:
             w.writeheader()
@@ -78,9 +78,10 @@ def report(r: RunResult) -> None:
     log("\n".join(lines))
 
 
-def one(client: Client, site: str, product: str, category: str, hint: str | None = None) -> RunResult:
+def one(client: Client, site: str, product: str, category: str, hint: str | None = None,
+        condition: str = "Bon état") -> RunResult:
     try:
-        r = run_site(client, site, product, category, log=log, hint=hint)
+        r = run_site(client, site, product, category, log=log, hint=hint, condition=condition)
     except Exception as e:  # erreur API : on la journalise aussi
         r = RunResult(site=site, product=product, status="error", note=f"{type(e).__name__}: {e}")
     append_log(r)
@@ -93,16 +94,17 @@ def main() -> None:
     p = argparse.ArgumentParser()
     g = p.add_mutually_exclusive_group(required=True)
     g.add_argument("--site", choices=list(SITES))
-    g.add_argument("--all", action="store_true", help="les 4 sites en parallèle")
+    g.add_argument("--all", action="store_true", help="tous les sites compatibles en parallèle")
     p.add_argument("--product", required=True)
     p.add_argument("--category", choices=CATEGORIES, default="smartphone")
     p.add_argument("--hint", default=None, help="description générique, ex. « manette PS5 »")
+    p.add_argument("--condition", default="Bon état", help="état comparable recherché")
     a = p.parse_args()
 
     client = Client()
-    sites = list(SITES) if a.all else [a.site]
+    sites = sites_for(a.category) if a.all else [a.site]
     with ThreadPoolExecutor(max_workers=len(sites)) as ex:
-        results = list(ex.map(lambda s: one(client, s, a.product, a.category, a.hint), sites))
+        results = list(ex.map(lambda s: one(client, s, a.product, a.category, a.hint, a.condition), sites))
 
     ok = sum(r.available for r in results)
     log(f"\nRésumé : {ok}/{len(results)} sites disponibles. Journal : {LOG.relative_to(ROOT)}")

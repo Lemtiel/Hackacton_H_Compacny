@@ -7,21 +7,24 @@ Un revendeur tape un objet (« Nintendo Switch »). Nos agents relèvent les pri
 
 Aucun agent en plus, aucun appel serveur en plus : tout se calcule dans le navigateur à partir des résultats de la recherche existante.
 
-## Ce qui existe déjà dans la branche
-La page `frontend/app/pro/page.tsx` tourne déjà :
-- champ objet et catégorie, bouton « Chercher les bonnes affaires » ;
+## Ce qui existe dans la branche
+La page `frontend/app/pro/page.tsx` tourne :
+- champ objet, catégorie et état comparable, bouton « Chercher les bonnes affaires » ;
 - même barre de progression que l'app (et les écrans des agents avec `?demo=1`) ;
 - médiane du marché, prix aberrants retirés ;
-- liste des annonces triées par marge, avec l'étiquette « Bonne affaire ».
+- liste des annonces triées par marge, avec l'étiquette « Bonne affaire » ;
+- curseur de frais de revente de 0 à 25 %, cas vides et accès depuis l'app.
+
+La collecte est partagée avec le parcours principal. Chaque agent reçoit le modèle, la variante,
+la capacité et l'état recherchés. Une offre ne participe au calcul que si elle correspond au modèle,
+affiche un état équivalent à celui demandé et possède une URL de fiche produit vérifiable. Tous les sites compatibles sont
+lancés en parallèle, dans la limite de 10 sessions H.
 
 Lancer en local (serveur et interface) : voir le README.
 
-## Ce qu'il reste à faire (par priorité)
-1. **Curseur des frais de revente** : aujourd'hui fixé à 10 % (commission et envoi). Le rendre réglable de 0 à 25 %, la marge se recalcule.
-2. **Accès depuis l'app** : un lien discret « Vous êtes revendeur ? » sur l'accueil (`frontend/app/page.tsx`) et dans `comment-ca-marche`.
-3. **Cas vides** : moins de 3 prix → message « trop peu de prix pour juger » ; aucune boutique → renvoi vers la recherche classique.
-4. **Habillage** : titre, textes, mise en forme des cartes. Garder les couleurs et composants de `globals.css`.
-5. **Plus tard, avec eBay** : la référence de revente deviendra la médiane eBay (`fetchEbay` dans `lib/api.ts`). En attendant, l'écran dit que la référence est la médiane des boutiques.
+## Suite possible
+1. **Après validation de Jude :** remplacer le coefficient de rachat de 0,40 par la calibration retenue.
+2. **Plus tard, avec eBay :** la référence de revente deviendra la médiane eBay (`fetchEbay` dans `lib/api.ts`). En attendant, l'écran dit que la référence est la médiane des boutiques.
 
 ## Règles du calcul (ne pas changer sans Jude)
 - Médiane des prix des boutiques, après retrait des prix sous la moitié ou au-dessus du double de la médiane (même règle que `backend/pricing.py`).

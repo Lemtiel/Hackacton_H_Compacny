@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { euros } from "@/lib/api";
+import { CountUp } from "@/components/CashFx";
 import {
   type GrenierItem,
   type ItemStatus,
@@ -42,7 +43,7 @@ export default function GrenierPage() {
         <>
           <div className="grenier-total">
             <p className="muted" style={{ margin: 0 }}>Ce qui dort encore chez vous vaut environ</p>
-            <div className="verdict-price num">{euros(t.sleepingValue)}</div>
+            <div className="verdict-price"><CountUp value={t.sleepingValue} /></div>
             <p className="small" style={{ margin: "0.4rem 0 0" }}>
               {t.count} objet{t.count > 1 ? "s" : ""} estimé{t.count > 1 ? "s" : ""}
               {t.soldCount > 0 ? `, ${euros(t.earned)} déjà gagnés sur ${t.soldCount} vente${t.soldCount > 1 ? "s" : ""}` : ""}.

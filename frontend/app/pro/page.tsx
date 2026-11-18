@@ -6,6 +6,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { CATEGORY_LABELS, type Category, type Offer, type SearchEvent, euros, isDemo, searchPrices, shotUrl } from "@/lib/api";
+import { CONDITIONS, type Condition } from "@/lib/listing";
 import { guessCategory } from "@/lib/variants";
 import { type Row, SearchProgress } from "@/components/SearchScreen";
 
@@ -25,10 +26,12 @@ function median(xs: number[]) {
 export default function ProPage() {
   const [product, setProduct] = useState("");
   const [category, setCategory] = useState<Category>("console");
-  const [query, setQuery] = useState<{ product: string; category: Category } | null>(null);
+  const [condition, setCondition] = useState<Condition>("Bon état");
+  const [query, setQuery] = useState<{ product: string; category: Category; condition: Condition } | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   const [done, setDone] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [refused, setRefused] = useState<string | null>(null);
   const [demo, setDemo] = useState(false);
   const [resaleFees, setResaleFees] = useState(DEFAULT_RESALE_FEES);
   const stopRef = useRef<(() => void) | null>(null);
@@ -40,10 +43,11 @@ export default function ProPage() {
     const p = product.trim();
     if (p.length < 2) return;
     stopRef.current?.();
-    setQuery({ product: p, category });
+    setQuery({ product: p, category, condition });
     setRows([]);
     setDone(false);
     setFailed(false);
+    setRefused(null);
     stopRef.current = searchPrices(
       p,
       category,
@@ -59,12 +63,17 @@ export default function ProPage() {
           setRows((r) => r.map((s) => (s.key === ev.site ? { ...s, shot: shotUrl(ev.shot) } : s)));
         } else if (ev.type === "site_result") {
           setRows((r) => r.map((s) => (s.key === ev.site ? { ...s, state: ev.state, offers: ev.offers } : s)));
+        } else if (ev.type === "error") {
+          setRefused(ev.message);
+          setFailed(true);
         } else if (ev.type === "done") {
           setDone(true);
         }
       },
       () => { setFailed(true); setDone(true); },
       demo,
+      "",
+      { condition },
     );
   }
 
@@ -108,12 +117,20 @@ export default function ProPage() {
               <button key={c} type="button" className="chip" aria-pressed={category === c} onClick={() => setCategory(c)}>{CATEGORY_LABELS[c]}</button>
             ))}
           </div>
+          <div>
+            <span className="label">État recherché</span>
+            <div className="chips" role="group" aria-label="État recherché">
+              {CONDITIONS.map((c) => (
+                <button key={c} type="button" className="chip" aria-pressed={condition === c} onClick={() => setCondition(c)}>{c}</button>
+              ))}
+            </div>
+          </div>
           <button className="btn btn-primary" type="submit" disabled={product.trim().length < 2 || (!!query && !done)}>
             Chercher les bonnes affaires
           </button>
         </form>
 
-        {failed && <p className="notice error" style={{ marginTop: "1rem" }}>Le serveur ne répond pas. Relancez la recherche.</p>}
+        {failed && <p className="notice error" style={{ marginTop: "1rem" }}>{refused ?? "Le serveur ne répond pas. Relancez la recherche."}</p>}
         {query && <SearchProgress rows={rows} done={done} demo={demo} />}
 
         {ref && (

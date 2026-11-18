@@ -5,7 +5,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from backend.matching import reject_reason  # noqa: E402
+from types import SimpleNamespace
+
+from backend.matching import filter_verified_offers, reject_reason  # noqa: E402
 
 CASES = [
     # (objet cherché, catégorie, titre de l'annonce, gardée ?)
@@ -72,5 +74,17 @@ for product, category, title, keep in CASES:
     if (reason is None) != keep:
         failed += 1
         print(f"ÉCHEC  {product!r} / {title!r} : attendu {'gardée' if keep else 'écartée'}, obtenu {reason or 'gardée'}")
+
+verified, rejected = filter_verified_offers([
+    SimpleNamespace(condition="Bon état", url="https://example.com/produit/iphone-15"),
+    SimpleNamespace(condition="Bon état", url="https://example.com/produit/iphone-15"),  # doublon
+    SimpleNamespace(condition=None, url="https://example.com/produit/iphone-15-noir"),
+    SimpleNamespace(condition="Très bon état", url="https://example.com/"),
+    SimpleNamespace(condition="Correct", url="https://example.com/produit/iphone-15-vert"),
+    SimpleNamespace(condition="Très bon état", url="https://example.com/produit/iphone-15-bleu"),
+], "Bon état")
+if len(verified) != 1 or rejected != 5:
+    failed += 1
+    print(f"ÉCHEC  offres vérifiables : attendu 1 gardée et 5 écartées, obtenu {len(verified)} et {rejected}")
 print(f"{len(CASES) - failed}/{len(CASES)} cas corrects")
 sys.exit(1 if failed else 0)

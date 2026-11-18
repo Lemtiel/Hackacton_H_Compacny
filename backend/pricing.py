@@ -10,8 +10,9 @@ import statistics
 from typing import Optional
 
 # Part du prix de revente en boutique que le magasin offre au vendeur.
-# Hypothèse des Specs (40 %), à remplacer par les 5 offres réelles relevées jeudi.
-BUYBACK_COEF = 0.40
+# Mesuré le 17/11 chez Easy Cash sur 7 objets (6 smartphones, 1 console), même modèle, même capacité, même état :
+# médiane 59,2 % (mesures/calibrage_rachat_easycash_2026-11-17.csv, PR #18, issue #11). Remplace l'hypothèse de 40 %.
+BUYBACK_COEF = 0.59
 
 
 def remove_outliers(prices: list[float]) -> list[float]:

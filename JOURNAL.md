@@ -449,7 +449,7 @@ Le dépôt est noté : rangement avant la fusion dans `main`.
 Préparé par Claude pour Tristan (CPO) et Stephen (CEO). Fichiers : `docs/business-model/business-model-snap-n-cash.md` et `docs/business-model/snap-n-cash-projections.xlsx`.
 
 Décisions de l'équipe (17/11, transmises par Tristan) :
-- 3 premières photos gratuites, puis abonnements Bronze 4,99 € TTC, Silver 14,99 € TTC, Entreprise 149 € HT par mois.
+- 3 premières estimations gratuites, puis abonnements Bronze 4,99 € TTC, Silver 14,99 € TTC, Entreprise 149 € HT par mois.
 - Cible Entreprise : dépôts-vente et brocanteurs d'abord. Horizon des projections : 3 ans. Fondateurs non payés en an 1.
 - Partenariat Vinted et Leboncoin : 0,30 € par annonce publiée pendant 12 mois, pour que les plateformes mesurent l'efficacité de l'outil, puis licence (4 000 € HT par mois et par plateforme, hypothèse).
 - Pourquoi : le partenariat donne un accès officiel à leurs prix, ce qui règle l'interdiction actuelle des CGU (règle 1).
@@ -460,9 +460,144 @@ Chiffres clés (scénario central, hypothèses) :
 - Chiffre d'affaires : 22 100 € en an 1, 149 500 € en an 2, 375 200 € en an 3. Résultat : +1 200 €, −23 300 €, +14 700 €. Besoin de financement : environ 37 000 €.
 
 Points d'attention :
-- Compter les 3 photos gratuites impose un compte (e-mail) : politique de confidentialité RGPD à prévoir.
+- Compter les 3 estimations gratuites impose un compte (e-mail) : politique de confidentialité RGPD à prévoir.
 - Dès qu'une plateforme nous rémunère, la page « Comment ça marche » doit le dire (elle affirme aujourd'hui qu'aucun site ne nous paie).
 - Licence non exclusive : l'application Snap N Cash garde la comparaison neutre de toutes les sources.
 
 Non vérifié : le modèle derrière `web-surfer-flash`, l'usage commercial de l'API H, le prix réaliste d'une licence, le coût d'acquisition (3 € par inscrit retenus).
 
+
+### Mardi 17/11, soir : business model corrigé pour 6 boutiques (relecture de Jude)
+Corrections apportées à la PR n°16 de Tristan, à la demande de Jude :
+- Offre gratuite : « 3 premières estimations » (et non « 3 photos » : une estimation peut maintenant utiliser 3 photos).
+- Coûts recalculés pour les 6 boutiques actuelles (1 140 000 tokens par estimation au lieu de 760 000) dans le tableur (Hypothèses B9 et B10), puis tout le classeur recalculé :
+  - coût d'une estimation, pire cas : 0,17 € → **0,25 €** (au-dessus de l'objectif des Specs de 0,25 $) ; forfait H : 0,02 € ;
+  - marge brute à l'usage moyen, pire cas : Bronze 68 %, Silver 57 %, Entreprise 56 % ; **Silver, quota épuisé : −0,37 € par mois** (parade : quota à 45, ou forfait H) ;
+  - scénario central : résultat an 2 −34 700 €, an 3 −8 000 € (au lieu de +14 700 €) ; besoin de financement 58 000 € (au lieu de 37 000 €), au mois 30.
+- Risque ajouté : les CGU « usage privé » des boutiques (Gamecash, Cash Converters...) imposent un accord écrit avant tout lancement payant.
+- Mesure : 10 objets (au lieu de 30). Lien vers le cahier des charges des revendeurs corrigé.
+Reste à Tristan : décider du quota Silver, et relire la synthèse « En bref » avec ces chiffres.
+
+### Mercredi 18/11, matin : nouvelle interface « Pop et cash » (Jude)
+Choix de Jude : direction « Pop et cash » sur toute l'app, avec une pluie d'objets en fond.
+Fait :
+- Fond animé (`components/FallingObjects.tsx`) : consoles, téléphones, manettes, casques, tablettes, jeux et pièces qui tombent lentement, à 9-12 % d'opacité, derrière le contenu, jamais cliquables. Immobiles si le téléphone demande moins d'animations.
+- Habillage : dégradé bleu vers vert (couleurs du logo), boutons et cartes en relief, champs blancs, barre de recherche en dégradé avec reflet qui défile.
+- Accueil : pastille « Agents IA · 6 boutiques d'occasion · eBay », titre avec « a un prix. » en dégradé, 3 cartes d'exemple cliquables (Nintendo Switch ≈ 166 €, iPhone 13 ≈ 266 €, Sony DualSense ≈ 53 €). Ce sont les prix médians réellement relevés le 17/11, marqués « à titre d'exemple ».
+- Verdict : carte en dégradé, montants qui défilent comme un compteur, pluie de pièces à l'apparition (`components/CashFx.tsx`).
+- Mon grenier : total dans une carte, en dégradé et en compteur ; objets en cartes.
+- Défaut corrigé : en touchant une carte d'exemple, l'écran de précisions s'ouvrait en bas de page.
+Testé dans Chrome : accueil, carte d'exemple, recherche réelle « Nintendo Switch » (barre, verdict, pluie de pièces capturée), Mon grenier, espace revendeurs.
+Non testé : le rendu sur téléphone, la fluidité de l'animation sur un téléphone ancien.
+Suite (retours de Jude) : pastille technique retirée (« Agents IA · 6 boutiques · eBay » : un client n'a pas à le savoir). Titre remplacé par un appel à l'action sur une ligne : « Transformez vos tiroirs en cash. » (« en cash » en vert), taille calée sur la largeur d'écran (vérifié à 320, 375 et 1 440 px, une ligne, aucun débordement). Dégradés bleu-vert retirés partout (titre, bouton, verdict, Mon grenier, barre) au profit des couleurs pleines du logo : ils faisaient « généré par IA ».
+Suite (Jude) : titre définitif « Vendez ce qui dort chez vous. » (« Vendez » en vert), une ligne de 320 à 1 440 px. Prise de vue : jusqu'à 5 photos en plus des 3 guidées (8 au total), ajout multiple et retrait une à une. Les photos en plus ne partent jamais à l'identification (seulement les 3 guidées) ; elles servent à l'annonce et au studio photo. Testé dans Chrome : 1 photo guidée et 2 en plus (compteur 2/5), identification sur la seule photo guidée, 3 photos affichées à la confirmation.
+
+### Mercredi 18/11, fin de matinée : barre du bas, Réglages, pages légales, mode sombre (Jude)
+Fait :
+- Titre de l'accueil encadré en « sticker » : carte à bord épais et ombre pleine décalée, « Vendez » en étiquette verte inclinée, étiquette de prix « € » en coin.
+- Barre du bas à 5 places : Accueil, Grenier, bouton central « Estimer » (ouvre l'appareil photo, puis la prise de vue guidée depuis n'importe quelle page), Compte, Réglages.
+- Réglages : thème (Auto, Clair, Sombre), objets animés en fond, mode démo (remplace `?demo=1`, qui reste valable), langue (français seul), devise (euro seul), effacement de Mon grenier avec confirmation, aide et contact, informations légales. Réglages gardés dans le navigateur, appliqués avant l'affichage (pas de flash clair).
+- Pages légales (`/legal/...`) : mentions légales, CGU, CGV (aucun service payant), confidentialité (données, destinataires dont Hugging Face, fal.ai, H Company, eBay, Vercel ; transferts hors UE ; droits ; CNIL), cookies (aucun cookie, stockage local nécessaire au service), contact. Base : le document de Tristan (`docs/produit/comment-ca-marche-mentions.md`).
+- Compte : pas de compte (Specs : utilisation anonyme) ; la page le dit, montre les chiffres de Mon grenier et annonce un compte « bientôt ».
+- Mode sombre sur toute l'app, automatique selon le téléphone ou choisi dans Réglages.
+Testé dans Chrome : accueil en sombre et en clair, Réglages (changement de thème), Compte, page Confidentialité, bouton central depuis une page légale jusqu'à la prise de vue ; aucun débordement à 320 et 375 px sur l'accueil, Réglages, Compte et les CGU.
+À compléter : l'adresse de contact publique (`frontend/lib/legal.tsx`, `CONTACT_EMAIL`, vide pour l'instant), le directeur de la publication (Jude, à confirmer), une relecture juridique des textes avant tout lancement.
+Non testé : le rendu sur téléphone, l'ouverture directe de l'appareil photo par le bouton central sur iPhone, le verdict et l'écran de recherche en mode sombre.
+Suite (Jude) : logo en deux versions, choisie selon le thème (contour bleu nuit en clair, contour clair en sombre, pièce verte inchangée), au lieu d'un carré blanc. Conseils photo raccourcis pour tenir sur une ligne de 320 à 1 440 px (« Objet seul, aucun visage sur la photo. », « Lumière franche, face à une fenêtre. », « Téléphone : visez le dos ou l'étiquette. »), mesuré dans Chrome. Marge basse des pages agrandie : le bouton central masquait le lien « Vous êtes revendeur ? ».
+Décision de Jude (18/11) : pas d'inscription pour vendredi. La page Compte reste « Utilisation sans compte ». L'inscription (e-mail, puis 3 estimations gratuites et abonnements du business model) passe dans la roadmap, avec la politique de confidentialité RGPD qu'elle impose.
+### Mardi 17/11, après-midi : calibrage du coefficient de rachat (Sebastian)
+
+Mesure demandée par Jude. Le coefficient `BUYBACK_COEF = 0.40` de `backend/pricing.py` est une
+hypothèse des Specs, jamais mesurée. Relevé à la main chez Easy Cash le 17/11, sans agent
+(aucun crédit consommé). Mesures brutes dans `mesures/calibrage_rachat_easycash_2026-11-17.csv`.
+
+Méthode : pour un même modèle, même couleur et même capacité, prix de vente sur la fiche
+catalogue d'Easy Cash et offre de rachat « bon état » de leur outil d'estimation
+(`prix.easycash.fr`). Coefficient = rachat ÷ vente.
+
+| Objet | Vente | Rachat (bon état) | Coef |
+|---|---|---|---|
+| iPhone 11 Noir 64 Go | 149,99 € | 76 € | 50,7 % |
+| iPhone 12 Noir 64 Go | 195,99 € | 116 € | 59,2 % |
+| iPhone 13 Minuit 128 Go | 259,99 € | 155 € | 59,6 % |
+| iPhone 13 mini Minuit 256 Go | 349,99 € | 164 € | 46,9 % |
+| iPhone 14 Minuit 128 Go | 309,99 € | 208 € | 67,1 % |
+| iPhone 15 Noir 128 Go | 419,99 € | 265 € | 63,1 % |
+| Switch (OLED) Noir 64 Go + 2 Joy Con Blanc | 184,99 € | 94 € | 50,8 % |
+
+- **Médiane sur 7 objets : 59,2 %.** Moyenne 56,8 %, étendue de 46,9 % à 67,1 %.
+- Médiane téléphones (6 objets) : 59,4 %. Console (1 objet) : 50,8 %.
+- Le 0,40 du code sous-estime donc l'offre de rachat d'environ un tiers. Sur un objet revendu
+  1 200 € en boutique, l'app annonce 480 € au lieu d'environ 710 €.
+
+**Proposition à valider par Jude :** passer `BUYBACK_COEF` de 0.40 à 0.59. Je n'ai pas modifié
+`backend/pricing.py` (règle du CLAUDE.md : proposer et attendre le feu vert).
+
+**Limites à connaître avant de trancher :**
+- Le prix de vente relevé est le « à partir de » du catalogue, c'est-à-dire le grade le moins cher,
+  alors que le rachat est pris en « bon état ». À grade égal, le coefficient réel est donc un peu
+  plus bas que 59 %. L'écart avec 0,40 reste large.
+- Une seule enseigne mesurée. Cash Converters, Gamecash et Troc.com restent à faire : le
+  coefficient leur est peut-être différent, et le code en applique un seul pour toutes.
+- Un seul objet en console. À étoffer avant de conclure sur la catégorie jeux vidéo.
+- Les modèles très récents (iPhone 18 Pro) et les marques moins courantes (Sony Xperia 1 III,
+  Xiaomi 12 Lite) n'ont pas de prix automatique chez Easy Cash : estimation manuelle sur photos.
+  Pour ces objets, aucun coefficient n'est relevable en ligne.
+- Prix relevés le 17/11. Ils bougent d'un jour à l'autre.
+
+**Point d'affichage, à trancher aussi :** le chiffre « En magasin » de l'écran de résultat est une
+offre de rachat, pas un prix de marché. Lu seul, il donne l'impression que l'app sous-évalue
+l'objet. Proposition : afficher le prix de marché en premier et renommer le bloc en
+« Offre de rachat typique (estimation basse) ».
+### Mercredi 18/11 : collecte de prix rendue stricte et commune aux deux parcours
+
+Décision de Tristan après les tests : les estimations mélangeaient parfois des variantes ou des états
+non comparables. Le parcours principal et l'espace revendeurs transmettent désormais aux agents le
+modèle, la capacité/variante, l'état et les détails fournis. Les agents doivent relever 3 à 8 offres
+vérifiées sur les boutiques autorisées, avec fiche produit et état visibles, sans inventer les données
+manquantes. Les offres sans URL de fiche, sans état ou en doublon sont écartées par le serveur.
+
+Les boutiques compatibles sont lancées simultanément, avec une limite configurable plafonnée à 10
+sessions H. Le coefficient de rachat reste à 0,40 : la proposition de recalibrage à 0,59 attend toujours
+la validation de Jude.
+
+Test fonctionnel : Apple iPhone 15 128 Go, « Bon état », cinq boutiques lancées ensemble. Après
+activation du magasin de certificats Windows avec `truststore`, les cinq sessions H sont accessibles.
+Easy Cash a rendu 2 offres strictement comparables à 414,99 € et 419,99 €. Troc.com n'en a trouvé
+aucune. Certideal et Swappie ont renvoyé des grades différents malgré la consigne : ce test a motivé
+le filtre déterministe des états côté serveur. Cash Converters est resté en file chez H et a été forcé
+avant de naviguer ; le budget de 70/90 secondes démarre donc désormais au début réel de la navigation,
+avec un délai de file séparé. Environ 755 000 tokens ont été consommés pour ce test complet.
+Fusion du 18/11 : contributions de l'équipe intégrées à `interface` (calibrage du rachat, issue #11 ; estimations multi-sources de Josia : consigne d'agent plus stricte, état, boîte, accessoires et détails transmis aux agents, jusqu'à 10 sessions en parallèle par défaut). Conflit résolu dans le verdict (libellés de Josia et compteur animé). Page « Confidentialité » corrigée : H Company reçoit maintenant aussi l'état, la boîte, les accessoires et les détails saisis. Tests : tri 52/52, eBay 14/14, compilation OK.
+Livrable du 18/11 : page parcours, architecture et roadmap mise à jour (version 3, https://claude.ai/artifact/RecgsXjdfxkmvbPWxPaHJD) avec l'interface du jour (8 écrans), le studio photo (Bria via fal.ai), la consigne d'agent de Josia, le rachat mesuré à 0,59 et la répartition des tâches. Loom de 2 min : Kevin et Stephen.
+Livrable du 18/11 fusionné dans le doc d'équipe « Team 13 · Hackathon Build The Future » (https://claude.ai/artifact/GwgpRDSDubuddWA3dojMwD) : nouvelle section « Livrable de mercredi 17h » après celle de lundi, avec le parcours en 8 écrans, un schéma d'architecture (vérifié par capture), la stack et la roadmap par jour avec responsables. Le reste du doc n'est pas modifié. La case « Mer. 18/11 » des échéances n'est pas cochée : le Loom n'est pas encore rendu.
+Doc d'équipe : section « Difficultés rencontrées et comment on les a surmontées » ajoutée (19 lignes, du 16 au 18/11, la plus récente en haut : difficulté, parade, ce qui restait à faire). Point principal : le compte développeur eBay demandé le 17/11 vers 9h n'est toujours pas validé le 18/11, alors qu'eBay annonce un jour ouvré.
+
+### Mercredi 18/11, après-midi : revue sévère (technique, consignes, livrables) et corrections 3 à 6
+Revue faite hors volet légal, à la demande de Jude. Bloquants relevés : pas de prototype en ligne (`main` en retard de 12 commits), pas de résultats chiffrés (le 18/11, 1 site sur 5 atteint 3 prix sur l'iPhone 15). Corrigés à la demande de Jude :
+- **Point 3, recherches abandonnées :** les agents s'arrêtaient seulement à 90 s, même si l'utilisateur avait quitté la page. Un signal d'arrêt par recherche est levé à la fermeture du flux, et chaque session en cours est annulée. Testé en réel : session Gamecash abandonnée à 10 s, arrêtée à 18,2 s (au lieu de 90).
+- **Point 4, garde-fous d'usage :** 20 recherches par adresse IP et par heure, 4 recherches en même temps au plus, 40 photos studio par IP et par heure, studio désactivable (`SEARCH_PER_HOUR`, `MAX_SEARCHES`, `STUDIO_PER_HOUR`, `STUDIO_ENABLED`). L'adresse est lue derrière le proxy du Space. Un refus s'affiche avec un message clair, dans l'estimation comme dans l'espace revendeurs.
+- **Point 5, coefficient de rachat :** 0,59 mesuré (Easy Cash, 7 objets) appliqué au lieu de 0,40 dans `backend/pricing.py`, avec sa source. La Switch à 166 € en boutique donne maintenant 98 € de rachat estimé au lieu de 66 €. L'hypothèse des 15 % (« vendre seul » sans eBay) reste à trancher sur les 10 objets.
+- **Point 6, cartes d'exemple :** le prix affiché est présenté comme « En boutique ≈ 166 € », avec « Estimer le mien → », et non plus comme ce que touche le vendeur. Dates corrigées (16 et 17/11).
+Tests : nouveau `tests/test_garde_fous.py` (8/8, sans réseau), ajouté à la vérification automatique ; tri 52/52, eBay 14/14, TypeScript OK.
+
+### Mercredi 18/11, après-midi : revue n°2, corrections 2, 3, 4, 7 et 9
+- **Point 3, adresse IP :** `X-Forwarded-For` lu à droite (adresse vue par le proxy du Space) et non plus à gauche (adresse déclarée par le client, falsifiable). `TRUSTED_PROXIES` règle le nombre de proxys (1 par défaut).
+- **Point 4, clé de démo :** `DEMO_KEY` dans `.env`. Ouvrir l'interface une fois avec `?cle=<la clé>` suffit : elle reste dans le navigateur et lève la limite par adresse IP (recherche et studio). Le plafond de recherches simultanées s'applique toujours.
+- **Point 9, compteur :** la place est prise et rendue dans le flux lui-même. Un navigateur parti avant le premier octet ne bloque plus de place.
+- **Point 7, libellés :** « Médiane mesurée » au lieu d'« estimation basse », car 0,59 est une médiane, pas un plancher ; même correction dans « Comment ça marche » et les CGU.
+- **Point 2, mesure :** `agents/mesure_objets.py` mesure un jeu d'objets par le même chemin que l'app (agents, tri par modèle et par état, bloc magasin) et sort par site et par objet le taux de réussite (au moins 3 prix), la durée, les jetons, l'identification si des photos sont données et l'écart au prix eBay vendu. Il imprime aussi les chiffres face aux objectifs des Specs. Modèle à remplir : `mesures/objets_a_mesurer.csv` (Kevin).
+Tests : `tests/test_garde_fous.py` 13/13 (adresse falsifiée, clé de démo, flux jamais démarré), tri 52/52, eBay 14/14, TypeScript OK ; identification vérifiée (dos + étiquette : « Apple iPhone 13 », correct ; dos seul : « Apple », incorrect).
+Test réel du script, Nintendo Switch : Easy Cash 3 prix (95 s), Cash Converters 1 prix (163 s), Gamecash 0, Troc.com 0. Soit 1 site sur 4 à 3 prix et 164 s par estimation. Prix de référence de 150 € mis pour le test seulement, fichier objet supprimé.
+**Régression repérée :** Gamecash renvoie 0 prix parce qu'il « n'utilise pas le libellé "Bon état" ». La consigne stricte du 18/11 (même état que demandé) écarte une boutique entière qui note autrement, alors que Gamecash donnait 3 à 4 prix de Switch le 16/11. À revoir avec Josia : accepter les grades équivalents, ou garder l'état comme critère de tri et non d'exclusion.
+
+### Mercredi 18/11, fin d'après-midi : parcours sans jargon (Jude)
+De la photo à l'estimation, l'interface ne parle plus d'agents, de serveur, de médiane ni de calcul. La barre dit où en est l'estimation (« On compare les prix d'occasion… », « On affine votre estimation… », « Votre estimation est prête. ») et les boutiques consultées s'affichent en petit dessous. Verdict, échelle, offres, bloc eBay, découverte et écran d'identification sont reformulés de même. Le mode démo garde les écrans des agents (pour le jury).
+Testé dans Chrome sur la Nintendo Switch : textes conformes, verdict « Passez en magasin » (rachat ≈ 94 € avec 0,59). Seul Cash Converters a rendu des prix sur cet essai, ce qui confirme la régression de la consigne d'état.
+README : section « Mesurer », section « Mettre en ligne » (variables du Space et de Vercel, clé de démo), état au 18/11.
+
+### Mercredi 18/11, 13h : clés eBay actives, premier appel réel
+- **Chronologie :** compte développeur créé le 18/11 (demande du 17/11). À la création du keyset Production, eBay l'a laissé **désactivé** (« keyset is currently disabled ») : il exige la conformité « Marketplace Account Deletion » ou une exemption. Premier appel à 13h : 401 (jeton refusé), cause = keyset désactivé, pas les clés. Exemption demandée vers 13h17 (« I do not persist eBay data », exact : pseudonyme du vendeur jeté, rien conservé côté serveur), **accordée** quelques minutes après.
+- **Test réel de `backend/ebay.py`** (API Browse, EBAY_FR) : Nintendo Switch 54 annonces lues, 45 gardées (même modèle), médiane 135,90 €, prix conseillé 122 € (94 à 144 €). iPhone 13 64 annonces, 64 gardées, médiane 273 €, prix conseillé 246 € (226 à 266 €). Vérifié aussi dans l'app (écran « Vendre seul (eBay) » : 122 €).
+- **Point faible :** les annonces « reconditionné » (revendeurs sur eBay) se mêlent aux occasions de particuliers sur l'iPhone et tirent le prix vers le haut. À filtrer ou à signaler avant de parler de prix « entre particuliers ».
+- **Rappel déploiement :** `EBAY_CLIENT_ID` et `EBAY_CLIENT_SECRET` à ajouter dans les secrets du Space. Toute évolution qui stocke des données eBay côté serveur oblige à revoir l'exemption.

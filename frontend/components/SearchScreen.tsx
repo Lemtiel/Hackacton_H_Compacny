@@ -20,6 +20,7 @@ import {
 import { type GrenierItem, newId, updateItem, upsertItem } from "@/lib/grenier";
 import { type Condition, type ListingFormat, type Platform, fallbackListing } from "@/lib/listing";
 import { PUBLISH_URLS, type Verdict, computeVerdict, priceZone } from "@/lib/verdict";
+import { CoinRain, CountUp } from "@/components/CashFx";
 
 type State = "attente" | "en_cours" | "ok" | "aucun_resultat" | "indisponible" | "hors_categorie";
 export type Row = {
@@ -52,6 +53,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
   const [shop, setShop] = useState<ShopBlock | null>(null);
   const [done, setDone] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [refused, setRefused] = useState<string | null>(null); // recherche refusée par le serveur (limite d'usage)
   const [myPrice, setMyPrice] = useState<number | null>(null);
   const idRef = useRef(newId());
   const shopRef = useRef<ShopBlock | null>(null);
@@ -97,13 +99,16 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
           }));
         } else if (ev.type === "site_result") {
           const base = ev.state === "ok" ? `${ev.offers.length} prix relevé${ev.offers.length > 1 ? "s" : ""}` : ev.state === "aucun_resultat" ? "Aucune offre de ce modèle" : "Site indisponible";
-          const rejected = ev.n_rejected ? `, ${ev.n_rejected} écartée${ev.n_rejected > 1 ? "s" : ""} (autre modèle)` : "";
+          const rejected = ev.n_rejected ? `, ${ev.n_rejected} écartée${ev.n_rejected > 1 ? "s" : ""} (non comparable ou invérifiable)` : "";
           setRows((r) => r.map((s) => (s.key === ev.site ? { ...s, state: ev.state, label: base + rejected, elapsed: ev.duration_s ?? s.elapsed, offers: ev.offers } : s)));
         } else if (ev.type === "site_shot") {
           setRows((r) => r.map((s) => (s.key === ev.site ? { ...s, shot: shotUrl(ev.shot) } : s)));
         } else if (ev.type === "shop_block") {
           setShop(ev.block);
           shopRef.current = ev.block;
+        } else if (ev.type === "error") {
+          setRefused(ev.message);
+          setFailed(true);
         } else if (ev.type === "done") {
           setDone(true);
         }
@@ -111,9 +116,10 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
       () => { setFailed(true); setDone(true); },
       isDemo(),
       input.hint ?? "",
+      { condition, box: withBox, accessories, details },
     );
     return stop;
-  }, [product, category]);
+  }, [product, category, condition, withBox, accessories, details, input.hint]);
 
   const verdict = shop ? computeVerdict(shop, ebaySellRange(ebay)) : null;
 
@@ -164,7 +170,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
       <p className="muted" style={{ margin: "0.5rem 0 0" }}>{CATEGORY_LABELS[category]}, {condition.toLowerCase()}</p>
       <h1 className="display search-title">{product}</h1>
 
-      {failed && <p className="notice error">Le serveur ne répond pas. Vérifiez votre connexion, puis relancez l&apos;estimation.</p>}
+      {failed && <p className="notice error">{refused ?? "L'estimation n'a pas pu aboutir. Vérifiez votre connexion, puis réessayez."}</p>}
 
       <SearchProgress rows={rows} done={done} demo={demo} />
 
@@ -197,7 +203,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
       {okSites.length > 0 && (
         <div className="panel">
           <h3>Les offres relevées</h3>
-          <p className="small" style={{ margin: "0 0 0.5rem" }}>Prix de revente affichés par les boutiques, même modèle uniquement.</p>
+          <p className="small" style={{ margin: "0 0 0.5rem" }}>Le même modèle, en vente dans les boutiques d&apos;occasion.</p>
           {okSites.map((s) => (
             <details key={s.key} className="site-detail">
               <summary>
@@ -221,7 +227,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
         <div className="panel">
           <h3>Prix entre particuliers</h3>
           <p className="small" style={{ margin: 0 }}>
-            Nos agents ne lisent pas Vinted ni Leboncoin. Ouvrez leur recherche pour comparer vous-même :
+            Comparez aussi vous-même sur les sites entre particuliers :
           </p>
           <div className="links">
             {marketplaceLinks(product)
@@ -243,8 +249,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
       </div>
 
       <p className="footer-note">
-        Prix indicatifs relevés sur Easy Cash, Gamecash, Troc.com, Cash Converters, Certideal et Swappie, et sur eBay par son API officielle. Comparaison non exhaustive. Objet reconnu et annonce
-        rédigée par intelligence artificielle. <a href="/comment-ca-marche">Comment ça marche</a>
+        Prix indicatifs, comparaison non exhaustive. Estimation et annonce générées par IA. <a href="/comment-ca-marche">Comment ça marche</a>
       </p>
     </section>
   );
@@ -259,12 +264,12 @@ export function SearchProgress({ rows, done, demo }: { rows: Row[]; done: boolea
   const progress = done
     ? 1
     : active.reduce((sum, r) => sum + (r.state === "attente" ? 0 : r.state === "en_cours" ? Math.min(r.elapsed / MAX_S, 0.95) : 1), 0) / active.length;
-  const n = active.length;
+  // Ce que l'utilisateur lit : où en est son estimation, sans détail technique.
   const label = done
-    ? `${n} boutiques d'occasion consultées`
+    ? "Votre estimation est prête."
     : finished === 0
-      ? `Nos agents visitent ${n} boutiques d'occasion…`
-      : `${finished} boutique${finished > 1 ? "s" : ""} sur ${n} ${finished > 1 ? "ont" : "a"} répondu…`;
+      ? progress < 0.3 ? "On compare les prix d'occasion…" : "On vérifie les annonces une à une…"
+      : finished < active.length ? "On affine votre estimation…" : "Encore quelques secondes…";
   const live = active.filter((r) => r.state === "en_cours" || r.shot);
   return (
     <div className="search-progress" aria-live="polite">
@@ -275,6 +280,7 @@ export function SearchProgress({ rows, done, demo }: { rows: Row[]; done: boolea
       <div className="search-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)} aria-label="Avancement de la recherche">
         <span style={{ transform: `scaleX(${progress})` }} data-done={done} />
       </div>
+      <p className="small search-sources">Boutiques consultées : {active.map((r) => r.name).join(", ")}</p>
       {demo && !done && live.length > 0 && (
         <div className="agent-grid">
           {live.map((r) => (
@@ -299,30 +305,28 @@ function VerdictCard({ verdict, running }: { verdict: Verdict; running: boolean 
   const seul = verdict.recommend === "seul";
   return (
     <div className="verdict-card" aria-live="polite">
+      <CoinRain />
       <p className="muted" style={{ margin: 0 }}>Où vendre ?</p>
       <h2 className="verdict-title">{seul ? "Vendez-le vous-même." : "Passez en magasin."}</h2>
       <p style={{ margin: "0.25rem 0 0" }}>
         {seul
-          ? <>Vous gagnez environ <strong className="num">{euros(verdict.gain)}</strong> de plus qu&apos;en magasin, en échange d&apos;une annonce à publier et d&apos;un envoi.</>
+          ? <>Vous gagnez environ <strong><CountUp value={verdict.gain} /></strong> de plus qu&apos;en magasin, en échange d&apos;une annonce à publier et d&apos;un envoi.</>
           : <>Vendre seul ne rapporterait qu&apos;environ <strong className="num">{euros(Math.max(verdict.gain, 0))}</strong> de plus. En magasin, vous êtes payé tout de suite.</>}
       </p>
       <div className="verdict-options">
         <div className="verdict-option" data-chosen={seul}>
           <span className="small">Vendre seul</span>
-          <span className="verdict-amount num">{euros(verdict.sellAloneLow)} – {euros(verdict.sellAloneHigh)}</span>
+          <span className="verdict-amount"><CountUp value={verdict.sellAloneLow} /> – <CountUp value={verdict.sellAloneHigh} /></span>
           <span className="small">Annonce, messages, envoi</span>
         </div>
         <div className="verdict-option" data-chosen={!seul}>
-          <span className="small">En magasin</span>
-          <span className="verdict-amount num">≈ {euros(verdict.buyback)}</span>
-          <span className="small">Un passage, payé tout de suite</span>
+          <span className="small">Offre de rachat typique</span>
+          <span className="verdict-amount">≈ <CountUp value={verdict.buyback} /></span>
+          <span className="small">Un passage en boutique</span>
         </div>
       </div>
       <p className="small" style={{ margin: "0.75rem 0 0" }}>
-        {verdict.source === "ebay"
-          ? "Vendre seul : annonces eBay en cours, moins 10 %. "
-          : "Prix entre particuliers estimé à partir des boutiques, faute d'annonces eBay. "}
-        {running ? "D'autres boutiques répondent encore." : ""}
+        {running ? "L'estimation s'affine encore." : "Prix indicatifs."}
       </p>
     </div>
   );
@@ -335,9 +339,9 @@ function PriceScale({ shop, verdict }: { shop: ShopBlock; verdict: Verdict }) {
   const pos = (v: number) => `${((v - min) / span) * 100}%`;
   const width = (a: number, b: number) => `${Math.max(((b - a) / span) * 100, 2)}%`;
   const bars = [
-    { label: "Rachat en magasin", cls: "magasin", lo: shop.buyback_low, hi: shop.buyback_high, mark: shop.buyback_estimate },
     { label: "Vendre seul", cls: "seul", lo: verdict.sellAloneLow, hi: verdict.sellAloneHigh, mark: verdict.sellAloneMid },
-    { label: "Revendu par les boutiques", cls: "boutique", lo: shop.shop_low, hi: shop.shop_high },
+    { label: "Prix de revente en boutique", cls: "boutique", lo: shop.shop_low, hi: shop.shop_high },
+    { label: "Ce qu'une boutique vous propose", cls: "magasin", lo: shop.buyback_low, hi: shop.buyback_high, mark: shop.buyback_estimate },
   ];
   return (
     <div className="scale" role="img" aria-label={bars.map((b) => `${b.label} : ${euros(b.lo)} à ${euros(b.hi)}`).join(", ")}>
@@ -505,7 +509,7 @@ function EbayPanel({ result }: { result: EbayResult | null }) {
   return (
     <div className="panel" aria-live="polite">
       <h3>Vendre seul (eBay)</h3>
-      {!result && <p className="small" style={{ margin: 0 }}>Recherche des annonces eBay…</p>}
+      {!result && <p className="small" style={{ margin: 0 }}>On regarde les annonces eBay…</p>}
       {result?.state === "indisponible" && <p className="small" style={{ margin: 0 }}>eBay ne répond pas pour l&apos;instant.</p>}
       {result && result.state !== "indisponible" && !b && (
         <p className="small" style={{ margin: 0 }}>Trop peu d&apos;annonces eBay de ce modèle pour donner un prix.</p>
@@ -514,15 +518,14 @@ function EbayPanel({ result }: { result: EbayResult | null }) {
         <>
           <div className="slider-value num">{euros(b.sell_price)}</div>
           <p className="small" style={{ margin: "0 0 0.5rem" }}>
-            Prix conseillé : la médiane des {b.n_kept} annonces en cours ({euros(b.listed_median)}), moins {Math.round(b.discount * 100)} %,
-            car un prix affiché part rarement tel quel. Fourchette : {euros(b.sell_low)} – {euros(b.sell_high)}.
+            Prix conseillé pour vendre vous-même. Fourchette : {euros(b.sell_low)} – {euros(b.sell_high)}.
           </p>
         </>
       )}
       {result && result.items.length > 0 && (
         <details className="site-detail">
           <summary>
-            <span>Annonces eBay, même modèle{result.n_rejected ? `, ${result.n_rejected} écartée${result.n_rejected > 1 ? "s" : ""}` : ""}</span>
+            <span>Annonces eBay, même modèle</span>
             <span className="num muted">{priceRange(result.items.map((o) => o.price_eur))}</span>
           </summary>
           {result.items.map((o, i) => (
@@ -533,7 +536,7 @@ function EbayPanel({ result }: { result: EbayResult | null }) {
           ))}
         </details>
       )}
-      <p className="small" style={{ margin: "0.5rem 0 0" }}>Source : API officielle d&apos;eBay, annonces d&apos;occasion en France. Prix demandés, pas des ventes conclues.</p>
+      <p className="small" style={{ margin: "0.5rem 0 0" }}>Annonces d&apos;occasion en cours sur eBay, en France.</p>
     </div>
   );
 }
