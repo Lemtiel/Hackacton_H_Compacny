@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from types import SimpleNamespace
 
-from backend.matching import filter_verified_offers, reject_reason  # noqa: E402
+from backend.matching import condition_grade, filter_verified_offers, rank_by_condition, reject_reason  # noqa: E402
 
 CASES = [
     # (objet cherché, catégorie, titre de l'annonce, gardée ?)
@@ -75,16 +75,65 @@ for product, category, title, keep in CASES:
         failed += 1
         print(f"ÉCHEC  {product!r} / {title!r} : attendu {'gardée' if keep else 'écartée'}, obtenu {reason or 'gardée'}")
 
-verified, rejected = filter_verified_offers([
-    SimpleNamespace(condition="Bon état", url="https://example.com/produit/iphone-15"),
-    SimpleNamespace(condition="Bon état", url="https://example.com/produit/iphone-15"),  # doublon
-    SimpleNamespace(condition=None, url="https://example.com/produit/iphone-15-noir"),
-    SimpleNamespace(condition="Très bon état", url="https://example.com/"),
-    SimpleNamespace(condition="Correct", url="https://example.com/produit/iphone-15-vert"),
-    SimpleNamespace(condition="Très bon état", url="https://example.com/produit/iphone-15-bleu"),
+def offer(condition, slug):
+    return SimpleNamespace(condition=condition, url=f"https://example.com/produit/{slug}" if slug else "https://example.com/")
+
+
+checks = 0
+
+
+def check(label, got, expected):
+    global failed, checks
+    checks += 1
+    if got != expected:
+        failed += 1
+        print(f"ÉCHEC  {label} : attendu {expected!r}, obtenu {got!r}")
+
+
+# Libellés des boutiques ramenés aux cinq états (Certideal, Swappie : notes d'agent du 18/11)
+for label, grade in [
+    ("Bon état", "bon"), ("Très bon état", "tres_bon"), ("Très bon", "tres_bon"), ("Excellent", "tres_bon"),
+    ("Correct", "correct"), ("État correct", "correct"), ("Parfait état", "comme_neuf"), ("Premium", "comme_neuf"),
+    ("Comme neuf", "comme_neuf"), ("Grade B", "bon"), ("Grade A", "tres_bon"), ("Pour pièces", "pieces"),
+    ("Occasion", None), ("", None),
+]:
+    check(f"libellé {label!r}", condition_grade(label), grade)
+
+# Issue #23 : assez d'offres au même état -> les autres états sont écartés, comme avant
+ranked, rejected = rank_by_condition([
+    offer("Bon état", "a"), offer("Bon état", "b"), offer("Grade B", "c"),
+    offer("Très bon état", "d"), offer(None, "e"),
 ], "Bon état")
-if len(verified) != 1 or rejected != 5:
-    failed += 1
-    print(f"ÉCHEC  offres vérifiables : attendu 1 gardée et 5 écartées, obtenu {len(verified)} et {rejected}")
-print(f"{len(CASES) - failed}/{len(CASES)} cas corrects")
+check("3 offres au même état", [m for _, m in ranked], ["exact", "exact", "exact"])
+check("3 offres au même état, écartées", rejected, 2)
+
+# Issue #23 : une seule offre au même état -> on complète avec les états voisins, puis les offres sans état
+ranked, rejected = rank_by_condition([
+    offer("Bon état", "a"),
+    offer("Très bon état", "b"),       # voisin au-dessus
+    offer("Correct", "c"),             # voisin en dessous
+    offer("Premium", "d"),             # deux crans au-dessus : écartée
+    offer("Pour pièces", "e"),         # jamais comparable à un objet qui marche
+    offer(None, "f"),                  # boutique sans état affiché
+    offer("Bon état", "a"),            # doublon
+    offer("Bon état", None),           # pas de fiche produit
+], "Bon état")
+check("complément par états voisins", [m for _, m in ranked], ["exact", "proche", "proche"])
+check("complément par états voisins, écartées", rejected, 5)
+
+# Gamecash (18/11) : aucun état affiché -> les offres restent, marquées « inconnu », au lieu de 0 prix
+ranked, rejected = rank_by_condition([offer(None, "a"), offer("", "b"), offer("Occasion", "c")], "Bon état")
+check("boutique sans état", [m for _, m in ranked], ["inconnu", "inconnu", "inconnu"])
+check("boutique sans état, écartées", rejected, 0)
+
+# Objet « pour pièces » : seules les offres pour pièces comptent
+ranked, rejected = rank_by_condition([offer("Pour pièces", "a"), offer("État correct", "b")], "Pour pièces")
+check("pour pièces", [m for _, m in ranked], ["exact"])
+
+# Compatibilité : filter_verified_offers rend les offres seules
+verified, rejected = filter_verified_offers([offer("Bon état", "a"), offer("Correct", "b")], "Bon état")
+check("filter_verified_offers", (len(verified), rejected), (2, 0))
+
+total = len(CASES) + checks
+print(f"{total - failed}/{total} cas corrects")
 sys.exit(1 if failed else 0)

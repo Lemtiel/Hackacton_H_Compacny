@@ -125,49 +125,97 @@ def filter_offers(product: str, category: str, offers: list) -> tuple[list, int]
     return kept, len(offers) - len(kept)
 
 
+# Les cinq états de l'interface, du pire au meilleur. L'écart de rang mesure la distance entre deux états.
+GRADE_ORDER = ["pieces", "correct", "bon", "tres_bon", "comme_neuf"]
+
+# Libellés des boutiques, ramenés aux cinq états. Ordre important : les libellés les plus longs d'abord
+# (« tres bon » avant « bon », « etat correct » avant « correct »). Chaque boutique note à sa façon :
+#   Certideal : Correct, Très bon état, Parfait état, Premium (note d'agent du 18/11)
+#   Swappie   : Bon état, Très bon état, Parfait état, Premium (note d'agent du 18/11)
+#   Gamecash  : n'affiche pas « Bon état » (issue #23) ; l'annonce sans état reste possible, voir rank_by_condition
+# Un libellé inconnu rend None : l'offre est gardée en dernier recours, jamais au même rang qu'un état identique.
+GRADE_LABELS = [
+    ("pieces", ("pour pieces", "hors service", "non fonctionnel", "en panne", "hs")),
+    ("comme_neuf", ("comme neuf", "parfait etat", "etat parfait", "premium", "grade s", "a+", "neuf")),
+    ("tres_bon", ("tres bon etat", "tres bon", "excellent etat", "excellent", "grade a")),
+    ("correct", ("etat correct", "correct", "acceptable", "satisfaisant", "etat moyen", "use", "grade c")),
+    ("bon", ("bon etat", "bon", "grade b")),
+]
+
+# En dessous de ce nombre d'offres au même état, on complète avec les états voisins (règle des Specs : 3 prix par site).
+MIN_SAME_CONDITION = 3
+
+
 def condition_grade(text: str) -> str | None:
-    """Ramène les libellés usuels des boutiques aux cinq états de l'interface."""
-    value = " ".join(tokens(text))
-    if any(term in value for term in ("pour pieces", "hors service", "non fonctionnel", "hs")):
-        return "pieces"
-    if any(term in value for term in ("comme neuf", "parfait etat", "premium", "grade s")):
-        return "comme_neuf"
-    if any(term in value for term in ("tres bon etat", "excellent etat", "grade a")):
-        return "tres_bon"
-    if any(term in value for term in ("bon etat", "grade b")):
-        return "bon"
-    if any(term in value for term in ("etat correct", "correct", "acceptable", "grade c")):
-        return "correct"
+    """Ramène les libellés usuels des boutiques aux cinq états de l'interface. None si le libellé est inconnu."""
+    value = " " + " ".join(tokens(text.replace("+", " plus "))) + " "
+    value = value.replace(" a plus ", " a+ ")
+    for grade, labels in GRADE_LABELS:
+        if any(f" {label} " in value for label in labels):
+            return grade
     return None
 
 
-def filter_verified_offers(offers: list, target_condition: str | None = None) -> tuple[list, int]:
-    """Garde uniquement les offres vérifiables et uniques.
+def _verifiable_url(url: str) -> str | None:
+    """Adresse canonique d'une fiche produit, ou None si ce n'est pas une fiche (accueil, vide, autre protocole)."""
+    try:
+        parsed = urlsplit(url)
+    except ValueError:
+        return None
+    if parsed.scheme not in ("http", "https") or not parsed.netloc or parsed.path in ("", "/"):
+        return None
+    return urlunsplit((parsed.scheme.lower(), parsed.netloc.lower(), parsed.path.rstrip("/"), parsed.query, ""))
 
-    Une offre sans état affiché ou sans URL de fiche produit ne doit pas influencer
-    l'estimation, même si un agent l'a renvoyée malgré sa consigne.
+
+def rank_by_condition(offers: list, target_condition: str | None = None,
+                      minimum: int = MIN_SAME_CONDITION) -> tuple[list[tuple[object, str]], int]:
+    """Classe les offres par proximité d'état au lieu d'exclure tout ce qui n'a pas exactement l'état demandé.
+
+    Rend ([(offre, correspondance)], nombre d'écartées), correspondance valant :
+      « exact »  : même état que celui demandé ;
+      « proche » : un cran au-dessus ou en dessous, ajouté seulement s'il manque des offres au même état ;
+      « inconnu » : boutique qui n'affiche pas d'état (ou libellé inconnu), en dernier recours.
+    Toujours écartées : offre sans fiche produit vérifiable, doublon, « pour pièces » (sauf si c'est l'état demandé),
+    état à deux crans ou plus. Sans état demandé, toutes les offres vérifiables sont « exact ».
     """
-    kept = []
-    seen_urls: set[str] = set()
-    target_grade = condition_grade(target_condition or "") if target_condition else None
+    target = condition_grade(target_condition or "") if target_condition else None
+    tiers: dict[str, list] = {"exact": [], "proche": [], "inconnu": []}
+    seen: set[str] = set()
+    rejected = 0
     for offer in offers:
-        condition = str(getattr(offer, "condition", "") or "").strip()
-        url = str(getattr(offer, "url", "") or "").strip()
-        try:
-            parsed = urlsplit(url)
-        except ValueError:
+        canonical = _verifiable_url(str(getattr(offer, "url", "") or "").strip())
+        if canonical is None or canonical in seen:
+            rejected += 1
             continue
-        if (
-            not condition
-            or (target_grade is not None and condition_grade(condition) != target_grade)
-            or parsed.scheme not in ("http", "https")
-            or not parsed.netloc
-            or parsed.path in ("", "/")
-        ):
-            continue
-        canonical = urlunsplit((parsed.scheme.lower(), parsed.netloc.lower(), parsed.path.rstrip("/"), parsed.query, ""))
-        if canonical in seen_urls:
-            continue
-        seen_urls.add(canonical)
-        kept.append(offer)
-    return kept, len(offers) - len(kept)
+        seen.add(canonical)
+        grade = condition_grade(str(getattr(offer, "condition", "") or ""))
+        if target is None:
+            tier = "exact"
+        elif grade is None:
+            tier = "inconnu"
+        elif grade == target:
+            tier = "exact"
+        elif "pieces" in (grade, target):
+            tier = None  # une console en panne ne se compare ni à une console qui marche, ni l'inverse
+        elif abs(GRADE_ORDER.index(grade) - GRADE_ORDER.index(target)) == 1:
+            tier = "proche"
+        else:
+            tier = None
+        if tier is None:
+            rejected += 1
+        else:
+            tiers[tier].append(offer)
+
+    kept = [(o, "exact") for o in tiers["exact"]]
+    for tier in ("proche", "inconnu"):
+        if len(kept) >= minimum:
+            rejected += len(tiers[tier])
+        else:
+            kept += [(o, tier) for o in tiers[tier]]
+    return kept, rejected
+
+
+def filter_verified_offers(offers: list, target_condition: str | None = None) -> tuple[list, int]:
+    """Offres vérifiables et uniques, classées par proximité d'état (voir rank_by_condition)."""
+    kept, rejected = rank_by_condition(offers, target_condition)
+    return [o for o, _ in kept], rejected
