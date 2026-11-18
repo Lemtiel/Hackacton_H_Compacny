@@ -762,3 +762,8 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - Outil `fill_item_specifics` : lit les lignes « - Libellé : valeur » du bloc CARACTÉRISTIQUES de la description, choisit seulement une valeur proposée par eBay (égalité, ou même fin : « iPhone 11 » donne « Apple iPhone 11 », jamais « iPhone 11 Pro »), laisse tel quel un champ déjà rempli.
 - Testé sur le brouillon réel : champs vidés puis remplis (Apple, Apple iPhone 11, Noir, 128 Go), relecture de la page ; second passage sans rien changer. Brouillon toujours non publié. Tests 25/25.
 - Non testé : un essai complet de l'agent avec cet outil, et les catégories où les libellés diffèrent (consoles, montres).
+
+### Jeudi 19/11, 0h45 : essai complet de l'agent avec les caractéristiques
+- Lancé par la route `/api/ebay/draft` (même chemin que le bouton), 3 photos, prix 141 €. Statut `draft_saved` en 126 s, 14 étapes. eBay a créé un nouveau brouillon (`draftId=5339447252121`).
+- Vérifié sur la page rouverte : 3 photos, titre exact, description de 20 lignes, prix 141,00 €, Marque Apple, Modèle Apple iPhone 11, Couleur Noir, Capacité 128 Go ; éditeur toujours ouvert avec « Mettre en vente gratuitement », donc non publié.
+- Brouillons de test à supprimer dans eBay : Nintendo Switch, iPhone 11 (`5339246164121`, photos en double), iPhone 11 (`5339447252121`, propre).
