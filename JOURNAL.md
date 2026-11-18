@@ -638,3 +638,17 @@ Fait :
 
 **Testé :** `tests/test_ebay_categorie.py` 13/13 sur réponse simulée (chemin de la catégorie, champs gardés, jeton et arbre réutilisés, aucune suggestion, erreur eBay, sandbox, sans clés), ajouté à la CI. `test_ebay.py` 14/14, `test_matching.py` 52/52, `test_garde_fous.py` 18/18. TypeScript compile. Route réelle sans clés : `non_configure`. Dans le navigateur (ordinateur et téléphone) : fiche affichée sans catégorie, puis avec une catégorie simulée ; état « Pour pièces » traduit ; titre et description copiés séparément (presse-papiers simulé, car le navigateur de test le refuse).
 **Pas testé :** l'appel réel à l'API Taxonomy (le poste de Kevin n'a pas les clés eBay) ; le copier-coller sur un vrai téléphone ; les libellés exacts du formulaire eBay (« Occasion », « pour pièces »), à vérifier en ouvrant eBay.
+
+### Mercredi 18/11, après-midi : l'état classe les offres au lieu de les exclure (issue #23, Tristan)
+Constat du test de 10h30 (Nintendo Switch, « Bon état ») : Gamecash 0 prix, car il n'affiche pas le libellé « Bon état » ; Cash Converters 1 prix. Une seule boutique sur 4 atteignait 3 prix, ce qui bloque l'objectif de la mesure (#8). Certideal et Swappie notent aussi à leur façon (Correct, Très bon état, Parfait état, Premium).
+
+**Décision (validée par Tristan, à relire par Jude) : l'état sert à classer, plus à exclure.**
+- Une boutique avec au moins 3 offres au même état : rien ne change, les autres états restent écartés.
+- Sinon, on complète avec les offres à un cran d'écart (au-dessus ou en dessous), puis avec celles dont la boutique n'affiche pas d'état. Chaque offre porte `condition_match` (`exact`, `proche`, `inconnu`), et l'interface l'indique (« état voisin », « état non précisé »).
+- Toujours écartés : deux crans d'écart ou plus, « pour pièces » face à un objet qui marche (et l'inverse), offre sans fiche produit, doublon.
+- Table des libellés élargie dans `backend/matching.py` (`GRADE_LABELS`) : Très bon, Excellent, Parfait état, Premium, Satisfaisant, Grade A/B/C, etc.
+- Consigne de l'agent (`agents/price_agent.py`, règle 2) : copier l'état tel qu'affiché, compléter par les états voisins s'il manque des offres, laisser l'état vide si la boutique n'en montre pas. À coordonner avec le chantier « vitesse des agents », qui touche la même consigne.
+
+Limite : mélanger des états voisins peut décaler un peu la médiane (un « très bon état » est plus cher). Le décalage reste visible à l'écran et ne joue qu'en l'absence de 3 offres au même état.
+**Testé :** `tests/test_matching.py` 74/74 (22 nouveaux cas : libellés, complément par états voisins, boutique sans état, pour pièces), `test_ebay.py` 14/14, `test_ebay_categorie.py` 13/13, `test_garde_fous.py` 18/18, TypeScript compile. `_site_payload` vérifié à la main sur des offres simulées de Gamecash.
+**Pas testé :** une vraie recherche avec les agents H (pas de clé dans cette session). À refaire : la Switch sur les 4 boutiques, et vérifier que Gamecash rend de nouveau des prix.
