@@ -569,3 +569,38 @@ le filtre déterministe des états côté serveur. Cash Converters est resté en
 avant de naviguer ; le budget de 70/90 secondes démarre donc désormais au début réel de la navigation,
 avec un délai de file séparé. Environ 755 000 tokens ont été consommés pour ce test complet.
 Fusion du 18/11 : contributions de l'équipe intégrées à `interface` (calibrage du rachat, issue #11 ; estimations multi-sources de Josia : consigne d'agent plus stricte, état, boîte, accessoires et détails transmis aux agents, jusqu'à 10 sessions en parallèle par défaut). Conflit résolu dans le verdict (libellés de Josia et compteur animé). Page « Confidentialité » corrigée : H Company reçoit maintenant aussi l'état, la boîte, les accessoires et les détails saisis. Tests : tri 52/52, eBay 14/14, compilation OK.
+
+### Mercredi 18/11, matin : agent de rachat Easy Cash (Sebastian, issue #11)
+
+Objectif : remplacer l'estimation par coefficient par l'offre de rachat réelle quand elle existe.
+Un agent H de plus va sur l'outil de reprise d'Easy Cash (`prix.easycash.fr`), choisit modèle,
+capacité et état, et lit l'offre. S'il n'y a pas d'offre en ligne, l'application garde le coefficient.
+
+Fichiers : `agents/buyback_agent.py` (l'agent), `agents/test_buyback.py` (le test). Rien n'est branché
+dans `backend/` : l'intégration attend le feu vert de Jude et Josia.
+
+Pourquoi un agent et pas un script : l'outil de reprise n'a pas d'API, c'est un formulaire en plusieurs
+étapes (marque, modèle, couleur, capacité, état). C'est le cas d'usage type d'un agent computer-use.
+
+Faisabilité du rachat en ligne par enseigne (vérifié les 17 et 18/11) :
+- Easy Cash : outil en ligne, `/vendez/` autorisé par le robots.txt. Couvre les 5 catégories de l'app
+  (pages de départ relevées le 18/11). Retenu.
+- Cash Converters : `reprise.cashconverters.fr` existe, mais robots.txt = `Disallow: /`. Exclu (règle 2).
+- Troc.com : dépôt-vente, estimation en magasin ou à domicile, pas d'offre en ligne. Exclu.
+- Gamecash : robots.txt sans interdiction, cote affichée en ligne. Page de rachat non localisée.
+- Certideal : robots.txt autorise un module `certidealinstantrebuy`. À vérifier.
+- Swappie : robots.txt interdit seulement les filtres. Rachat d'iPhone à vérifier.
+
+Limite connue : Easy Cash ne donne une offre en ligne que pour les modèles courants. Les modèles récents
+ou rares (iPhone 18 Pro, Sony Xperia 1 III, Xiaomi 12 Lite le 17/11) passent en cotation manuelle sur
+photos : l'agent rend alors `manual` et le coefficient reste indispensable en secours.
+
+**Testé :** la logique hors réseau, avec une API H simulée (offre lue, cotation manuelle, réponse texte,
+offre sans montant, catégorie inconnue). **Pas testé :** l'agent en réel. Le poste de travail utilisé
+n'atteint pas l'API H (proxy réseau). À lancer depuis un poste de l'équipe :
+`.venv/bin/python -m agents.test_buyback --all` (11 objets, environ 0,35 € de crédits). Les 7 objets
+relevés à la main le 17/11 servent de bonne réponse (tolérance 5 % ou 5 €).
+
+Question ouverte pour les mentors H : peut-on répartir les sessions sur les 6 comptes de l'équipe pour
+dépasser la limite de 3 sessions simultanées ? Si oui, Gamecash et Certideal pourraient s'ajouter sans
+allonger la recherche.
