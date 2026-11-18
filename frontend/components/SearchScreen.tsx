@@ -248,7 +248,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
             {marketplaceLinks(product)
               .filter((l) => !(ebay?.block && l.name.startsWith("eBay")))
               .map((l) => (
-                <a key={l.name} className="btn btn-quiet" href={l.url} target="_blank" rel="noopener noreferrer" style={{ background: "#fff" }}>
+                <a key={l.name} className="btn btn-quiet" href={l.url} target="_blank" rel="noopener noreferrer">
                   Voir sur {l.name}
                 </a>
               ))}
@@ -499,7 +499,11 @@ function ListingPanel({
 
   // Un agent H prépare le brouillon dans le Chrome de l'ordinateur ; l'utilisateur publie lui-même depuis eBay.
   async function prepareDraft() {
-    if (!ad || myPrice === null) return;
+    if (!ad) return;
+    if (myPrice === null) {
+      setDraft({ running: false, label: "", result: null, error: "Attendez la fin de l'estimation : le prix de l'annonce en dépend." });
+      return;
+    }
     setDraft({ running: true, label: "Envoi des photos à l'agent…", result: null, error: null });
     try {
       await startEbayDraft(
@@ -553,19 +557,19 @@ function ListingPanel({
               <button className="btn btn-primary" onClick={() => copy("annonce")}>{copied === "annonce" ? "Annonce copiée" : "Copier l'annonce"}</button>
             )}
             {canShare && (
-              <button type="button" className="btn btn-quiet" style={{ background: "#fff" }} onClick={shareAd}>
+              <button type="button" className="btn btn-quiet" onClick={shareAd}>
                 Partager photos et annonce
               </button>
             )}
             {platform === "ebay" && draftOn && sharePhotos.length > 0 && (
-              <button type="button" className="btn btn-quiet" style={{ background: "#fff" }} onClick={prepareDraft} disabled={myPrice === null || draft?.running}>
+              <button type="button" className="btn btn-quiet" onClick={prepareDraft} disabled={draft?.running}>
                 {draft?.running ? "L'agent prépare le brouillon…" : "Laisser un agent H préparer le brouillon eBay"}
               </button>
             )}
             {publish && (
               <a
                 className="btn btn-quiet"
-                style={{ background: "#fff" }}
+               
                 href={platform === "ebay" && ad ? ebayListingUrl({ title: ad.title, categoryId: ebayCategory?.id, condition }) : publish.url}
                 target="_blank"
                 rel="noopener noreferrer"
