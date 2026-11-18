@@ -66,6 +66,13 @@ export type SearchEvent =
   | { type: "shop_block"; block: ShopBlock | null }
   | { type: "done" };
 
+export type PriceSearchContext = {
+  condition?: string;
+  box?: boolean | null;
+  accessories?: string;
+  details?: string;
+};
+
 // Mode démo (pitch, vidéo) : ?demo=1 dans l'adresse de la page affiche les captures des agents.
 export function isDemo(): boolean {
   try {
@@ -78,8 +85,23 @@ export function isDemo(): boolean {
 
 export const shotUrl = (token: string) => `${API_URL}/api/shot/${encodeURIComponent(token)}`;
 
-export function searchPrices(product: string, category: string, onEvent: (e: SearchEvent) => void, onError: () => void, demo = false, hint = "") {
-  const url = `${API_URL}/api/search?product=${encodeURIComponent(product)}&category=${encodeURIComponent(category)}${demo ? "&demo=1" : ""}${hint ? `&hint=${encodeURIComponent(hint)}` : ""}`;
+export function searchPrices(
+  product: string,
+  category: string,
+  onEvent: (e: SearchEvent) => void,
+  onError: () => void,
+  demo = false,
+  hint = "",
+  context: PriceSearchContext = {},
+) {
+  const params = new URLSearchParams({ product, category });
+  if (demo) params.set("demo", "1");
+  if (hint) params.set("hint", hint);
+  if (context.condition) params.set("condition", context.condition);
+  if (context.box !== undefined && context.box !== null) params.set("box", String(context.box));
+  if (context.accessories) params.set("accessories", context.accessories);
+  if (context.details) params.set("details", context.details);
+  const url = `${API_URL}/api/search?${params.toString()}`;
   const source = new EventSource(url);
   source.onmessage = (msg) => {
     const ev = JSON.parse(msg.data) as SearchEvent;

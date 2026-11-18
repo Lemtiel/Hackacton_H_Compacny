@@ -98,7 +98,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
           }));
         } else if (ev.type === "site_result") {
           const base = ev.state === "ok" ? `${ev.offers.length} prix relevé${ev.offers.length > 1 ? "s" : ""}` : ev.state === "aucun_resultat" ? "Aucune offre de ce modèle" : "Site indisponible";
-          const rejected = ev.n_rejected ? `, ${ev.n_rejected} écartée${ev.n_rejected > 1 ? "s" : ""} (autre modèle)` : "";
+          const rejected = ev.n_rejected ? `, ${ev.n_rejected} écartée${ev.n_rejected > 1 ? "s" : ""} (non comparable ou invérifiable)` : "";
           setRows((r) => r.map((s) => (s.key === ev.site ? { ...s, state: ev.state, label: base + rejected, elapsed: ev.duration_s ?? s.elapsed, offers: ev.offers } : s)));
         } else if (ev.type === "site_shot") {
           setRows((r) => r.map((s) => (s.key === ev.site ? { ...s, shot: shotUrl(ev.shot) } : s)));
@@ -112,9 +112,10 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
       () => { setFailed(true); setDone(true); },
       isDemo(),
       input.hint ?? "",
+      { condition, box: withBox, accessories, details },
     );
     return stop;
-  }, [product, category]);
+  }, [product, category, condition, withBox, accessories, details, input.hint]);
 
   const verdict = shop ? computeVerdict(shop, ebaySellRange(ebay)) : null;
 
@@ -315,9 +316,9 @@ function VerdictCard({ verdict, running }: { verdict: Verdict; running: boolean 
           <span className="small">Annonce, messages, envoi</span>
         </div>
         <div className="verdict-option" data-chosen={!seul}>
-          <span className="small">En magasin</span>
+          <span className="small">Offre de rachat typique</span>
           <span className="verdict-amount">≈ <CountUp value={verdict.buyback} /></span>
-          <span className="small">Un passage, payé tout de suite</span>
+          <span className="small">Estimation basse · un passage</span>
         </div>
       </div>
       <p className="small" style={{ margin: "0.75rem 0 0" }}>
@@ -337,9 +338,9 @@ function PriceScale({ shop, verdict }: { shop: ShopBlock; verdict: Verdict }) {
   const pos = (v: number) => `${((v - min) / span) * 100}%`;
   const width = (a: number, b: number) => `${Math.max(((b - a) / span) * 100, 2)}%`;
   const bars = [
-    { label: "Rachat en magasin", cls: "magasin", lo: shop.buyback_low, hi: shop.buyback_high, mark: shop.buyback_estimate },
     { label: "Vendre seul", cls: "seul", lo: verdict.sellAloneLow, hi: verdict.sellAloneHigh, mark: verdict.sellAloneMid },
-    { label: "Revendu par les boutiques", cls: "boutique", lo: shop.shop_low, hi: shop.shop_high },
+    { label: "Prix affiché par les boutiques", cls: "boutique", lo: shop.shop_low, hi: shop.shop_high },
+    { label: "Offre de rachat typique (estimation basse)", cls: "magasin", lo: shop.buyback_low, hi: shop.buyback_high, mark: shop.buyback_estimate },
   ];
   return (
     <div className="scale" role="img" aria-label={bars.map((b) => `${b.label} : ${euros(b.lo)} à ${euros(b.hi)}`).join(", ")}>

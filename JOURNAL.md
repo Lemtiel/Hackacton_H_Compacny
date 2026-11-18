@@ -505,3 +505,66 @@ Testé dans Chrome : accueil en sombre et en clair, Réglages (changement de th�
 Non testé : le rendu sur téléphone, l'ouverture directe de l'appareil photo par le bouton central sur iPhone, le verdict et l'écran de recherche en mode sombre.
 Suite (Jude) : logo en deux versions, choisie selon le thème (contour bleu nuit en clair, contour clair en sombre, pièce verte inchangée), au lieu d'un carré blanc. Conseils photo raccourcis pour tenir sur une ligne de 320 à 1 440 px (« Objet seul, aucun visage sur la photo. », « Lumière franche, face à une fenêtre. », « Téléphone : visez le dos ou l'étiquette. »), mesuré dans Chrome. Marge basse des pages agrandie : le bouton central masquait le lien « Vous êtes revendeur ? ».
 Décision de Jude (18/11) : pas d'inscription pour vendredi. La page Compte reste « Utilisation sans compte ». L'inscription (e-mail, puis 3 estimations gratuites et abonnements du business model) passe dans la roadmap, avec la politique de confidentialité RGPD qu'elle impose.
+### Mardi 17/11, après-midi : calibrage du coefficient de rachat (Sebastian)
+
+Mesure demandée par Jude. Le coefficient `BUYBACK_COEF = 0.40` de `backend/pricing.py` est une
+hypothèse des Specs, jamais mesurée. Relevé à la main chez Easy Cash le 17/11, sans agent
+(aucun crédit consommé). Mesures brutes dans `mesures/calibrage_rachat_easycash_2026-11-17.csv`.
+
+Méthode : pour un même modèle, même couleur et même capacité, prix de vente sur la fiche
+catalogue d'Easy Cash et offre de rachat « bon état » de leur outil d'estimation
+(`prix.easycash.fr`). Coefficient = rachat ÷ vente.
+
+| Objet | Vente | Rachat (bon état) | Coef |
+|---|---|---|---|
+| iPhone 11 Noir 64 Go | 149,99 € | 76 € | 50,7 % |
+| iPhone 12 Noir 64 Go | 195,99 € | 116 € | 59,2 % |
+| iPhone 13 Minuit 128 Go | 259,99 € | 155 € | 59,6 % |
+| iPhone 13 mini Minuit 256 Go | 349,99 € | 164 € | 46,9 % |
+| iPhone 14 Minuit 128 Go | 309,99 € | 208 € | 67,1 % |
+| iPhone 15 Noir 128 Go | 419,99 € | 265 € | 63,1 % |
+| Switch (OLED) Noir 64 Go + 2 Joy Con Blanc | 184,99 € | 94 € | 50,8 % |
+
+- **Médiane sur 7 objets : 59,2 %.** Moyenne 56,8 %, étendue de 46,9 % à 67,1 %.
+- Médiane téléphones (6 objets) : 59,4 %. Console (1 objet) : 50,8 %.
+- Le 0,40 du code sous-estime donc l'offre de rachat d'environ un tiers. Sur un objet revendu
+  1 200 € en boutique, l'app annonce 480 € au lieu d'environ 710 €.
+
+**Proposition à valider par Jude :** passer `BUYBACK_COEF` de 0.40 à 0.59. Je n'ai pas modifié
+`backend/pricing.py` (règle du CLAUDE.md : proposer et attendre le feu vert).
+
+**Limites à connaître avant de trancher :**
+- Le prix de vente relevé est le « à partir de » du catalogue, c'est-à-dire le grade le moins cher,
+  alors que le rachat est pris en « bon état ». À grade égal, le coefficient réel est donc un peu
+  plus bas que 59 %. L'écart avec 0,40 reste large.
+- Une seule enseigne mesurée. Cash Converters, Gamecash et Troc.com restent à faire : le
+  coefficient leur est peut-être différent, et le code en applique un seul pour toutes.
+- Un seul objet en console. À étoffer avant de conclure sur la catégorie jeux vidéo.
+- Les modèles très récents (iPhone 18 Pro) et les marques moins courantes (Sony Xperia 1 III,
+  Xiaomi 12 Lite) n'ont pas de prix automatique chez Easy Cash : estimation manuelle sur photos.
+  Pour ces objets, aucun coefficient n'est relevable en ligne.
+- Prix relevés le 17/11. Ils bougent d'un jour à l'autre.
+
+**Point d'affichage, à trancher aussi :** le chiffre « En magasin » de l'écran de résultat est une
+offre de rachat, pas un prix de marché. Lu seul, il donne l'impression que l'app sous-évalue
+l'objet. Proposition : afficher le prix de marché en premier et renommer le bloc en
+« Offre de rachat typique (estimation basse) ».
+### Mercredi 18/11 : collecte de prix rendue stricte et commune aux deux parcours
+
+Décision de Tristan après les tests : les estimations mélangeaient parfois des variantes ou des états
+non comparables. Le parcours principal et l'espace revendeurs transmettent désormais aux agents le
+modèle, la capacité/variante, l'état et les détails fournis. Les agents doivent relever 3 à 8 offres
+vérifiées sur les boutiques autorisées, avec fiche produit et état visibles, sans inventer les données
+manquantes. Les offres sans URL de fiche, sans état ou en doublon sont écartées par le serveur.
+
+Les boutiques compatibles sont lancées simultanément, avec une limite configurable plafonnée à 10
+sessions H. Le coefficient de rachat reste à 0,40 : la proposition de recalibrage à 0,59 attend toujours
+la validation de Jude.
+
+Test fonctionnel : Apple iPhone 15 128 Go, « Bon état », cinq boutiques lancées ensemble. Après
+activation du magasin de certificats Windows avec `truststore`, les cinq sessions H sont accessibles.
+Easy Cash a rendu 2 offres strictement comparables à 414,99 € et 419,99 €. Troc.com n'en a trouvé
+aucune. Certideal et Swappie ont renvoyé des grades différents malgré la consigne : ce test a motivé
+le filtre déterministe des états côté serveur. Cash Converters est resté en file chez H et a été forcé
+avant de naviguer ; le budget de 70/90 secondes démarre donc désormais au début réel de la navigation,
+avec un délai de file séparé. Environ 755 000 tokens ont été consommés pour ce test complet.
