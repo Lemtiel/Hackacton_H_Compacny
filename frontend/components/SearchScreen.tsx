@@ -20,6 +20,7 @@ import {
 import { type GrenierItem, newId, updateItem, upsertItem } from "@/lib/grenier";
 import { type Condition, type ListingFormat, type Platform, fallbackListing } from "@/lib/listing";
 import { PUBLISH_URLS, type Verdict, computeVerdict, priceZone } from "@/lib/verdict";
+import { CoinRain, CountUp } from "@/components/CashFx";
 
 type State = "attente" | "en_cours" | "ok" | "aucun_resultat" | "indisponible" | "hors_categorie";
 export type Row = {
@@ -299,22 +300,23 @@ function VerdictCard({ verdict, running }: { verdict: Verdict; running: boolean 
   const seul = verdict.recommend === "seul";
   return (
     <div className="verdict-card" aria-live="polite">
+      <CoinRain />
       <p className="muted" style={{ margin: 0 }}>Où vendre ?</p>
       <h2 className="verdict-title">{seul ? "Vendez-le vous-même." : "Passez en magasin."}</h2>
       <p style={{ margin: "0.25rem 0 0" }}>
         {seul
-          ? <>Vous gagnez environ <strong className="num">{euros(verdict.gain)}</strong> de plus qu&apos;en magasin, en échange d&apos;une annonce à publier et d&apos;un envoi.</>
+          ? <>Vous gagnez environ <strong><CountUp value={verdict.gain} /></strong> de plus qu&apos;en magasin, en échange d&apos;une annonce à publier et d&apos;un envoi.</>
           : <>Vendre seul ne rapporterait qu&apos;environ <strong className="num">{euros(Math.max(verdict.gain, 0))}</strong> de plus. En magasin, vous êtes payé tout de suite.</>}
       </p>
       <div className="verdict-options">
         <div className="verdict-option" data-chosen={seul}>
           <span className="small">Vendre seul</span>
-          <span className="verdict-amount num">{euros(verdict.sellAloneLow)} – {euros(verdict.sellAloneHigh)}</span>
+          <span className="verdict-amount"><CountUp value={verdict.sellAloneLow} /> – <CountUp value={verdict.sellAloneHigh} /></span>
           <span className="small">Annonce, messages, envoi</span>
         </div>
         <div className="verdict-option" data-chosen={!seul}>
           <span className="small">En magasin</span>
-          <span className="verdict-amount num">≈ {euros(verdict.buyback)}</span>
+          <span className="verdict-amount">≈ <CountUp value={verdict.buyback} /></span>
           <span className="small">Un passage, payé tout de suite</span>
         </div>
       </div>

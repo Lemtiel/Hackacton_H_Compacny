@@ -69,7 +69,8 @@ export type SearchEvent =
 // Mode démo (pitch, vidéo) : ?demo=1 dans l'adresse de la page affiche les captures des agents.
 export function isDemo(): boolean {
   try {
-    return new URLSearchParams(window.location.search).get("demo") === "1";
+    if (new URLSearchParams(window.location.search).get("demo") === "1") return true;
+    return JSON.parse(localStorage.getItem("snapncash.prefs") || "{}").demo === true; // interrupteur dans Réglages
   } catch {
     return false;
   }

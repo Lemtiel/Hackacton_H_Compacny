@@ -477,3 +477,31 @@ Corrections apportées à la PR n°16 de Tristan, à la demande de Jude :
 - Risque ajouté : les CGU « usage privé » des boutiques (Gamecash, Cash Converters...) imposent un accord écrit avant tout lancement payant.
 - Mesure : 10 objets (au lieu de 30). Lien vers le cahier des charges des revendeurs corrigé.
 Reste à Tristan : décider du quota Silver, et relire la synthèse « En bref » avec ces chiffres.
+
+### Mercredi 18/11, matin : nouvelle interface « Pop et cash » (Jude)
+Choix de Jude : direction « Pop et cash » sur toute l'app, avec une pluie d'objets en fond.
+Fait :
+- Fond animé (`components/FallingObjects.tsx`) : consoles, téléphones, manettes, casques, tablettes, jeux et pièces qui tombent lentement, à 9-12 % d'opacité, derrière le contenu, jamais cliquables. Immobiles si le téléphone demande moins d'animations.
+- Habillage : dégradé bleu vers vert (couleurs du logo), boutons et cartes en relief, champs blancs, barre de recherche en dégradé avec reflet qui défile.
+- Accueil : pastille « Agents IA · 6 boutiques d'occasion · eBay », titre avec « a un prix. » en dégradé, 3 cartes d'exemple cliquables (Nintendo Switch ≈ 166 €, iPhone 13 ≈ 266 €, Sony DualSense ≈ 53 €). Ce sont les prix médians réellement relevés le 17/11, marqués « à titre d'exemple ».
+- Verdict : carte en dégradé, montants qui défilent comme un compteur, pluie de pièces à l'apparition (`components/CashFx.tsx`).
+- Mon grenier : total dans une carte, en dégradé et en compteur ; objets en cartes.
+- Défaut corrigé : en touchant une carte d'exemple, l'écran de précisions s'ouvrait en bas de page.
+Testé dans Chrome : accueil, carte d'exemple, recherche réelle « Nintendo Switch » (barre, verdict, pluie de pièces capturée), Mon grenier, espace revendeurs.
+Non testé : le rendu sur téléphone, la fluidité de l'animation sur un téléphone ancien.
+Suite (retours de Jude) : pastille technique retirée (« Agents IA · 6 boutiques · eBay » : un client n'a pas à le savoir). Titre remplacé par un appel à l'action sur une ligne : « Transformez vos tiroirs en cash. » (« en cash » en vert), taille calée sur la largeur d'écran (vérifié à 320, 375 et 1 440 px, une ligne, aucun débordement). Dégradés bleu-vert retirés partout (titre, bouton, verdict, Mon grenier, barre) au profit des couleurs pleines du logo : ils faisaient « généré par IA ».
+Suite (Jude) : titre définitif « Vendez ce qui dort chez vous. » (« Vendez » en vert), une ligne de 320 à 1 440 px. Prise de vue : jusqu'à 5 photos en plus des 3 guidées (8 au total), ajout multiple et retrait une à une. Les photos en plus ne partent jamais à l'identification (seulement les 3 guidées) ; elles servent à l'annonce et au studio photo. Testé dans Chrome : 1 photo guidée et 2 en plus (compteur 2/5), identification sur la seule photo guidée, 3 photos affichées à la confirmation.
+
+### Mercredi 18/11, fin de matinée : barre du bas, Réglages, pages légales, mode sombre (Jude)
+Fait :
+- Titre de l'accueil encadré en « sticker » : carte à bord épais et ombre pleine décalée, « Vendez » en étiquette verte inclinée, étiquette de prix « € » en coin.
+- Barre du bas à 5 places : Accueil, Grenier, bouton central « Estimer » (ouvre l'appareil photo, puis la prise de vue guidée depuis n'importe quelle page), Compte, Réglages.
+- Réglages : thème (Auto, Clair, Sombre), objets animés en fond, mode démo (remplace `?demo=1`, qui reste valable), langue (français seul), devise (euro seul), effacement de Mon grenier avec confirmation, aide et contact, informations légales. Réglages gardés dans le navigateur, appliqués avant l'affichage (pas de flash clair).
+- Pages légales (`/legal/...`) : mentions légales, CGU, CGV (aucun service payant), confidentialité (données, destinataires dont Hugging Face, fal.ai, H Company, eBay, Vercel ; transferts hors UE ; droits ; CNIL), cookies (aucun cookie, stockage local nécessaire au service), contact. Base : le document de Tristan (`docs/produit/comment-ca-marche-mentions.md`).
+- Compte : pas de compte (Specs : utilisation anonyme) ; la page le dit, montre les chiffres de Mon grenier et annonce un compte « bientôt ».
+- Mode sombre sur toute l'app, automatique selon le téléphone ou choisi dans Réglages.
+Testé dans Chrome : accueil en sombre et en clair, Réglages (changement de thème), Compte, page Confidentialité, bouton central depuis une page légale jusqu'à la prise de vue ; aucun débordement à 320 et 375 px sur l'accueil, Réglages, Compte et les CGU.
+À compléter : l'adresse de contact publique (`frontend/lib/legal.tsx`, `CONTACT_EMAIL`, vide pour l'instant), le directeur de la publication (Jude, à confirmer), une relecture juridique des textes avant tout lancement.
+Non testé : le rendu sur téléphone, l'ouverture directe de l'appareil photo par le bouton central sur iPhone, le verdict et l'écran de recherche en mode sombre.
+Suite (Jude) : logo en deux versions, choisie selon le thème (contour bleu nuit en clair, contour clair en sombre, pièce verte inchangée), au lieu d'un carré blanc. Conseils photo raccourcis pour tenir sur une ligne de 320 à 1 440 px (« Objet seul, aucun visage sur la photo. », « Lumière franche, face à une fenêtre. », « Téléphone : visez le dos ou l'étiquette. »), mesuré dans Chrome. Marge basse des pages agrandie : le bouton central masquait le lien « Vous êtes revendeur ? ».
+Décision de Jude (18/11) : pas d'inscription pour vendredi. La page Compte reste « Utilisation sans compte ». L'inscription (e-mail, puis 3 estimations gratuites et abonnements du business model) passe dans la roadmap, avec la politique de confidentialité RGPD qu'elle impose.

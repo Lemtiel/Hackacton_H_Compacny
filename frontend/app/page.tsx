@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { CATEGORY_LABELS, type Category, euros, identifyPhotos } from "@/lib/api";
 import { onGrenierChange, readGrenier, totals } from "@/lib/grenier";
 import { CONDITIONS, type Condition } from "@/lib/listing";
 import { applyVariant, guessCategory, variantSuggestion } from "@/lib/variants";
 import SearchScreen, { type SearchInput } from "@/components/SearchScreen";
+import { onPendingPhoto, takePendingPhoto } from "@/lib/pending";
 
 type Step = "home" | "capture" | "identifying" | "confirm" | "search";
 
@@ -25,6 +26,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
   const [shots, setShots] = useState<(File | null)[]>([null, null, null]);
+  const [extras, setExtras] = useState<File[]>([]); // jusqu'à 5 photos en plus, pour l'annonce et le studio
   const [product, setProduct] = useState("");
   const [category, setCategory] = useState<Category>("console");
   const [lowConfidence, setLowConfidence] = useState(false);
@@ -44,6 +46,17 @@ export default function Home() {
     window.scrollTo({ top: 0 });
   }
 
+  // Photo prise avec le bouton central de la barre du bas.
+  useEffect(() => {
+    const take = () => {
+      const f = takePendingPhoto();
+      if (f) onPhoto(f);
+    };
+    take();
+    return onPendingPhoto(take);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function setShot(i: number, file: File | null) {
     setShots((cur) => cur.map((f, j) => (j === i ? file : f)));
   }
@@ -52,7 +65,8 @@ export default function Home() {
     const files = shots.filter((f): f is File => !!f);
     if (files.length === 0) return;
     setError(null);
-    setPhotos(files.map((f) => URL.createObjectURL(f)));
+    // Les 3 photos guidées servent à reconnaître l'objet ; toutes (jusqu'à 8) servent à l'annonce et au studio.
+    setPhotos([...files, ...extras].map((f) => URL.createObjectURL(f)));
     setStep("identifying");
     try {
       const ident = await identifyPhotos(files);
@@ -77,6 +91,7 @@ export default function Home() {
     setError(null);
     setPhotos([]);
     setShots([null, null, null]);
+    setExtras([]);
     setProduct("");
     setAccessories("");
     setDetails("");
@@ -104,7 +119,7 @@ export default function Home() {
       {step === "home" && (
         <HomeScreen
           onPhoto={onPhoto}
-          onText={(p) => { reset(); setProduct(p); setCategory(guessCategory(p) ?? "console"); setStep("confirm"); }}
+          onText={(p) => { reset(); setProduct(p); setCategory(guessCategory(p) ?? "console"); setStep("confirm"); window.scrollTo({ top: 0 }); }}
         />
       )}
 
@@ -112,6 +127,8 @@ export default function Home() {
         <CaptureScreen
           shots={shots}
           onShot={setShot}
+          extras={extras}
+          onExtras={setExtras}
           onIdentify={identify}
           onText={() => { reset(); setStep("home"); }}
         />
@@ -134,7 +151,7 @@ export default function Home() {
               {photos.map((p, i) => <img key={i} src={p} alt={`Photo ${i + 1}`} className={i === 0 ? "photo" : "thumb"} />)}
             </div>
           )}
-          {photos.length > 0 && <p className="small">Vos photos ont servi à reconnaître l&apos;objet. Elles restent sur votre téléphone pour l&apos;annonce.</p>}
+          {photos.length > 0 && <p className="small">Les photos guidées ont servi à reconnaître l&apos;objet. Toutes restent sur votre téléphone pour l&apos;annonce.</p>}
 
           {error && <p className="notice error" style={{ marginTop: "1rem" }}>{error}</p>}
 
@@ -219,8 +236,13 @@ function HomeScreen({ onPhoto, onText }: { onPhoto: (f?: File) => void; onText: 
 
   return (
     <section className="screen">
-      <h1 className="display">Ce qui dort chez vous a un prix.</h1>
-      <p className="lede">Photographiez votre objet. On compare les prix d&apos;occasion à votre place et on prépare l&apos;annonce.</p>
+      <div className="hero">
+        <div className="hero-card">
+          <span className="hero-tag" aria-hidden><span className="hero-tag-hole" />€</span>
+          <h1 className="display hero-title"><span className="hero-sticker">Vendez</span> ce qui dort chez vous.</h1>
+          <p className="lede">Une photo de l&apos;objet : vous savez combien il vaut, où le vendre, et votre annonce est prête.</p>
+        </div>
+      </div>
 
       <div className="stack">
         <button className="btn btn-primary" onClick={() => cameraRef.current?.click()}>
@@ -232,10 +254,12 @@ function HomeScreen({ onPhoto, onText }: { onPhoto: (f?: File) => void; onText: 
       <input ref={galleryRef} type="file" accept="image/*" className="sr-only" onChange={(e) => onPhoto(e.target.files?.[0])} />
 
       <ul className="tips" aria-label="Conseils pour la photo">
-        <li><TipIcon kind="seul" /> L&apos;objet seul, sans personne : une photo avec un visage est refusée.</li>
-        <li><TipIcon kind="lumiere" /> Une lumière franche, face à une fenêtre.</li>
-        <li><TipIcon kind="etiquette" /> Pour un téléphone, montrez le dos ou l&apos;étiquette : le modèle s&apos;y lit mieux.</li>
+        <li><TipIcon kind="seul" /> Objet seul, aucun visage sur la photo.</li>
+        <li><TipIcon kind="lumiere" /> Lumière franche, face à une fenêtre.</li>
+        <li><TipIcon kind="etiquette" /> Téléphone : visez le dos ou l&apos;étiquette.</li>
       </ul>
+
+      <ExampleCards onPick={onText} />
 
       <div className="or">ou</div>
       <form className="stack" onSubmit={(e) => { e.preventDefault(); if (text.trim().length >= 2) onText(text.trim()); }}>
@@ -261,9 +285,50 @@ function HomeScreen({ onPhoto, onText }: { onPhoto: (f?: File) => void; onText: 
   );
 }
 
-function CaptureScreen({ shots, onShot, onIdentify, onText }: {
+// Prix réellement relevés par nos agents le 17/11 (JOURNAL.md), montrés comme exemples. Un toucher lance l'estimation.
+const EXAMPLES = [
+  { name: "Nintendo Switch", price: 166, art: "console" },
+  { name: "Apple iPhone 13 128 Go", price: 266, art: "phone" },
+  { name: "Sony DualSense", price: 53, art: "pad" },
+] as const;
+
+function ExampleCards({ onPick }: { onPick: (product: string) => void }) {
+  return (
+    <section className="examples" aria-labelledby="examples-title">
+      <h2 id="examples-title" className="examples-title">Ça vaut combien ?</h2>
+      <div className="examples-row">
+        {EXAMPLES.map((e) => (
+          <button key={e.name} type="button" className="example-card" data-art={e.art} onClick={() => onPick(e.name)}>
+            <span className="example-art" aria-hidden>{ART[e.art]}</span>
+            <span className="example-name">{e.name.replace("Apple ", "").replace(" 128 Go", "")}</span>
+            <span className="example-price num">≈ {e.price} €</span>
+          </button>
+        ))}
+      </div>
+      <p className="small" style={{ margin: "0.5rem 0 0" }}>Prix médians relevés en boutique d&apos;occasion le 17/11, à titre d&apos;exemple.</p>
+    </section>
+  );
+}
+
+const ART: Record<string, ReactNode> = {
+  console: (
+    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="8" width="26" height="16" rx="6" /><path d="M9 13v6M6 16h6" /><circle cx="21" cy="14" r="1.6" /><circle cx="24" cy="18" r="1.6" /></svg>
+  ),
+  phone: (
+    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="3" width="14" height="26" rx="3.5" /><path d="M14 25.5h4" /></svg>
+  ),
+  pad: (
+    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 11h16a5 5 0 0 1 5 5v3a4 4 0 0 1-7 2.6L20 19h-8l-2 2.6A4 4 0 0 1 3 19v-3a5 5 0 0 1 5-5Z" /><path d="M9 14v4M7 16h4" /><circle cx="22" cy="15" r="1.3" /></svg>
+  ),
+};
+
+const MAX_EXTRAS = 5;
+
+function CaptureScreen({ shots, onShot, extras, onExtras, onIdentify, onText }: {
   shots: (File | null)[];
   onShot: (i: number, f: File | null) => void;
+  extras: File[];
+  onExtras: (files: File[]) => void;
   onIdentify: () => void;
   onText: () => void;
 }) {
@@ -280,12 +345,58 @@ function CaptureScreen({ shots, onShot, onIdentify, onText }: {
           <ShotSlot key={s.title} index={i} title={s.title} tip={s.tip} required={s.required} file={shots[i]} onFile={(f) => onShot(i, f)} />
         ))}
       </ol>
+      <ExtraPhotos files={extras} onChange={onExtras} />
       <div className="stack" style={{ marginTop: "1.5rem" }}>
         <button className="btn btn-primary" disabled={count === 0} onClick={onIdentify}>
           Reconnaître mon objet{count > 1 ? ` (${count} photos)` : ""}
         </button>
         <button className="link-btn" onClick={onText}>Taper le nom à la place</button>
       </div>
+    </section>
+  );
+}
+
+// Photos en plus des 3 guidées : jamais envoyées pour la reconnaissance, seulement pour l'annonce et le studio.
+function ExtraPhotos({ files, onChange }: { files: File[]; onChange: (f: File[]) => void }) {
+  const ref = useRef<HTMLInputElement>(null);
+  const [urls, setUrls] = useState<string[]>([]);
+  useEffect(() => {
+    const u = files.map((f) => URL.createObjectURL(f));
+    setUrls(u);
+    return () => u.forEach((x) => URL.revokeObjectURL(x));
+  }, [files]);
+  const left = MAX_EXTRAS - files.length;
+  return (
+    <section className="extras" aria-labelledby="extras-title">
+      <div className="extras-head">
+        <span id="extras-title" className="shot-title">Photos en plus pour l&apos;annonce <span className="small">(facultatif, {MAX_EXTRAS} max)</span></span>
+        <span className="small num">{files.length}/{MAX_EXTRAS}</span>
+      </div>
+      <p className="small" style={{ margin: "0.2rem 0 0.6rem" }}>Autres angles, accessoires, défauts. Elles servent à votre annonce et aux photos studio.</p>
+      <div className="extras-grid">
+        {urls.map((u, i) => (
+          <div key={u} className="extra">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={u} alt={`Photo en plus ${i + 1}`} />
+            <button type="button" className="extra-remove" aria-label={`Retirer la photo en plus ${i + 1}`} onClick={() => onChange(files.filter((_, j) => j !== i))}>×</button>
+          </div>
+        ))}
+        {left > 0 && (
+          <button type="button" className="extra-add" onClick={() => ref.current?.click()} aria-label="Ajouter des photos en plus">+</button>
+        )}
+      </div>
+      <input
+        ref={ref}
+        type="file"
+        accept="image/*"
+        multiple
+        className="sr-only"
+        onChange={(e) => {
+          const picked = Array.from(e.target.files ?? []);
+          onChange([...files, ...picked].slice(0, MAX_EXTRAS));
+          e.target.value = "";
+        }}
+      />
     </section>
   );
 }
