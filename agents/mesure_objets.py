@@ -32,6 +32,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import csv
+import json
 import os
 import statistics
 import threading
@@ -75,14 +76,30 @@ class Concurrency:
             self.now -= 1
 
 
+# Une seule boucle asynchrone pour tous les appels eBay : backend/ebay.py garde un verrou (jeton) lié à la boucle
+# qui l'utilise. Une boucle par objet (asyncio.run) bloquait le 2e objet indéfiniment (mesure du 19/11, iPhone 12).
+_ebay_loop: asyncio.AbstractEventLoop | None = None
+_ebay_loop_lock = threading.Lock()
+EBAY_TIMEOUT_S = 60
+
+
+def _loop() -> asyncio.AbstractEventLoop:
+    global _ebay_loop
+    with _ebay_loop_lock:
+        if _ebay_loop is None:
+            _ebay_loop = asyncio.new_event_loop()
+            threading.Thread(target=_ebay_loop.run_forever, daemon=True, name="ebay-loop").start()
+        return _ebay_loop
+
+
 def ebay_prices(product: str, category: str) -> dict:
     """Bloc eBay de l'app (API Browse). Rend {etat, n, bas, haut, conseille}, ou {etat} si eBay ne répond rien."""
     if not ebay.configured():
         return {"etat": "non_configure"}
     try:
-        r = asyncio.run(ebay.search(product, category))
-    except Exception as e:  # panne réseau ou quota : la mesure continue sans eBay
-        return {"etat": f"erreur : {e}"[:80]}
+        r = asyncio.run_coroutine_threadsafe(ebay.search(product, category), _loop()).result(timeout=EBAY_TIMEOUT_S)
+    except Exception as e:  # panne réseau, quota ou délai dépassé : la mesure continue sans eBay
+        return {"etat": f"erreur : {type(e).__name__} {e}"[:80]}
     b = r.get("block")
     if r.get("state") != "ok" or not b:
         return {"etat": r.get("state") or "aucun_resultat"}
@@ -139,7 +156,10 @@ def measure(client: Client, obj: dict, slots: threading.Semaphore,
     with ThreadPoolExecutor(max_workers=len(sites) + 1) as ex:
         eb_future = ex.submit(ebay_prices, product, category)  # eBay répond en 1 à 2 s, en parallèle des agents
         rows = list(ex.map(one, sites))
-        eb = eb_future.result()
+        try:
+            eb = eb_future.result(timeout=EBAY_TIMEOUT_S + 10)
+        except Exception as e:  # garde-fou : un appel eBay ne bloque jamais la mesure
+            eb = {"etat": f"erreur : {type(e).__name__}"}
     total_s = round(time.monotonic() - t0, 1)
 
     prices = [o["price_eur"] for r in rows for o in r.pop("_offers")]
@@ -188,10 +208,16 @@ def main() -> None:
     log(f"{len(objs)} objet(s), agent {AGENT}, {PARALLEL} sessions H en parallèle au plus.")
 
     client, slots, conc = Client(), threading.Semaphore(PARALLEL), Concurrency()
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d_%Hh%M")
+    out = ROOT / "mesures"
+    partial = out / f"mesure_partielle_{stamp}.jsonl"
+    write_lock = threading.Lock()
 
     def run(i: int, obj: dict) -> tuple[dict, list[dict]]:
         log(f"[{i}/{len(objs)}] {obj['objet']} …")
         s, rows = measure(client, obj, slots, conc)
+        with write_lock, open(partial, "a", encoding="utf-8") as f:  # rien n'est perdu si un objet bloque ensuite
+            f.write(json.dumps({"objet": s, "sites": rows}, ensure_ascii=False) + "\n")
         log(f"    {obj['objet']} : {s['sites_reussis']}/{s['sites']} sites à ≥ {MIN_PRICES_OK} prix, {s['n_prix']} prix, "
             f"eBay {s['ebay_etat']}, {s['duree_totale_s']} s" + (f", écart {s['ecart_pct']} %" if "ecart_pct" in s else ""))
         return s, rows
@@ -202,8 +228,6 @@ def main() -> None:
     summaries = [s for s, _ in results]
     site_rows = [r for _, rows in results for r in rows]
 
-    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d_%Hh%M")
-    out = ROOT / "mesures"
     for name, data in ((f"mesure_sites_{stamp}.csv", site_rows), (f"mesure_objets_{stamp}.csv", summaries)):
         cols = list(dict.fromkeys(k for row in data for k in row))
         with open(out / name, "w", newline="", encoding="utf-8") as f:

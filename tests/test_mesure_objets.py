@@ -36,6 +36,7 @@ def fake_payload(site, r, product, category, condition):
     return {"state": "ok", "offers": [{"price_eur": p} for p in (200.0, 210.0, 220.0)], "n_rejected": 0}
 
 
+REAL_EBAY_PRICES = m.ebay_prices
 m.run_site, m._site_payload = fake_run_site, fake_payload
 
 
@@ -68,6 +69,27 @@ check("toutes les sessions terminées : compteur revenu à 0", conc.now == 0)
 conc = m.Concurrency()
 m.measure(None, {"objet": "Apple iPhone 13 128 Go", "categorie": "smartphone"}, threading.Semaphore(3), conc)
 check("plafond à 3 respecté", conc.peak == 3)
+
+# Blocage du 19/11 : deux objets appellent eBay en même temps ; le verrou du jeton eBay est lié à une boucle.
+import asyncio  # noqa: E402
+
+token_lock = asyncio.Lock()
+
+
+async def fake_search(product, category):
+    async with token_lock:  # même schéma que backend/ebay.py (_token_lock)
+        await asyncio.sleep(0.3)
+    return {"state": "ok", "block": {"n_kept": 5, "sell_low": 100, "sell_high": 140, "sell_price": 120}}
+
+
+m.ebay.configured, m.ebay.search = (lambda: True), fake_search
+res = []
+ths = [threading.Thread(target=lambda: res.append(REAL_EBAY_PRICES("X", "smartphone"))) for _ in range(3)]
+t0 = time.monotonic()
+[t.start() for t in ths]
+[t.join(timeout=10) for t in ths]
+check("3 appels eBay simultanés : aucun ne bloque", len(res) == 3 and time.monotonic() - t0 < 5)
+check("3 appels eBay simultanés : tous répondent « ok »", all(r.get("etat") == "ok" and r.get("conseille") == 120 for r in res))
 
 print(f"{total - failed}/{total} vérifications correctes")
 sys.exit(1 if failed else 0)

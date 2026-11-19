@@ -799,3 +799,9 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - Demande de Jude : sur snapncash.vercel.app, chaque visiteur voit les agents H naviguer. L'interrupteur « Mode démo » de Réglages coupe ou rallume l'affichage.
 - Contradiction relevée avec la règle 9 et Specs.md : les boutiques interdisent la reproduction de leurs pages. Option « captures réservées au lien du jury » proposée, Jude a choisi « pour tout le monde ». Risque accepté par Jude, règle 9 et Specs.md réécrites.
 - Code : `frontend/lib/prefs.ts` (démo à `true` par défaut), `frontend/lib/api.ts` (démo active sauf si le visiteur l'a coupée). Côté Space : variable `DEMO_SHOTS=1`. Les captures restent relayées sans enregistrement, jeton valable 10 min.
+
+### Jeudi 19/11, 9h45 : mesure #8 bloquée, deux corrections
+- Mesure lancée à 9h03 (10 objets, 2 à la fois). 9 objets finis en 10 min, l'iPhone 12 bloqué plus de 20 min. Cause : mon ajout eBay ouvrait une boucle asynchrone par objet, et le verrou du jeton eBay (`backend/ebay.py`, `_token_lock`) restait lié à la première. Le serveur en ligne n'est pas touché (une seule boucle). Le script n'écrivait qu'à la fin : résultats perdus, processus arrêté.
+- Résultats vus à l'écran avant l'arrêt (boutiques à ≥ 3 prix) : iPhone 13 3/5 (175 s), Galaxy S21 1/5, iPad 9 0/5, MacBook Air M1 1/4, Switch 0/4, PS5 0/4, Xbox Series S 1/4, Zelda 0/4, FC 25 0/4. eBay en échec après le 1er objet à cause du bug.
+- Corrigé : une seule boucle partagée pour eBay avec un délai de 60 s, écriture de chaque objet dès qu'il est fini (`mesures/mesure_partielle_<date>.jsonl`). Test qui reproduit le blocage : échoue sur l'ancien code (9/11), passe sur le nouveau (11/11).
+- Tri par modèle (validé par Jude) : « 9e génération », « 9th gen » valent « 9 » ; une année glissée (« iPad 2021 9e gen ») ne compte plus ; « The Legend of Zelda » vaut « Zelda ». 9 cas ajoutés, tri 101/101. Pas encore déployé sur le Space.

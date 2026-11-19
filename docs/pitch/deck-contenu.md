@@ -43,7 +43,19 @@ Exemple mesuré le 19/11 en ligne, « iPhone 13 128 Go, bon état » :
 - Scénario central : **22 k€** en an 1, **150 k€** en an 2, **375 k€** en an 3. Marge brute de 81 à 84 %.
 
 ## 6. Go-to-market
-*À compléter par Tristan et Stephen (docs/business-model, partie 3).* Pistes déjà écrites : vendeurs occasionnels (déménagement, tri), revendeurs professionnels avec l'espace `/pro`, puis les plateformes (Vinted, Leboncoin) qui gagnent des annonces mieux remplies.
+*Validé par Jude et Tristan le 19/11. Reprend les clients de docs/business-model (partie 3) et les hypothèses du tableur (🟡 = hypothèse).*
+
+**Cible de départ : la personne qui n'a jamais osé vendre.** 83 % des Français n'ont jamais revendu. Nous commençons par le high-tech, là où l'écart de prix fait le plus peur : 46 millions de téléphones dorment dans les tiroirs.
+
+| Phase | Qui | Comment | Objectif |
+|---|---|---|---|
+| **1. Lancement** (mois 1 à 6) | Particuliers | 3 estimations gratuites comme produit d'appel. Vidéos courtes « ce que vaut ton vieux téléphone » sur TikTok et Instagram, avec les écrans des agents. Temps forts : déménagements, rentrée, avant Noël. Écoles et campus. | 500 inscrits le 1er mois 🟡, puis +12 % par mois |
+| **2. Pros** (dès le mois 4) | Dépôts-ventes, ressourceries, petites enseignes | Démarchage direct avec l'espace `/pro`, qui classe les annonces par marge de revente | Offre Entreprise, 7 clients en fin d'an 1 🟡 |
+| **3. Plateformes** (an 2) | Vinted, Leboncoin | Nous leur apportons des annonces bien remplies, d'objets qui dormaient. Payé par annonce publiée, puis licence | 26 800 € en an 2 🟡 |
+
+**Chiffres clés :** 4 % des inscrits passent en Bronze 🟡 ; publicité à 3 € par inscrit 🟡 ; 16 100 inscrits en an 1.
+
+> Note orale : « On ne va pas chercher les vendeurs Vinted. On va chercher les 83 % qui n'ont jamais vendu, avec trois estimations offertes. »
 
 ## 7. Architecture technique
 ```
