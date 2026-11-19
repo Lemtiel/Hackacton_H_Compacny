@@ -160,5 +160,16 @@ gc = [Offer(title="Console Nintendo Switch", price_eur=p_, condition="Occasion r
 p = main._site_payload("gamecash", result("completed", False, gc), "Nintendo Switch", "console", "Bon état")
 check("Gamecash (« Occasion reconditionnée », sans grade) : 4 prix gardés, plus 0", p["state"] == "ok" and len(p["offers"]) == 4)
 
+# Réponse d'agent dont les offres arrivent en texte JSON (Easy Cash, iPad 9, 19/11) : elles doivent être lues.
+from agents.price_agent import Offers as _Offers, coerce_answer  # noqa: E402
+
+_raw = {"offers": ['[{"title": "Tablette APPLE iPad 9 (2021) 64 Go", "price_eur": 189.99, "condition": "Bon état", '
+                   '"url": "https://bons-plans.easycash.fr/tablette/a-1"}, {"title": "iPad 9 64 Go", "price_eur": 199, '
+                   '"condition": "Bon état", "url": "https://bons-plans.easycash.fr/tablette/a-2"}]'], "note": None}
+check("offres en texte JSON dans la liste : 2 offres lues", len(_Offers.model_validate(coerce_answer(_raw)).offers) == 2)
+check("réponse entière en texte JSON : lue", len(_Offers.model_validate(coerce_answer('{"offers": [{"title": "a", "price_eur": 2}]}')).offers) == 1)
+check("réponse normale : inchangée", len(_Offers.model_validate(coerce_answer({"offers": [{"title": "a", "price_eur": 1}]})).offers) == 1)
+check("texte libre : rendu tel quel (devient la note)", coerce_answer("pas de JSON") == "pas de JSON")
+
 print(f"{total - failed}/{total} vérifications correctes")
 sys.exit(1 if failed else 0)
