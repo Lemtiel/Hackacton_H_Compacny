@@ -94,8 +94,10 @@ python -m venv .venv
 cd frontend
 cp .env.local.example .env.local   # NEXT_PUBLIC_API_URL=http://localhost:8000
 npm install
-npm run dev                         # http://localhost:3000, mode démo : http://localhost:3000/?demo=1
+npm run dev                         # http://localhost:3000
 ```
+
+Pour voir les écrans des agents en local, ajouter `DEMO_SHOTS=1` dans le `.env` (le mode démo est actif par défaut dans l'interface). Pour le brouillon eBay par agent sur ce Mac, ajouter aussi `EBAY_DRAFT_LOCAL=1` (voir plus bas). Relancer le serveur après chaque modification du `.env`.
 
 Une recherche lance de vrais agents H : environ 80 s et des crédits par site.
 
