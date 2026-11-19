@@ -67,6 +67,7 @@ Interface Next.js (Vercel) ──▶ Serveur FastAPI (Space Hugging Face)
 ```
 - **Un agent pour six sites** : aucune ligne de code propre à une boutique. Certideal et Swappie se sont ajoutés par une ligne de configuration.
 - **Résultats envoyés site par site**, écrans des agents relayés en direct.
+- **Passage à l'échelle sans recoder** : 3 agents simultanés sur l'offre gratuite de H, 10 avec l'offre Builder (20 $ par mois), 100 avec Startup.
 - **Mesuré sur 10 objets** : [MESURE] sessions réussies, [MESURE] s de durée médiane, pic de [MESURE] agents simultanés.
 
 ## 8. Ce qu'on a refusé de faire
