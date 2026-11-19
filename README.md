@@ -180,6 +180,33 @@ Ouvrir l'interface une fois avec `?cle=<DEMO_KEY>` pour lever la limite par adre
 **Testé :** parcours complet sur ordinateur et sur téléphone, 3 photos guidées (réduites à 1600 px avant l'envoi), agents sur les 6 boutiques, studio photo, nouvelle interface (clair et sombre), espace revendeurs, arrêt des agents quand l'utilisateur quitte une recherche (en réel), limites d'usage, coefficient de rachat mesuré par catégorie sur 30 objets ([docs/calibrage-rachat.md](docs/calibrage-rachat.md)), **API eBay en réel** (annonces « Vendre seul », catégorie suggérée sur 15 produits), classement des offres par état (Gamecash n'est plus à 0 prix), lien « Publier sur eBay » qui ouvre l'éditeur avec titre, catégorie et état remplis (vérifié sur un compte connecté).
 **Pas encore :** mesure sur 10 objets, bouton « Partager photos et annonce » sur un vrai iPhone (testé avec un partage simulé ; il exige du HTTPS), publication en 1 clic sur eBay (maquette et plan dans [docs/produit/publication-ebay.md](docs/produit/publication-ebay.md), hors Specs actuelles). Le prix, la description et les photos ne passent pas par le lien eBay. Suivi dans les [issues](https://github.com/Lemtiel/Hackacton_H_Compacny/issues).
 
+## Pour aller plus loin
+Ce que nous aurions aimé faire avec plus de temps, ou qui demande l'accord d'une plateforme.
+
+### Un partenariat avec Vinted et Leboncoin
+Leurs CGU interdisent les robots : nous n'y envoyons aucun agent. Avec leur accord (une API, ou des agents identifiés et limités en rythme), le partenariat profite aux trois parties.
+- **Pour la plateforme :** de nouvelles annonces d'objets qui dormaient dans les tiroirs (83 % des Français n'ont jamais revendu), des annonces complètes (photos studio, caractéristiques, prix cohérent avec le marché), donc moins d'annonces bâclées, moins de litiges et plus de ventes sur lesquelles elle touche ses frais.
+- **Pour le vendeur :** le prix entre particuliers mesuré sur la plateforme où il vend, et une publication en un clic au lieu de recopier l'annonce.
+- **Pour Snap N Cash :** des prix de vente réels pour mesurer la précision de nos estimations, et un revenu par annonce publiée, puis une licence (voir le [modèle économique](docs/business-model/business-model-snap-n-cash.md)).
+
+### Le programme partenaire d'eBay
+Publier en un clic par l'API de brouillons d'eBay (Listing API), à la place de notre agent qui ne tourne que sur l'ordinateur du vendeur. L'accord d'utilisation d'eBay serait respecté et la fonction s'ouvrirait à tous les utilisateurs.
+
+### Une extension de navigateur
+Une extension installée par le vendeur préparerait le brouillon dans son propre navigateur, là où il est déjà connecté : ses identifiants ne passeraient jamais par notre serveur. Elle suppose l'accord de chaque plateforme, comme le partenariat.
+
+### Choisir sa vitesse de vente
+Le curseur « vente rapide, prix juste, ambitieux » existe déjà sur l'écran de prix. L'étape suivante : demander dès le départ « vendre vite » ou « au meilleur prix », appliquer ce choix au prix de l'annonce et du brouillon eBay, et afficher un délai de vente estimé une fois les ventes réelles connues.
+
+### Mesurer la précision des prix
+Comparer le prix conseillé au prix réellement obtenu, sur des ventes conclues (API Marketplace Insights d'eBay ou données d'une plateforme partenaire). Le critère des Specs (écart médian de 15 % au plus) n'est pas encore mesuré.
+
+### Une marge revendeur plus réaliste
+L'espace revendeurs calcule la marge sur le prix médian des boutiques. Un revendeur revend plutôt entre particuliers : prendre le prix eBay comme référence de revente donnerait une marge plus prudente.
+
+### Plus de boutiques, puis d'autres pays
+Une boutique s'ajoute par une ligne de configuration, sans code propre. Les mêmes agents peuvent couvrir d'autres catégories et d'autres pays.
+
 ## Équipe
 | | Rôle |
 |---|---|
