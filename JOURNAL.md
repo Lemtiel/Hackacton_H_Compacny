@@ -820,3 +820,10 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - Cause principale des échecs, lue dans les notes des agents : objet absent du stock (PS5, Xbox, jeux, iPad 9), pas un échec de navigation.
 - Bug trouvé : prix eBay conseillé de 18 € pour une PS5 (jeux PS5 pris pour des consoles). Corrigé : recherche eBay limitée à la catégorie de l'objet (une seule acceptée par l'API), « Portal » ajouté aux variantes. Vérifié en réel sur les 10 objets : PS5 580 €, Xbox Series S 314 €, Zelda 43 €.
 - Troc.com mis en pause (0 prix sur 10, sa recherche répond toujours « aucun produit ») ; Swappie limité aux iPhone et iPad. Textes de l'interface, README, Specs et règle 1 mis à jour.
+
+### Jeudi 19/11, 11h30 : autorisation de l'utilisateur avant le brouillon eBay par agent
+- Demande de Jude : l'app doit demander l'autorisation de l'utilisateur avant que l'agent agisse sur son compte eBay.
+- Interface : le bouton ouvre un écran d'autorisation (ce que fait l'agent, qu'il ne publie jamais, que les captures passent par H). L'agent ne démarre qu'après « Autoriser et lancer l'agent », à chaque brouillon.
+- Serveur : `/api/ebay/draft` refuse (403) toute demande sans `consent=1`, même avec la clé de démo. Tests 27/27 (2 nouveaux).
+- Rappel : l'accord de l'utilisateur ne remplace pas l'autorisation d'eBay, qui interdit les agents IA sans son accord (risque accepté, en local seulement, entrée de 8h45). Connexion officielle eBay (OAuth + API) écartée pour vendredi : 1 à 2 jours, configuration eBay, pas de vrai brouillon via l'API Inventory.
+- Pas testé : l'affichage de l'écran dans le navigateur (le bouton n'apparaît qu'avec le serveur local `EBAY_DRAFT_LOCAL=1`).

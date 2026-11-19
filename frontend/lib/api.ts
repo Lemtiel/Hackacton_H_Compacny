@@ -298,7 +298,7 @@ export async function draftAvailable(): Promise<boolean> {
 }
 
 export async function startEbayDraft(
-  p: { photos: string[]; title: string; description: string; price: number; categoryId?: string | null; condition: string },
+  p: { photos: string[]; title: string; description: string; price: number; categoryId?: string | null; condition: string; consent: true },
   onEvent: (e: DraftEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {
@@ -311,6 +311,7 @@ export async function startEbayDraft(
   body.append("category_id", p.categoryId ?? "");
   body.append("condition", p.condition);
   body.append("key", demoKey());
+  body.append("consent", p.consent ? "1" : ""); // donné par l'écran d'autorisation, à chaque brouillon
   const res = await fetch(`${API_URL}/api/ebay/draft`, { method: "POST", body, signal });
   if (!res.ok || !res.body) {
     const data = await res.json().catch(() => ({}));

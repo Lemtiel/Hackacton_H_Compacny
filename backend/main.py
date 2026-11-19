@@ -204,6 +204,7 @@ async def ebay_draft(
     category_id: str = Form("", max_length=12),
     condition: str = Form("Bon état", max_length=20),
     key: str = Form("", max_length=100),
+    consent: str = Form("", max_length=1),
 ):
     """Un agent H prépare un BROUILLON eBay dans le Chrome local (photos, description, prix) et ne publie jamais.
     Réponse : flux d'événements (progression, puis résultat)."""
@@ -211,6 +212,9 @@ async def ebay_draft(
         raise HTTPException(404, "Cette fonction n'est pas activée sur ce serveur.")
     if not _demo_key_ok(key or request.headers.get("x-demo-key", "")):
         raise HTTPException(403, "Clé de démo absente ou incorrecte. Rouvrez l'app avec ?cle=VOTRE_CLE dans l'adresse, sans virgule ni point à la fin.")
+    # L'utilisateur autorise l'agent à agir dans son navigateur connecté à eBay, à chaque brouillon (écran de consentement).
+    if consent != "1":
+        raise HTTPException(403, "Autorisation manquante : validez l'écran d'autorisation avant de lancer l'agent.")
     if not 1 <= len(files) <= 10:
         raise HTTPException(422, "Entre 1 et 10 photos.")
     blobs: list[tuple[bytes, str]] = []

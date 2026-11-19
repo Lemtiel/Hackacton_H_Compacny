@@ -61,7 +61,7 @@ from PIL import Image  # noqa: E402
 
 Image.new("RGB", (40, 40), (30, 111, 217)).save(jpeg, "JPEG")
 photo = ("photo-1.jpg", jpeg.getvalue(), "image/jpeg")
-form = {"title": "Apple iPhone 11 noir", "description": "Description de test assez longue", "price": "141", "condition": "Bon état"}
+form = {"title": "Apple iPhone 11 noir", "description": "Description de test assez longue", "price": "141", "condition": "Bon état", "consent": "1"}
 
 
 def post(files=None, key="cle-demo-test", **over):
@@ -74,6 +74,8 @@ check("fonction désactivée : 404", post().status_code == 404)
 main.EBAY_DRAFT_LOCAL = True
 check("sans clé de démo : 403 avec la marche à suivre", (lambda r: r.status_code == 403 and "?cle=" in r.json()["detail"])(post(key="")))
 check("mauvaise clé de démo : 403", post(key="autre").status_code == 403)
+check("sans autorisation de l'utilisateur : 403, l'agent ne démarre pas", (lambda r: r.status_code == 403 and "Autorisation" in r.json()["detail"])(post(consent="")))
+check("autorisation autre que « 1 » : refusée", post(consent="0").status_code == 403)
 check("sans photo : 422", client.post("/api/ebay/draft", data={**form, "key": "cle-demo-test"}).status_code == 422)
 check("fichier qui n'est pas une image : 422", post(files=[("files", ("a.txt", b"hello", "text/plain"))]).status_code == 422)
 check("prix négatif : 422", post(price="-3").status_code == 422)

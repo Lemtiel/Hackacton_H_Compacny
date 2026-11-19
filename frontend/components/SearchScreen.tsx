@@ -431,6 +431,7 @@ function ListingPanel({
   // Brouillon eBay par un agent H (démo seulement : serveur de démo + clé de démo)
   const [draftOn, setDraftOn] = useState(false);
   const [draft, setDraft] = useState<{ running: boolean; label: string; result: Extract<DraftEvent, { type: "result" }> | null; error: string | null; note?: string | null } | null>(null);
+  const [consentOpen, setConsentOpen] = useState(false); // écran d'autorisation, demandé à chaque brouillon
   useEffect(() => { draftAvailable().then(setDraftOn); }, []);
 
   // Le partage natif n'existe qu'en HTTPS (ou localhost) et sur les navigateurs qui le gèrent : sinon on ne montre pas le bouton.
@@ -519,7 +520,7 @@ function ListingPanel({
         : null;
       setDraft((d) => (d ? { ...d, label: "Envoi des photos à l'agent…", note } : d));
       await startEbayDraft(
-        { photos: prepared.urls, title: ad.title, description: ad.description, price: myPrice, categoryId: ebayCategory?.id, condition },
+        { photos: prepared.urls, title: ad.title, description: ad.description, price: myPrice, categoryId: ebayCategory?.id, condition, consent: true },
         (e) => {
           if (e.type === "step") setDraft((d) => (d ? { ...d, label: e.label } : d));
           if (e.type === "result") setDraft((d) => (d ? { ...d, running: false, result: e } : d));
@@ -574,9 +575,26 @@ function ListingPanel({
               </button>
             )}
             {platform === "ebay" && draftOn && sharePhotos.length > 0 && (
-              <button type="button" className="btn btn-quiet" onClick={prepareDraft} disabled={draft?.running}>
+              <button type="button" className="btn btn-quiet" onClick={() => setConsentOpen(true)} disabled={draft?.running || consentOpen}>
                 {draft?.running ? "L'agent prépare le brouillon…" : "Laisser un agent H préparer le brouillon eBay"}
               </button>
+            )}
+            {platform === "ebay" && consentOpen && (
+              <div className="panel" role="region" aria-labelledby="consent-title" style={{ background: "var(--bg)" }}>
+                <h3 id="consent-title" style={{ margin: 0 }}>Autoriser l&apos;agent à agir sur votre compte eBay ?</h3>
+                <ul className="small" style={{ margin: "0.6rem 0", paddingLeft: "1.1rem" }}>
+                  <li>Un agent IA de H Company ouvre eBay dans votre navigateur, connecté à votre compte.</li>
+                  <li>Il remplit un brouillon : titre, description, prix, caractéristiques et photos de cette annonce.</li>
+                  <li>Il ne publie jamais : c&apos;est vous qui cliquez sur « Mettre en vente ».</li>
+                  <li>Les captures de son écran passent par H Company. Votre mot de passe ne quitte pas votre navigateur.</li>
+                </ul>
+                <div className="stack">
+                  <button type="button" className="btn btn-primary" onClick={() => { setConsentOpen(false); prepareDraft(); }}>
+                    Autoriser et lancer l&apos;agent
+                  </button>
+                  <button type="button" className="btn btn-quiet" onClick={() => setConsentOpen(false)}>Annuler</button>
+                </div>
+              </div>
             )}
             {publish && (
               <a
