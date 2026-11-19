@@ -215,8 +215,9 @@ export default function ProPage() {
         {failed && <p className="notice error" style={{ marginTop: "1rem" }}>{refused ?? "Le serveur ne répond pas. Relancez la recherche."}</p>}
         {query && (
           <>
-            <SearchProgress rows={rows} done={done} demo={demo} />
-            <ProAgentLive rows={rows} done={done} />
+            {/* Les écrans des agents s'affichent dans les cartes ci-dessous : pas de deuxième grille. */}
+            <SearchProgress rows={rows} done={done} demo={false} />
+            <ProAgentLive rows={rows} done={done} demo={demo} />
           </>
         )}
 
@@ -299,7 +300,7 @@ function CartIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden><path d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.6L20 8H6.1M9 20h.01M17 20h.01" /></svg>;
 }
 
-function ProAgentLive({ rows, done }: { rows: Row[]; done: boolean }) {
+function ProAgentLive({ rows, done, demo }: { rows: Row[]; done: boolean; demo: boolean }) {
   const active = rows.filter((row) => row.state !== "hors_categorie");
   if (active.length === 0) return null;
   return (
@@ -318,6 +319,11 @@ function ProAgentLive({ rows, done }: { rows: Row[]; done: boolean }) {
               <strong>{row.name}</strong>
               <span className="small num">{Math.round(row.elapsed)} s</span>
             </div>
+            {/* Mode démo : l'écran de l'agent en direct, jamais conservé une fois la recherche finie (règle 9). */}
+            {demo && !done && (row.shot
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img className="pro-agent-shot" src={row.shot} alt={`Ce que voit l'agent sur ${row.name}`} />
+              : row.state === "en_cours" && <div className="pro-agent-shot pro-agent-shot-wait">Démarrage du navigateur…</div>)}
             <div className="pro-agent-status"><span className="dot" data-state={row.state} />{row.label}</div>
             {row.steps.length > 0 && (
               <ol className="pro-agent-steps">
