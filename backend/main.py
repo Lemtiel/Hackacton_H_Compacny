@@ -63,9 +63,10 @@ STUDIO_PER_HOUR = int(os.getenv("STUDIO_PER_HOUR") or "40")  # photos studio par
 MAX_SEARCHES = int(os.getenv("MAX_SEARCHES") or "4")  # recherches en cours en même temps, toutes adresses confondues
 STUDIO_ENABLED = (os.getenv("STUDIO_ENABLED") or "1") == "1"
 # Routes facturées (routeur Hugging Face) ou soumises au quota quotidien d'eBay : plafond par IP aussi (revue du 19/11).
-IDENTIFY_PER_HOUR = int(os.getenv("IDENTIFY_PER_HOUR") or "60")  # identifications par IP et par heure
-LISTING_PER_HOUR = int(os.getenv("LISTING_PER_HOUR") or "60")  # rédactions d'annonce par IP et par heure
-EBAY_PER_HOUR = int(os.getenv("EBAY_PER_HOUR") or "120")  # appels eBay (prix + catégorie) par IP et par heure
+# Alignés sur SEARCH_PER_HOUR=200 du Space : une salle partage une IP, et une estimation appelle eBay 2 fois.
+IDENTIFY_PER_HOUR = int(os.getenv("IDENTIFY_PER_HOUR") or "400")  # identifications par IP et par heure
+LISTING_PER_HOUR = int(os.getenv("LISTING_PER_HOUR") or "400")  # rédactions d'annonce par IP et par heure
+EBAY_PER_HOUR = int(os.getenv("EBAY_PER_HOUR") or "800")  # appels eBay par IP et par heure (2 par estimation)
 # Brouillon eBay par un agent H dans le Chrome local de l'utilisateur : démo sur son ordinateur seulement, jamais sur le Space
 # (le serveur ne peut pas piloter un Chrome distant). Réservé à la clé de démo : il agit sur UN compte eBay.
 EBAY_DRAFT_LOCAL = (os.getenv("EBAY_DRAFT_LOCAL") or "0") == "1"
@@ -90,11 +91,34 @@ def _client_ip(request: Request) -> str:
     return request.client.host if request.client else "inconnue"
 
 
+DEMO_TOKEN_TTL_S = 3600
+_demo_tokens: dict[str, float] = {}  # jeton temporaire -> expiration, en mémoire
+_demo_tokens_lock = threading.Lock()
+
+
 def _demo_key_ok(key: str) -> bool:
-    """Clé de démo (DEMO_KEY dans .env) : lève la limite par adresse IP, pour que la démo ne soit pas bloquée
-    par les autres personnes du même Wi-Fi. Le plafond de recherches simultanées s'applique toujours."""
+    """Clé de démo (DEMO_KEY dans .env) ou jeton temporaire obtenu avec elle : lève la limite par adresse IP, pour que
+    la démo ne soit pas bloquée par les autres personnes du même Wi-Fi. Le plafond de recherches simultanées s'applique
+    toujours. Le jeton sert à /api/search, dont l'adresse (EventSource, sans en-tête possible) apparaît dans les
+    journaux et l'historique : la vraie clé n'y passe plus."""
     expected = os.getenv("DEMO_KEY") or ""
-    return bool(expected) and bool(key) and secrets.compare_digest(key, expected)
+    if not (expected and key):
+        return False
+    if secrets.compare_digest(key, expected):
+        return True
+    with _demo_tokens_lock:
+        exp = _demo_tokens.get(key)
+        return exp is not None and exp > time.time()
+
+
+def _new_demo_token() -> str:
+    now = time.time()
+    token = secrets.token_urlsafe(18)
+    with _demo_tokens_lock:
+        for k in [k for k, exp in _demo_tokens.items() if exp < now]:
+            del _demo_tokens[k]
+        _demo_tokens[token] = now + DEMO_TOKEN_TTL_S
+    return token
 
 
 def _allow(kind: str, ip: str, per_hour: int) -> bool:
@@ -137,6 +161,16 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+
+@app.post("/api/demo/token")
+def demo_token(request: Request):
+    """Échange la clé de démo (en-tête X-Demo-Key, jamais dans l'adresse) contre un jeton valable 1 h."""
+    expected = os.getenv("DEMO_KEY") or ""
+    key = request.headers.get("x-demo-key", "")
+    if not (expected and key and secrets.compare_digest(key, expected)):
+        raise HTTPException(403, "Clé de démo absente ou incorrecte.")
+    return {"token": _new_demo_token(), "ttl_s": DEMO_TOKEN_TTL_S}
 
 
 @app.get("/api/health")

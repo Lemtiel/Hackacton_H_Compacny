@@ -192,7 +192,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
 
       {shop && verdict && (
         <>
-          <VerdictCard verdict={verdict} running={running} shopPrices={shop.n_prices} />
+          <VerdictCard verdict={verdict} running={running} shopPrices={shop.n_kept} />
           <PriceScale shop={shop} verdict={verdict} />
           {myPrice !== null && (
             <PriceSlider shop={shop} verdict={verdict} value={myPrice} onChange={(v) => { priceTouched.current = true; setMyPrice(v); }} />

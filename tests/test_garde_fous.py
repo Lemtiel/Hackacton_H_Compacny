@@ -144,8 +144,42 @@ check("eBay : au-delà du plafond, refus 429", _limited("ebay", 3) == 429)
 os.environ["DEMO_KEY"] = "cle-demo-test"
 check("eBay : la clé de démo (en-tête X-Demo-Key) lève le plafond", _limited("ebay", 3, {"x-demo-key": "cle-demo-test"}) is None)
 del os.environ["DEMO_KEY"]
-check("identification, annonce, eBay : un plafond par route", {main.IDENTIFY_PER_HOUR, main.LISTING_PER_HOUR, main.EBAY_PER_HOUR} and all(
-    "_limit(request" in __import__("inspect").getsource(f) for f in (main.identify, main.make_listing, main.ebay_prices, main.ebay_category)))
+
+
+def _route_status(coro):
+    try:
+        asyncio.run(coro)
+        return 200
+    except _HE as e:
+        return e.status_code
+
+
+_ip = "198.51.100.88"
+for _kind, _n in (("identify", main.IDENTIFY_PER_HOUR), ("listing", main.LISTING_PER_HOUR), ("ebay", main.EBAY_PER_HOUR)):
+    main._hits[(_kind, _ip)].extend([__import__("time").time()] * _n)
+_req = FakeRequest(xff=_ip)
+check("identification : plafond atteint, la route répond 429 avant de lire les photos",
+      _route_status(main.identify(_req, files=[object()], file=None)) == 429)
+check("annonce : plafond atteint, 429 avant toute rédaction",
+      _route_status(main.make_listing(main.listing.ListingRequest(product="Nintendo Switch", category="console"), _req)) == 429)
+check("prix eBay : plafond atteint, 429 avant l'appel à eBay",
+      _route_status(main.ebay_prices(_req, product="Nintendo Switch", category="console")) == 429)
+check("catégorie eBay : plafond atteint, 429", _route_status(main.ebay_category(_req, product="Nintendo Switch", category="console")) == 429)
+check("plafonds alignés sur une salle (au moins 400 par heure)", min(main.IDENTIFY_PER_HOUR, main.LISTING_PER_HOUR) >= 400 and main.EBAY_PER_HOUR >= 800)
+
+# Jeton temporaire de démo : la vraie clé ne passe plus dans l'adresse de /api/search.
+os.environ["DEMO_KEY"] = "cle-demo-test"
+_tok = main.demo_token(FakeRequest(demo_key="cle-demo-test"))["token"]
+check("jeton de démo : délivré contre la clé en en-tête, et accepté", _tok != "cle-demo-test" and main._demo_key_ok(_tok))
+try:
+    main.demo_token(FakeRequest(demo_key="autre"))
+    _refused = False
+except _HE as e:
+    _refused = e.status_code == 403
+check("jeton de démo : refusé (403) avec une mauvaise clé", _refused)
+main._demo_tokens[_tok] = 0  # expiré
+check("jeton de démo expiré : refusé", not main._demo_key_ok(_tok))
+del os.environ["DEMO_KEY"]
 
 # 3. Coefficient de rachat mesuré : 0,59 par défaut, puis par catégorie (docs/calibrage-rachat.md).
 b = pricing.shop_block([150, 166, 180])

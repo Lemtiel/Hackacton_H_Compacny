@@ -162,20 +162,45 @@ export function searchPrices(
   if (context.box !== undefined && context.box !== null) params.set("box", String(context.box));
   if (context.accessories) params.set("accessories", context.accessories);
   if (context.details) params.set("details", context.details);
-  const key = demoKey();
-  if (key) params.set("key", key);
-  const url = `${API_URL}/api/search?${params.toString()}`;
-  const source = new EventSource(url);
-  source.onmessage = (msg) => {
-    const ev = JSON.parse(msg.data) as SearchEvent;
-    onEvent(ev);
-    if (ev.type === "done") source.close();
+  let source: EventSource | null = null;
+  let stopped = false;
+  // La vraie clé ne passe jamais dans l'adresse : on l'échange d'abord contre un jeton temporaire (1 h).
+  demoToken().then((token) => {
+    if (stopped) return;
+    if (token) params.set("key", token);
+    const s = new EventSource(`${API_URL}/api/search?${params.toString()}`);
+    source = s;
+    s.onmessage = (msg) => {
+      const ev = JSON.parse(msg.data) as SearchEvent;
+      onEvent(ev);
+      if (ev.type === "done") s.close();
+    };
+    s.onerror = () => {
+      s.close();
+      onError();
+    };
+  });
+  return () => {
+    stopped = true;
+    source?.close();
   };
-  source.onerror = () => {
-    source.close();
-    onError();
-  };
-  return () => source.close();
+}
+
+// Jeton temporaire de démo, gardé en mémoire jusqu'à 5 min avant son expiration. Vide sans clé ou en cas d'échec :
+// la recherche part alors sans clé (limite par IP normale).
+let cachedToken: { value: string; until: number } | null = null;
+async function demoToken(): Promise<string> {
+  if (!demoKey()) return "";
+  if (cachedToken && cachedToken.until > Date.now()) return cachedToken.value;
+  try {
+    const res = await fetch(`${API_URL}/api/demo/token`, { method: "POST", headers: demoHeaders() });
+    if (!res.ok) return "";
+    const data = (await res.json()) as { token: string; ttl_s: number };
+    cachedToken = { value: data.token, until: Date.now() + (data.ttl_s - 300) * 1000 };
+    return data.token;
+  } catch {
+    return "";
+  }
 }
 
 // Recherche ouverte dans le navigateur de l'utilisateur : aucun agent ne lit ces sites.

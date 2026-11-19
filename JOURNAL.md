@@ -844,3 +844,9 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - File d'attente : `MAX_SEARCHES=2` sur le Space (2 estimations × 5 boutiques = 10 agents). Au-delà, refus immédiat « agents tous occupés », plus d'attente de plusieurs minutes.
 - Routes facturées ou à quota : plafond par IP sur `/api/identify` (60/h), `/api/listing` (60/h), `/api/ebay` et `/api/ebay/category` (120/h), levé par l'en-tête `X-Demo-Key` que l'interface envoie quand la clé est présente. Garde-fous 31/31 (4 nouveaux).
 - Commentaires du serveur corrigés (10 sessions H, mode démo actif par défaut).
+
+### Jeudi 19/11, 13h : 2e revue hostile, 4 corrections
+- Plafonds par IP alignés sur une salle (une IP partagée) : identification et annonce 400/h, eBay 800/h (2 appels par estimation), dans le code et sur le Space. Avant : 60/h, une salle aurait été bloquée après 60 estimations, avec eBay « indisponible » en silence.
+- Alerte « estimation fragile » calculée sur les prix gardés après retrait des valeurs aberrantes (`n_kept`), plus sur tous les prix.
+- Clé de démo : `/api/search` (EventSource, sans en-tête possible) reçoit un jeton temporaire de 1 h, obtenu par `POST /api/demo/token` avec la clé en en-tête. La vraie clé ne passe plus dans aucune adresse.
+- Tests des plafonds réécrits : ils appellent les 4 routes avec le plafond atteint et vérifient le 429 (au lieu de chercher du texte dans le code). Garde-fous 38/38.
