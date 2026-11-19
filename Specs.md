@@ -17,7 +17,7 @@ H Company sert à une seule tâche : naviguer sur les sites sans API. Hugging Fa
 - Entrées : photo seule, photo suivie de questions d'état (état, boîte, accessoires), texte libre.
 - Sources de prix :
   - eBay via l'API Browse officielle ;
-  - agents H sur Easy Cash (pages de catégorie uniquement), Gamecash, Troc.com, Cash Converters, Certideal et Swappie (ajoutés le 17/11).
+  - agents H sur Easy Cash (pages de catégorie uniquement), Gamecash, Cash Converters, Certideal et Swappie (ajoutés le 17/11). Troc.com en pause depuis le 19/11 (0 prix sur 10 objets).
 - Boutons qui ouvrent la recherche de l'objet sur Vinted, Leboncoin, Cdiscount et TikTok Shop, dans le navigateur de l'utilisateur.
 - Annonce générée en 4 formats : Vinted, Leboncoin, eBay, texte générique.
 - Historique des estimations stocké dans le navigateur de l'utilisateur.
@@ -41,7 +41,7 @@ H Company sert à une seule tâche : naviguer sur les sites sans API. Hugging Fa
 5. **Affichage progressif.** Chaque site s'affiche dès qu'il répond. L'écran montre les agents en train de naviguer si l'API H le permet. Sinon, il affiche les étapes de chaque agent (« ouvre Easy Cash », « catégorie Smartphones », « 6 prix trouvés »), puis le replay de la session. Un site qui dépasse 90 secondes passe en « indisponible », et l'estimation se fait sans lui. Un site sans résultat, par exemple Gamecash pour un téléphone, affiche « aucun résultat ».
 6. **Calcul (notre code, sans IA), une fourchette par bloc, sans jamais mélanger eBay et les autres sites (licence eBay) :**
    - **Vendre seul :** à partir des annonces eBay seules. Valeurs aberrantes retirées, fourchette, puis médiane moins une décote. Ce prix est le prix conseillé.
-   - **Revendre en magasin :** à partir des boutiques seules (Easy Cash, Gamecash, Troc.com, Cash Converters, Certideal, Swappie). Valeurs aberrantes retirées, fourchette, puis prix de revente multiplié par un coefficient. L'écran l'affiche comme une estimation basse.
+   - **Revendre en magasin :** à partir des boutiques seules (Easy Cash, Gamecash, Cash Converters, Certideal, Swappie). Valeurs aberrantes retirées, fourchette, puis prix de revente multiplié par un coefficient. L'écran l'affiche comme une estimation basse.
 7. **Résultat :** deux blocs séparés, « Vendre seul (eBay) » et « Revendre en magasin », chacun avec sa fourchette, son prix et ses prix détaillés par site avec leurs liens. Le prix conseillé est celui de « vendre seul ».
 8. **Annonce.** Un modèle de texte Hugging Face rédige l'annonce dans les 4 formats. L'utilisateur la copie et la publie lui-même. Les données eBay ne passent pas dans le modèle de texte.
 9. **Historique.** Le navigateur garde les estimations passées. Notre serveur ne conserve rien.
@@ -62,7 +62,7 @@ H Company sert à une seule tâche : naviguer sur les sites sans API. Hugging Fa
 - Aucun agent sur un site dont les CGU ou le robots.txt interdisent l'accès automatisé. Les CGU de H Company (§5.3) l'exigent aussi.
 - Aucun contournement d'anti-robot : un site qui bloque l'agent sort de la liste.
 - Aucune donnée conservée côté serveur : ni photo, ni annonce relevée, ni pseudonyme de vendeur.
-- Aucune capture des pages des sites sources affichée à l'utilisateur, pour respecter leur interdiction de reproduction : le prix et le lien suffisent.
+- Captures des agents montrées en direct pendant la recherche (mode démo, actif par défaut depuis le 19/11, désactivable dans Réglages). Aucune capture conservée. Les résultats affichent seulement le prix et le lien. Risque accepté par Jude : les boutiques interdisent la reproduction de leurs pages (voir JOURNAL.md, 19/11).
 
 ## Alternatives écartées
 - **Lire Leboncoin et Vinted avec un agent :** leurs CGU l'interdisent, ainsi que celles de H Company (§5.3). Leboncoin a gagné ses procès contre Entreparticuliers et Jinka.

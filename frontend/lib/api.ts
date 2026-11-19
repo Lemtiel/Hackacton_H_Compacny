@@ -88,7 +88,7 @@ export async function identifyPhotos(files: File[]): Promise<Identification> {
   const body = new FormData();
   const small = await Promise.all(files.slice(0, 3).map((f) => downscale(f)));
   small.forEach((b, i) => body.append("files", b, `photo-${i + 1}.jpg`));
-  const res = await fetch(`${API_URL}/api/identify`, { method: "POST", body });
+  const res = await fetch(`${API_URL}/api/identify`, { method: "POST", body, headers: demoHeaders() });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.detail || "L'identification a échoué. Tapez le nom de l'objet.");
   return data as Identification;
@@ -110,13 +110,14 @@ export type PriceSearchContext = {
   details?: string;
 };
 
-// Mode démo (pitch, vidéo) : ?demo=1 dans l'adresse de la page affiche les captures des agents.
+// Mode démo : captures des agents pendant la recherche. Actif par défaut (décision du 19/11) ; l'interrupteur de
+// Réglages le coupe ou le rallume ; ?demo=1 dans l'adresse le force.
 export function isDemo(): boolean {
   try {
     if (new URLSearchParams(window.location.search).get("demo") === "1") return true;
-    return JSON.parse(localStorage.getItem("snapncash.prefs") || "{}").demo === true; // interrupteur dans Réglages
+    return JSON.parse(localStorage.getItem("snapncash.prefs") || "{}").demo !== false; // interrupteur dans Réglages
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -124,11 +125,28 @@ export const shotUrl = (token: string) => `${API_URL}/api/shot/${encodeURICompon
 
 // Clé de démo : ouverte une fois avec ?cle=… dans l'adresse, gardée dans ce navigateur. Elle lève la limite par
 // adresse IP côté serveur (DEMO_KEY), pour que la démo ne soit pas bloquée par les autres personnes du même Wi-Fi.
+// En-tête de la clé de démo pour les routes limitées par IP (identification, annonce, eBay) : vide sans clé.
+export function demoHeaders(): Record<string, string> {
+  const key = demoKey();
+  return key ? { "X-Demo-Key": key } : {};
+}
+
+// Le serveur (Space Hugging Face) s'endort sans visite : on le réveille dès l'ouverture de l'app, pour que la première
+// estimation ne tombe pas sur un démarrage à froid. Sans attendre la réponse, sans erreur affichée.
+export function wakeServer(): void {
+  fetch(`${API_URL}/api/health`, { cache: "no-store" }).catch(() => undefined);
+}
+
 export function demoKey(): string {
+  // Une clé copiée depuis une phrase traîne souvent une virgule ou un point à la fin (« …?cle=abc, ») : on les retire,
+  // y compris sur la clé déjà gardée dans le navigateur.
+  const clean = (k: string | null) => (k ?? "").trim().replace(/[,.;:)\]]+$/, "");
   try {
-    const fromUrl = new URLSearchParams(window.location.search).get("cle");
+    const fromUrl = clean(new URLSearchParams(window.location.search).get("cle"));
     if (fromUrl) localStorage.setItem("snapncash.cle", fromUrl);
-    return localStorage.getItem("snapncash.cle") || "";
+    const stored = clean(localStorage.getItem("snapncash.cle"));
+    if (stored) localStorage.setItem("snapncash.cle", stored);
+    return stored;
   } catch {
     return "";
   }
@@ -150,20 +168,45 @@ export function searchPrices(
   if (context.box !== undefined && context.box !== null) params.set("box", String(context.box));
   if (context.accessories) params.set("accessories", context.accessories);
   if (context.details) params.set("details", context.details);
-  const key = demoKey();
-  if (key) params.set("key", key);
-  const url = `${API_URL}/api/search?${params.toString()}`;
-  const source = new EventSource(url);
-  source.onmessage = (msg) => {
-    const ev = JSON.parse(msg.data) as SearchEvent;
-    onEvent(ev);
-    if (ev.type === "done") source.close();
+  let source: EventSource | null = null;
+  let stopped = false;
+  // La vraie clé ne passe jamais dans l'adresse : on l'échange d'abord contre un jeton temporaire (1 h).
+  demoToken().then((token) => {
+    if (stopped) return;
+    if (token) params.set("key", token);
+    const s = new EventSource(`${API_URL}/api/search?${params.toString()}`);
+    source = s;
+    s.onmessage = (msg) => {
+      const ev = JSON.parse(msg.data) as SearchEvent;
+      onEvent(ev);
+      if (ev.type === "done") s.close();
+    };
+    s.onerror = () => {
+      s.close();
+      onError();
+    };
+  });
+  return () => {
+    stopped = true;
+    source?.close();
   };
-  source.onerror = () => {
-    source.close();
-    onError();
-  };
-  return () => source.close();
+}
+
+// Jeton temporaire de démo, gardé en mémoire jusqu'à 5 min avant son expiration. Vide sans clé ou en cas d'échec :
+// la recherche part alors sans clé (limite par IP normale).
+let cachedToken: { value: string; until: number } | null = null;
+async function demoToken(): Promise<string> {
+  if (!demoKey()) return "";
+  if (cachedToken && cachedToken.until > Date.now()) return cachedToken.value;
+  try {
+    const res = await fetch(`${API_URL}/api/demo/token`, { method: "POST", headers: demoHeaders() });
+    if (!res.ok) return "";
+    const data = (await res.json()) as { token: string; ttl_s: number };
+    cachedToken = { value: data.token, until: Date.now() + (data.ttl_s - 300) * 1000 };
+    return data.token;
+  } catch {
+    return "";
+  }
 }
 
 // Recherche ouverte dans le navigateur de l'utilisateur : aucun agent ne lit ces sites.
@@ -192,7 +235,7 @@ export type ListingRequest = {
 export async function generateListing(req: ListingRequest): Promise<import("./listing").ListingFormat[]> {
   const res = await fetch(`${API_URL}/api/listing`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...demoHeaders() },
     body: JSON.stringify(req),
   });
   const data = await res.json().catch(() => ({}));
@@ -225,7 +268,7 @@ export type EbayResult = {
 export async function fetchEbay(product: string, category: string, signal?: AbortSignal): Promise<EbayResult> {
   const url = `${API_URL}/api/ebay?product=${encodeURIComponent(product)}&category=${encodeURIComponent(category)}`;
   try {
-    const res = await fetch(url, { signal });
+    const res = await fetch(url, { signal, headers: demoHeaders() });
     if (!res.ok) return { state: "indisponible", block: null, items: [] };
     return (await res.json()) as EbayResult;
   } catch {
@@ -243,7 +286,7 @@ export type EbayCategoryResult = {
 
 export async function fetchEbayCategory(product: string, category: string): Promise<EbayCategoryResult> {
   try {
-    const res = await fetch(`${API_URL}/api/ebay/category?product=${encodeURIComponent(product)}&category=${encodeURIComponent(category)}`);
+    const res = await fetch(`${API_URL}/api/ebay/category?product=${encodeURIComponent(product)}&category=${encodeURIComponent(category)}`, { headers: demoHeaders() });
     if (!res.ok) return { state: "indisponible", categories: [] };
     return (await res.json()) as EbayCategoryResult;
   } catch {
@@ -262,4 +305,67 @@ export async function makeStudio(photo: Blob): Promise<Blob> {
     throw new Error(typeof data.detail === "string" ? data.detail : "La photo studio a échoué. Réessayez dans un instant.");
   }
   return res.blob();
+}
+
+
+// --- Brouillon eBay préparé par un agent H dans le Chrome de l'ordinateur (démo seulement, voir agents/ebay_draft.py) ---
+export type DraftEvent =
+  | { type: "start"; photos: number }
+  | { type: "step"; label: string; steps?: number }
+  | {
+      type: "result";
+      status: "draft_saved" | "login_required" | "blocked" | "partial" | "cancelled";
+      photos_uploaded?: number;
+      description_filled?: boolean;
+      price_set?: boolean;
+      draft_url?: string | null;
+      note?: string;
+    }
+  | { type: "done" };
+
+// La fonction n'existe que sur le serveur de démo (EBAY_DRAFT_LOCAL=1) et avec la clé de démo dans le navigateur.
+export async function draftAvailable(): Promise<boolean> {
+  if (!demoKey()) return false;
+  try {
+    const res = await fetch(`${API_URL}/api/health`);
+    return res.ok && Boolean((await res.json()).brouillon_ebay);
+  } catch {
+    return false;
+  }
+}
+
+export async function startEbayDraft(
+  p: { photos: string[]; title: string; description: string; price: number; categoryId?: string | null; condition: string; consent: true },
+  onEvent: (e: DraftEvent) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const body = new FormData();
+  const blobs = await Promise.all(p.photos.slice(0, 10).map(async (u) => downscale(await fetch(u).then((r) => r.blob()))));
+  blobs.forEach((b, i) => body.append("files", b, `photo-${i + 1}.jpg`));
+  body.append("title", p.title);
+  body.append("description", p.description);
+  body.append("price", String(p.price));
+  body.append("category_id", p.categoryId ?? "");
+  body.append("condition", p.condition);
+  body.append("key", demoKey());
+  body.append("consent", p.consent ? "1" : ""); // donné par l'écran d'autorisation, à chaque brouillon
+  const res = await fetch(`${API_URL}/api/ebay/draft`, { method: "POST", body, signal });
+  if (!res.ok || !res.body) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.detail || "Le brouillon n'a pas pu démarrer.");
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    let i: number;
+    while ((i = buf.indexOf("\n\n")) >= 0) {
+      const line = buf.slice(0, i).trim();
+      buf = buf.slice(i + 2);
+      if (line.startsWith("data:")) onEvent(JSON.parse(line.slice(5)) as DraftEvent);
+    }
+  }
 }

@@ -737,7 +737,132 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - **Conservé de mon côté (ne chevauchait pas) :** reconditionné exclu du bloc eBay ; rebuts et plancher de prix des consoles (PS5) ; offres gardées après délai ; bouton de partage ; lien d'ouverture de l'éditeur eBay ; réduction des photos avant envoi ; nom sans marque répétée. Le plancher de prix s'appuie sur `is_accessory` de Kevin.
 - **Tests après fusion :** tri 92/92, eBay 19/19, catégorie 49/49 (15 cas réels), garde-fous 23/23, TypeScript et import du serveur OK.
 
-### Jeudi 19/11 : accès revendeur et suivi des agents rendus visibles
+### Mercredi 18/11, 22h : description eBay améliorée, déploiement préparé, photos vers eBay étudiées
+- **Description eBay (`backend/listing.py`) :** texte brut en 4 blocs (accroche, CARACTÉRISTIQUES, ÉTAT, CONTENU DE LA VENTE), titre avec le type d'objet. Même règle : aucun fait inventé (capacité, couleur et boîte n'apparaissent que s'ils sont donnés). Avant : 5 lignes (« Marque, Modèle, État, Contenu » plus une phrase). Testé sur un iPhone 11 et une Switch OLED.
+- **Déploiement préparé :** `deploy/space/Dockerfile` et `README.md` (Space Docker, port 7860, utilisateur 1000), `scripts/deploy_space.sh <compte>/<space>`, route `GET /api/health` (booleans des clés, jamais les valeurs), en-tête `X-Accel-Buffering: no` sur le flux de recherche. **Image construite et testée en local** (657 Mo) : démarre, `/api/health` tout vrai, eBay répond, reconnaissance de 3 photos en 2,2 s (le modèle de visages se télécharge au premier appel), événements de recherche reçus au fil de l'eau. **Pas testé :** le Space réel (le jeton HF du `.env` n'a que l'inférence : il faut un jeton d'écriture), Vercel (CLI non connectée), le flux via le proxy du Space, un réveil à froid du Space.
+- **Photos vers eBay par un agent H :** **pas besoin de stockage cloud à nous.** L'Agent API accepte des fichiers joints au message de la session (10 au plus, 7 Mo au total), déposés dans `~/Downloads` du navigateur de l'agent. **Testé en réel :** sur une page de test d'envoi de fichier, l'agent a récupéré `test-photo.jpg` et l'a déposée en 23 s, 3 étapes (image neutre). **Non testé sur eBay.** Reste le problème de connexion : le navigateur de l'agent n'est pas connecté à eBay. Le SDK permet un `browser_profile_id` (cookies conservés) créé en envoyant un profil de navigateur zippé : à décider (voir plan dans la conversation).
+
+### Mercredi 18/11, 23h : brouillon eBay par un agent H dans le Chrome local (demande de Jude, accord donné)
+- **Pourquoi pas un cloud :** l'Agent API accepte des fichiers joints (10, 7 Mo) pour un navigateur **cloud** (testé : un agent a déposé une image sur une page d'envoi, 23 s). Mais le navigateur cloud n'est pas connecté à eBay et il faudrait lui envoyer les cookies de Jude. Le mode **`user_device`** (navigateur sur l'ordinateur, via le port de débogage de Chrome) garde la session eBay sur le Mac : choisi.
+- **Limite trouvée, testée :** en mode `user_device`, (1) on ne peut pas joindre de fichiers au message (« files: the agent needs a workstation or a cloud browser ») ; (2) l'agent n'a pas d'outil d'envoi de fichier (il l'écrit lui-même). **Contournement :** un outil à nous, `upload_listing_photos`, exécuté sur le Mac (Playwright branché sur le Chrome local), que l'agent appelle quand la zone « PHOTOS ET VIDÉO » est visible. Le pont se lance avec `holo local browser --session-id … --debug-port 9222` ; un Chrome sans fenêtre oublié sur le port 9222 avait fait échouer 3 essais (« unable to connect to renderer »).
+- **Construit :** `agents/ebay_draft.py` (consigne stricte : jamais publier, arrêt sur connexion, vérification ou captcha, résultat structuré dont le statut « published » n'existe pas), route `POST /api/ebay/draft` (flux d'événements ; fermée sans `EBAY_DRAFT_LOCAL=1` et sans clé de démo ; refus 409 si le Chrome eBay est fermé ; un seul brouillon à la fois ; photos écrites dans un dossier temporaire et effacées à la fin), `scripts/ebay_chrome.sh` (Chrome dédié, profil séparé), `requirements-demo.txt`, bouton et panneau de suivi dans l'onglet eBay (visibles seulement avec la clé de démo et le serveur de démo). README et vérification automatique mis à jour.
+- **Testé (sans réseau, agent simulé) :** `tests/test_brouillon_ebay.py` 21/21 : refus sans clé ou avec mauvaise clé, sans photo, fichier non image, prix négatif, Chrome fermé ; flux start, step, result, done ; photos effacées ; verrou libéré ; consigne qui interdit de publier. TypeScript OK. **Pas testé :** l'agent sur le vrai éditeur eBay (demande que Jude se connecte dans le Chrome dédié), l'envoi des photos par l'outil sur le vrai formulaire (champ de fichier eBay), le clic sur « Enregistrer », la vérification éventuelle de connexion par eBay.
+- **Réserves :** réservé à la démo (un seul compte eBay ; absent du Space) ; les conditions d'eBay sur l'automatisation d'un compte vendeur n'ont pas été vérifiées.
+
+### Jeudi 19/11, 0h : brouillon eBay par un agent H, essayé sur le vrai eBay
+- **Essai 1 (agent seul avec l'outil photos) :** partiel en 337 s. Photos : 3 envoyées (notre outil marche sur le vrai champ de fichier d'eBay). Description et prix : échec (éditeur de description dans un cadre intégré `se-rte-frame__summary`, champ de prix `price`).
+- **Corrections :** trois outils de plus exécutés sur le Mac : `fill_listing_description` (clic dans le cadre, ⌘A, saisie), `set_listing_price`, `save_listing_draft` (bouton « Enregistrer », nom exact) ; l'envoi des photos saute si le brouillon en a déjà (eBay rouvre le même brouillon : l'essai 2 avait ajouté 3 photos de plus, 6 au total).
+- **Essai 3 (tous les outils) : statut `draft_saved` en 93 s, 12 étapes.** Vérifié indépendamment du récit de l'agent : brouillon rouvert par son identifiant (`draftId=5339246164121`), éditeur toujours ouvert avec le bouton « Mettre en vente gratuitement » (donc non publié), titre exact, description de 20 lignes, prix 141,00 € (l'acheteur paierait 147,34 € avec les frais de protection), 6 photos (3 en double, dues à l'essai 2).
+- **Non vérifié :** la liste des brouillons dans eBay (le Hub vendeur n'est pas activé sur le compte : `/sh/lst/drafts` renvoie à l'accueil) ; le bouton de l'interface (testé par appel direct à la route, pas par un clic dans l'app) ; une 2e exécution à partir d'un brouillon vierge ; les conditions d'eBay sur l'automatisation d'un compte vendeur.
+- **À nettoyer dans eBay :** deux brouillons de test (« Nintendo Switch console » et « Apple iPhone 11 ») ; celui de l'iPhone a 3 photos en double.
+
+### Mercredi 18/11, 23h55 : bouton « agent H » testé depuis l'interface par Jude
+- Clé de démo : une virgule copiée avec l'adresse rendait la clé invalide ; l'app retire maintenant la ponctuation finale.
+- Bouton : fond blanc forcé illisible en mode sombre, et bouton muet tant que le prix n'était pas fixé. Corrigé et vérifié dans un navigateur de test.
+- Premier clic réel : requête reçue (200) mais l'agent restait à « étape 0 ». Cause : le Chrome dédié tournait sans aucun onglet, le pont `holo local browser` s'est arrêté. Correction : le serveur ouvre l'onglet eBay s'il manque et prévient si le pont s'arrête ; le script de lancement ouvre aussi l'onglet. Tests 22/22. Nouveau clic à faire par Jude.
+
+### Jeudi 19/11, 0h30 : caractéristiques obligatoires eBay remplies par l'agent
+- Demande de Jude : remplir Marque, Modèle, Couleur, Capacité de stockage (champs obligatoires de l'éditeur).
+- Outil `fill_item_specifics` : lit les lignes « - Libellé : valeur » du bloc CARACTÉRISTIQUES de la description, choisit seulement une valeur proposée par eBay (égalité, ou même fin : « iPhone 11 » donne « Apple iPhone 11 », jamais « iPhone 11 Pro »), laisse tel quel un champ déjà rempli.
+- Testé sur le brouillon réel : champs vidés puis remplis (Apple, Apple iPhone 11, Noir, 128 Go), relecture de la page ; second passage sans rien changer. Brouillon toujours non publié. Tests 25/25.
+- Non testé : un essai complet de l'agent avec cet outil, et les catégories où les libellés diffèrent (consoles, montres).
+
+### Jeudi 19/11, 0h45 : essai complet de l'agent avec les caractéristiques
+- Lancé par la route `/api/ebay/draft` (même chemin que le bouton), 3 photos, prix 141 €. Statut `draft_saved` en 126 s, 14 étapes. eBay a créé un nouveau brouillon (`draftId=5339447252121`).
+- Vérifié sur la page rouverte : 3 photos, titre exact, description de 20 lignes, prix 141,00 €, Marque Apple, Modèle Apple iPhone 11, Couleur Noir, Capacité 128 Go ; éditeur toujours ouvert avec « Mettre en vente gratuitement », donc non publié.
+- Brouillons de test à supprimer dans eBay : Nintendo Switch, iPhone 11 (`5339246164121`, photos en double), iPhone 11 (`5339447252121`, propre).
+
+### Jeudi 19/11, 1h30 : photos studio dans le brouillon eBay
+- Demande de Jude : eBay reçoit les photos studio. Au clic sur « Laisser un agent H… », l'app crée d'abord les versions studio manquantes (une photo remise en « Originale » reste originale ; un échec studio envoie l'originale avec un message).
+- Essai 1 par l'interface : eBay a rouvert un brouillon existant ; l'outil photos a vu « déjà 3 photos » et n'a rien envoyé, le titre est resté l'ancien. Le brouillon a mélangé deux annonces. (La reconnaissance avait aussi donné iPhone 13 : mon test ne corrigeait pas le modèle.)
+- Corrections : l'outil photos vide un brouillon rouvert (« Sélectionner » puis « Tout supprimer ») et envoie les nôtres, une seule fois par session ; nouvel outil `set_listing_title` ; les caractéristiques remplacent une valeur différente (testé : iPhone 11 vers iPhone 13).
+- Essai 2 par l'interface (clic sur le bouton, navigateur de test) : 2 photos studio créées, brouillon enregistré en 174 s. Vérifié sur la page : 2 photos studio (objet détouré sur fond clair) à la place de l'ancienne, titre, prix 141 €, caractéristiques justes, non publié.
+- Description : la frappe touche par touche doublait les sauts de ligne. Remplacée par une insertion d'un bloc ; vérifié après enregistrement et réouverture (texte gardé, caractères spéciaux compris).
+- Non refait : un essai complet de l'agent après ce dernier changement de description.
+
+### Jeudi 19/11, 7h45 : point de reprise (changement de conversation)
+- Poussé sur `interface` : 10 commits jusqu'à `17980e2` (brouillon eBay par agent H avec photos studio). La CI a échoué sur `tests/test_brouillon_ebay.py` : la route crée le client H avant l'agent simulé et la CI n'a pas de clé H. Corrigé dans le test (client simulé), vérifié sans clé : 25/25. Commit local, **pas encore poussé**.
+- Déploiement en cours : Mac connecté ni à Hugging Face ni à Vercel. `HF_TOKEN` du `.env` = droits « inference » seulement (vérifié via whoami-v2) : il ne peut pas créer de Space. Jude crée un jeton Write et l'ajoute dans `.env` sous `HF_WRITE_TOKEN`. La connexion par code (`hf auth login`) a expiré deux fois.
+- Suite prévue : `hf auth login --token` depuis `HF_WRITE_TOKEN` (sans l'afficher), créer le Space Docker public `Judebkn95/snapncash`, `scripts/deploy_space.sh Judebkn95/snapncash`, Jude saisit les secrets du Space, `vercel login` puis déploiement de `frontend/` avec `NEXT_PUBLIC_API_URL`, vérification `/api/health` et une vraie estimation. Le brouillon eBay reste désactivé en ligne.
+
+### Jeudi 19/11, 8h15 : serveur et interface en ligne
+- Hugging Face refuse désormais un Space Docker sur CPU gratuit sans abonnement PRO (erreur 402). Jude a choisi de payer avec les crédits du hackathon : Space public `Judebkn95/snapncash` sur `cpu-upgrade` (0,03 $/h). Création par l'API REST (pas de CLI `hf` sur le Mac), envoi par `scripts/deploy_space.sh` avec le jeton `HF_TOKEN_WRITE` (nom réel dans `.env`) passé par un askpass temporaire.
+- Interface : projet Vercel `snapncash`, `NEXT_PUBLIC_API_URL` enregistrée en production, adresse https://snapncash.vercel.app. `vercel link` a ajouté `.vercel` à `frontend/.gitignore`.
+- Jude a saisi les secrets (`HAI_API_KEY`, `HF_TOKEN`, `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET`) et les variables (`ALLOWED_ORIGINS`, `TRUSTED_PROXIES=1`). `EBAY_DRAFT_LOCAL` et `DEMO_SHOTS` restent absents : brouillon eBay et captures désactivés en ligne.
+- Vérifié en ligne : `/api/health` renvoie agents H, Hugging Face et eBay actifs, `brouillon_ebay:false`. Estimation « iPhone 13 128 Go, bon état » : eBay 61 annonces (prix conseillé 261 €), agents H en 89 s, 4 sites sur 5 avec des prix (Easy Cash, Certideal, Cash Converters, Swappie), Troc.com sans résultat, Gamecash inactif pour les smartphones. Rachat magasin estimé 155 €.
+- `DEMO_KEY` ajoutée (cle_demo:true), `HF_TOKEN_WRITE` retiré des secrets du Space (le serveur n'en a pas besoin).
+- Pas encore testé en ligne : identification par photo depuis l'interface, annonce générée, photo studio.
+
+### Jeudi 19/11, 8h45 : brouillon eBay par agent, risque accepté en local seulement (décision de Jude)
+- Vérifié ce matin : depuis le 20/02/2026, l'accord d'utilisation d'eBay interdit les robots et « autres moyens automatisés (y compris les bots pilotés par un LLM) » sans autorisation expresse d'eBay (The Register 22/01/2026, EcommerceBytes 21/01/2026). Texte exact de l'accord français à relire. Le garde-fou rapide a classé le brouillon par agent en ROUGE.
+- Jude a demandé que le bouton marche pour tout visiteur de snapncash.vercel.app. Trois voies examinées : agent H dans le cloud connecté au compte du visiteur (refusé : identifiants confiés à un tiers, anti-robot, règles 2 et 5), Listing API d'eBay `createItemDraft` (réservée aux partenaires invités, contrat requis), API Inventory (légale, sans agent, 1 à 2 jours, contraire aux Specs et à l'exemption eBay du 18/11).
+- Décision de Jude : le brouillon par agent reste en local, sur son compte eBay, pour la démo. Il reste désactivé en ligne (`EBAY_DRAFT_LOCAL` absent du Space). Au pitch, l'équipe présente le déploiement comme une étape qui demande l'autorisation d'eBay (programme partenaire, Listing API).
+- Risque accepté par Jude : suspension possible de son compte eBay si eBay détecte l'agent. L'agent s'arrête sur une connexion, une vérification ou un captcha, sans contournement.
+
+### Jeudi 19/11, 9h : mode démo actif par défaut sur le site (décision de Jude)
+- Demande de Jude : sur snapncash.vercel.app, chaque visiteur voit les agents H naviguer. L'interrupteur « Mode démo » de Réglages coupe ou rallume l'affichage.
+- Contradiction relevée avec la règle 9 et Specs.md : les boutiques interdisent la reproduction de leurs pages. Option « captures réservées au lien du jury » proposée, Jude a choisi « pour tout le monde ». Risque accepté par Jude, règle 9 et Specs.md réécrites.
+- Code : `frontend/lib/prefs.ts` (démo à `true` par défaut), `frontend/lib/api.ts` (démo active sauf si le visiteur l'a coupée). Côté Space : variable `DEMO_SHOTS=1`. Les captures restent relayées sans enregistrement, jeton valable 10 min.
+
+### Jeudi 19/11, 9h45 : mesure #8 bloquée, deux corrections
+- Mesure lancée à 9h03 (10 objets, 2 à la fois). 9 objets finis en 10 min, l'iPhone 12 bloqué plus de 20 min. Cause : mon ajout eBay ouvrait une boucle asynchrone par objet, et le verrou du jeton eBay (`backend/ebay.py`, `_token_lock`) restait lié à la première. Le serveur en ligne n'est pas touché (une seule boucle). Le script n'écrivait qu'à la fin : résultats perdus, processus arrêté.
+- Résultats vus à l'écran avant l'arrêt (boutiques à ≥ 3 prix) : iPhone 13 3/5 (175 s), Galaxy S21 1/5, iPad 9 0/5, MacBook Air M1 1/4, Switch 0/4, PS5 0/4, Xbox Series S 1/4, Zelda 0/4, FC 25 0/4. eBay en échec après le 1er objet à cause du bug.
+- Corrigé : une seule boucle partagée pour eBay avec un délai de 60 s, écriture de chaque objet dès qu'il est fini (`mesures/mesure_partielle_<date>.jsonl`). Test qui reproduit le blocage : échoue sur l'ancien code (9/11), passe sur le nouveau (11/11).
+- Tri par modèle (validé par Jude) : « 9e génération », « 9th gen » valent « 9 » ; une année glissée (« iPad 2021 9e gen ») ne compte plus ; « The Legend of Zelda » vaut « Zelda ». 9 cas ajoutés, tri 101/101. Pas encore déployé sur le Space.
+
+### Jeudi 19/11, 10h15 : clé H de Jude, offre gratuite à 3 agents
+- La clé H du `.env` appartenait à un autre compte (29,4 M jetons utilisés sur 60 M). Jude a mis la sienne dans `.env` et dans les secrets du Space : 60 M jetons, 50 $ de crédits en réserve, offre Free (3 sessions simultanées). Vérifié par `quota.get_token_quota`, sans afficher la clé.
+- Panne de H vers 9h55 (« Nos services sont actuellement indisponibles ») : sessions jamais démarrées, mesure arrêtée. Rétabli vers 10h10 (Gamecash, Switch : 3 offres en 81 s).
+- Offre Builder (10 sessions, 20 $ par mois) discutée : contrainte de budget, l'équipe reste sur l'offre gratuite à 3 agents. Le Space reste à `HAI_MAX_PARALLEL=3` ; une estimation prend 2 à 4 min. Au pitch : « 10 agents en changeant d'offre, sans recoder ».
+
+### Jeudi 19/11, 10h45 : mesure #8 (10 objets, offre H gratuite à 3 agents) et corrections
+- Mesure sur la clé de Jude, 3 agents à la fois, 44 sessions, 7,8 M jetons (`mesures/mesure_*_2026-11-19_09h08.csv`).
+- Toutes les sessions ont abouti à une réponse (prix ou absence de stock vérifiée), aucune « indisponible ».
+- Prix eBay « vendre seul » : 10 objets sur 10. Prix boutiques : 10 sur 10 avec au moins 1 prix, 6 sur 10 avec au moins 3.
+- Sessions avec au moins 1 prix : 20 sur 44 (Easy Cash 7/10, Certideal 4/5, Gamecash 3/5, Cash Converters 4/10, Swappie 2/4, Troc.com 0/10). Critère strict des Specs (≥ 3 prix par boutique) : 8 sur 44.
+- Durée médiane d'une estimation : 196 s (objectif < 120 s, inatteignable à 3 agents pour 4 ou 5 boutiques).
+- Cause principale des échecs, lue dans les notes des agents : objet absent du stock (PS5, Xbox, jeux, iPad 9), pas un échec de navigation.
+- Bug trouvé : prix eBay conseillé de 18 € pour une PS5 (jeux PS5 pris pour des consoles). Corrigé : recherche eBay limitée à la catégorie de l'objet (une seule acceptée par l'API), « Portal » ajouté aux variantes. Vérifié en réel sur les 10 objets : PS5 580 €, Xbox Series S 314 €, Zelda 43 €.
+- Troc.com mis en pause (0 prix sur 10, sa recherche répond toujours « aucun produit ») ; Swappie limité aux iPhone et iPad. Textes de l'interface, README, Specs et règle 1 mis à jour.
+
+### Jeudi 19/11, 11h30 : autorisation de l'utilisateur avant le brouillon eBay par agent
+- Demande de Jude : l'app doit demander l'autorisation de l'utilisateur avant que l'agent agisse sur son compte eBay.
+- Interface : le bouton ouvre un écran d'autorisation (ce que fait l'agent, qu'il ne publie jamais, que les captures passent par H). L'agent ne démarre qu'après « Autoriser et lancer l'agent », à chaque brouillon.
+- Serveur : `/api/ebay/draft` refuse (403) toute demande sans `consent=1`, même avec la clé de démo. Tests 27/27 (2 nouveaux).
+- Rappel : l'accord de l'utilisateur ne remplace pas l'autorisation d'eBay, qui interdit les agents IA sans son accord (risque accepté, en local seulement, entrée de 8h45). Connexion officielle eBay (OAuth + API) écartée pour vendredi : 1 à 2 jours, configuration eBay, pas de vrai brouillon via l'API Inventory.
+- Pas testé : l'affichage de l'écran dans le navigateur (le bouton n'apparaît qu'avec le serveur local `EBAY_DRAFT_LOCAL=1`).
+
+### Jeudi 19/11, 11h40 : 10 sessions H simultanées
+- H Company (Amel Negra, Slack) a relevé la limite de notre organisation à 10 sessions. Vérifié : 10 sessions courtes lancées ensemble, toutes en « running » en 8 s, annulées aussitôt.
+- Space : `HAI_MAX_PARALLEL=10` (vérifié par `/api/health`, `max_agents:10`). README et deck mis à jour.
+- La mesure #8 du matin a tourné à 3 agents (durée médiane 196 s) : la durée à 10 agents n'est pas encore mesurée.
+
+### Jeudi 19/11, 12h : mesure #8 à 10 agents
+- 10 objets, 33 sessions, pic de 8 sessions simultanées (`mesures/mesure_*_2026-11-19_10h30.csv`).
+- Durée médiane d'une estimation : 91 s (toutes entre 82 et 100 s), contre 196 s à 3 agents. Objectif des Specs (< 120 s) tenu.
+- eBay 10/10, prix boutiques ≥ 1 pour 10/10, ≥ 3 pour 6/10. Sessions abouties 33/33, sessions avec au moins 1 prix 21/33. Critère strict des Specs (≥ 3 prix par boutique) : 10/33.
+- Jetons : 506 000 par estimation en moyenne (784 000 le matin).
+
+### Jeudi 19/11, 12h30 : corrections des points majeurs de la revue hostile
+- Estimation fragile : sous 3 prix boutique, le verdict affiche « Fragile : N prix en boutique » et « Estimation magasin fragile… comparez avant de décider » (`SearchScreen.tsx`, `VerdictCard`).
+- File d'attente : `MAX_SEARCHES=2` sur le Space (2 estimations × 5 boutiques = 10 agents). Au-delà, refus immédiat « agents tous occupés », plus d'attente de plusieurs minutes.
+- Routes facturées ou à quota : plafond par IP sur `/api/identify` (60/h), `/api/listing` (60/h), `/api/ebay` et `/api/ebay/category` (120/h), levé par l'en-tête `X-Demo-Key` que l'interface envoie quand la clé est présente. Garde-fous 31/31 (4 nouveaux).
+- Commentaires du serveur corrigés (10 sessions H, mode démo actif par défaut).
+
+### Jeudi 19/11, 13h : 2e revue hostile, 4 corrections
+- Plafonds par IP alignés sur une salle (une IP partagée) : identification et annonce 400/h, eBay 800/h (2 appels par estimation), dans le code et sur le Space. Avant : 60/h, une salle aurait été bloquée après 60 estimations, avec eBay « indisponible » en silence.
+- Alerte « estimation fragile » calculée sur les prix gardés après retrait des valeurs aberrantes (`n_kept`), plus sur tous les prix.
+- Clé de démo : `/api/search` (EventSource, sans en-tête possible) reçoit un jeton temporaire de 1 h, obtenu par `POST /api/demo/token` avec la clé en en-tête. La vraie clé ne passe plus dans aucune adresse.
+- Tests des plafonds réécrits : ils appellent les 4 routes avec le plafond atteint et vérifient le 429 (au lieu de chercher du texte dans le code). Garde-fous 38/38.
+
+### Jeudi 19/11, 14h : audit UX et 4 corrections
+- Audit sur le site en ligne (estimation réelle « Sony PlayStation 5 », environ 80 s, ordinateur) : accueil, attente avec écrans des agents, verdict, annonce lisibles. Téléphone non vérifié (redimensionnement non appliqué).
+- Serveur endormi après 1 h sans visite : mise en veille portée à 48 h jusqu'à vendredi soir, et l'accueil réveille le serveur dès l'ouverture. Message d'échec : « le serveur était peut-être en train de démarrer : réessayez dans quelques secondes ».
+- Messages de développeur (« HF_TOKEN manque dans .env », « HAI_API_KEY manque dans .env ») remplacés par des phrases pour l'utilisateur (identification, annonce, studio, agents).
+- Verdict fragile (moins de 3 prix boutique) : « Plutôt : vendez-le vous-même. », gain « à confirmer ».
+- Bloc eBay : « Prix affichés sur eBay (avant négociation) », pour le distinguer du prix conseillé « vendre seul ».
+
+### Jeudi 19/11, 16h30 : accès revendeur et suivi des agents rendus visibles
 - **Accueil :** le lien discret vers l'espace revendeur devient une carte d'accès compacte, sans modifier le parcours d'estimation principal.
 - **Espace revendeur uniquement :** ajout d'un tableau « Agents en direct » qui affiche, pour chaque site, l'étape courante, les dernières actions, le temps écoulé et le résultat de la visite. Les captures des pages sources ne sont pas affichées.
 - **Périmètre préservé :** hors espace revendeur, seul le raccourci déjà demandé vers le panier revendeur dans le Grenier et cette nouvelle carte d'accueil sont modifiés. Aucun bouton flottant de retour aux filtres.

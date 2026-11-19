@@ -111,7 +111,7 @@ def _parse_json(text: str) -> dict:
 def identify(imgs: "Image.Image | list[Image.Image]") -> Identification:
     token = os.getenv("HF_TOKEN")
     if not token:
-        raise PhotoError("Identification indisponible : HF_TOKEN manque dans .env. Tapez le nom de l'objet.")
+        raise PhotoError("La reconnaissance photo est momentanément indisponible. Tapez le nom de l'objet.")
     from openai import OpenAI
 
     if not isinstance(imgs, list):

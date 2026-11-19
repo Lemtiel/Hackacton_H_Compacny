@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 export const CONTACT_EMAIL = "";
 export const LAST_UPDATE = "18 novembre 2026";
 
-export const SITES = "Easy Cash, Gamecash, Troc.com, Cash Converters, Certideal et Swappie";
+export const SITES = "Easy Cash, Gamecash, Cash Converters, Certideal et Swappie";
 
 function Contact() {
   return CONTACT_EMAIL ? <strong className="selectable">{CONTACT_EMAIL}</strong> : <strong>adresse de l&apos;équipe, communiquée sur demande auprès d&apos;Eugenia School</strong>;

@@ -9,8 +9,10 @@ Entrée : un CSV (par défaut mesures/objets_a_mesurer.csv), une ligne par objet
   modele_attendu        facultatif : le nom que l'identification doit trouver (sinon « objet »)
 
 Chaque objet passe par le même chemin que l'app : agents H sur les boutiques de la catégorie (en parallèle,
-HAI_MAX_PARALLEL au plus), tri par modèle et par état, bloc magasin (médiane, coefficient de rachat), prix
-« vendre seul » estimé faute d'eBay (même hypothèse que l'interface, SELL_ALONE_DISCOUNT).
+HAI_MAX_PARALLEL au plus), tri par modèle et par état, bloc magasin (médiane, coefficient de rachat), bloc eBay
+(API Browse, annonces en cours) pour le prix « vendre seul », comme l'interface. Sans clés eBay ou sans résultat eBay,
+le prix « vendre seul » est estimé depuis les boutiques (même hypothèse que l'interface, SELL_ALONE_DISCOUNT).
+--parallele N traite N objets en même temps : avec 2 smartphones (5 sites chacun), 10 sessions H tournent ensemble.
 
 Sorties (dans mesures/, datées) :
   mesure_sites_<date>.csv     une ligne par objet et par site : état, nombre de prix, durée, jetons, note de l'agent
@@ -20,6 +22,7 @@ Sorties (dans mesures/, datées) :
 Lancer :
   .venv/bin/python -m agents.mesure_objets                       # le CSV par défaut
   .venv/bin/python -m agents.mesure_objets --csv mes_objets.csv --limite 3
+  .venv/bin/python -m agents.mesure_objets --parallele 2              # 2 objets à la fois (test des 10 agents)
 
 Coût : environ 4 à 6 sessions H par objet (environ 80 s chacune). Ne pas lancer sur la clé de démo pendant une démo.
 """
@@ -27,7 +30,9 @@ Coût : environ 4 à 6 sessions H par objet (environ 80 s chacune). Ne pas lance
 from __future__ import annotations
 
 import argparse
+import asyncio
 import csv
+import json
 import os
 import statistics
 import threading
@@ -45,7 +50,7 @@ from hai_agents import Client  # noqa: E402
 
 from agents.price_agent import AGENT, run_site  # noqa: E402
 from agents.sites import CATEGORIES, SITES, sites_for  # noqa: E402
-from backend import matching, pricing  # noqa: E402
+from backend import ebay, matching, pricing  # noqa: E402
 from backend.main import _site_payload  # noqa: E402  (même tri que l'app)
 
 # Même hypothèse que frontend/lib/verdict.ts, tant que le bloc eBay n'a pas ses clés.
@@ -53,6 +58,52 @@ SELL_ALONE_DISCOUNT = 0.15
 MIN_PRICES_OK = 3  # critère des Specs : une session réussie rapporte au moins 3 prix
 PARALLEL = max(1, min(int(os.getenv("HAI_MAX_PARALLEL") or "10"), 10))
 _print = threading.Lock()
+
+
+class Concurrency:
+    """Compte les sessions H en cours et retient le pic (preuve du test des 10 agents en parallèle)."""
+
+    def __init__(self) -> None:
+        self.lock, self.now, self.peak = threading.Lock(), 0, 0
+
+    def enter(self) -> None:
+        with self.lock:
+            self.now += 1
+            self.peak = max(self.peak, self.now)
+
+    def leave(self) -> None:
+        with self.lock:
+            self.now -= 1
+
+
+# Une seule boucle asynchrone pour tous les appels eBay : backend/ebay.py garde un verrou (jeton) lié à la boucle
+# qui l'utilise. Une boucle par objet (asyncio.run) bloquait le 2e objet indéfiniment (mesure du 19/11, iPhone 12).
+_ebay_loop: asyncio.AbstractEventLoop | None = None
+_ebay_loop_lock = threading.Lock()
+EBAY_TIMEOUT_S = 60
+
+
+def _loop() -> asyncio.AbstractEventLoop:
+    global _ebay_loop
+    with _ebay_loop_lock:
+        if _ebay_loop is None:
+            _ebay_loop = asyncio.new_event_loop()
+            threading.Thread(target=_ebay_loop.run_forever, daemon=True, name="ebay-loop").start()
+        return _ebay_loop
+
+
+def ebay_prices(product: str, category: str) -> dict:
+    """Bloc eBay de l'app (API Browse). Rend {etat, n, bas, haut, conseille}, ou {etat} si eBay ne répond rien."""
+    if not ebay.configured():
+        return {"etat": "non_configure"}
+    try:
+        r = asyncio.run_coroutine_threadsafe(ebay.search(product, category), _loop()).result(timeout=EBAY_TIMEOUT_S)
+    except Exception as e:  # panne réseau, quota ou délai dépassé : la mesure continue sans eBay
+        return {"etat": f"erreur : {type(e).__name__} {e}"[:80]}
+    b = r.get("block")
+    if r.get("state") != "ok" or not b:
+        return {"etat": r.get("state") or "aucun_resultat"}
+    return {"etat": "ok", "n": b["n_kept"], "bas": b["sell_low"], "haut": b["sell_high"], "conseille": b["sell_price"]}
 
 
 def log(msg: str) -> None:
@@ -77,14 +128,21 @@ def identify(paths: str, expected: str, category: str) -> tuple[str, str, float 
     return found, "oui" if ok else "non", round(time.monotonic() - t, 1)
 
 
-def measure(client: Client, obj: dict, slots: threading.Semaphore) -> tuple[dict, list[dict]]:
+def measure(client: Client, obj: dict, slots: threading.Semaphore,
+            conc: Concurrency | None = None) -> tuple[dict, list[dict]]:
     product, category, condition = obj["objet"].strip(), obj["categorie"].strip(), (obj.get("etat") or "Bon état").strip()
-    sites = sites_for(category)
+    sites = sites_for(category, product)
     t0 = time.monotonic()
 
     def one(site: str) -> dict:
         with slots:
-            r = run_site(client, site, product, category, log=lambda _m: None, condition=condition)
+            if conc:
+                conc.enter()
+            try:
+                r = run_site(client, site, product, category, log=lambda _m: None, condition=condition)
+            finally:
+                if conc:
+                    conc.leave()
         p = _site_payload(site, r, product, category, condition)
         n = len(p["offers"])
         return {
@@ -95,8 +153,13 @@ def measure(client: Client, obj: dict, slots: threading.Semaphore) -> tuple[dict
             "_offers": p["offers"],
         }
 
-    with ThreadPoolExecutor(max_workers=len(sites)) as ex:
+    with ThreadPoolExecutor(max_workers=len(sites) + 1) as ex:
+        eb_future = ex.submit(ebay_prices, product, category)  # eBay répond en 1 à 2 s, en parallèle des agents
         rows = list(ex.map(one, sites))
+        try:
+            eb = eb_future.result(timeout=EBAY_TIMEOUT_S + 10)
+        except Exception as e:  # garde-fou : un appel eBay ne bloque jamais la mesure
+            eb = {"etat": f"erreur : {type(e).__name__}"}
     total_s = round(time.monotonic() - t0, 1)
 
     prices = [o["price_eur"] for r in rows for o in r.pop("_offers")]
@@ -108,15 +171,21 @@ def measure(client: Client, obj: dict, slots: threading.Semaphore) -> tuple[dict
         "identification": found, "identification_correcte": ident_ok, "identification_s": ident_s if ident_s is not None else "",
         "duree_totale_s": total_s, "sites": len(sites), "sites_reussis": sum(r["reussi"] == "oui" for r in rows),
         "n_prix": len(prices), "prix_vendu_ref": ref if ref is not None else "",
+        "ebay_etat": eb["etat"], "ebay_n": eb.get("n", ""),
     }
     if block:
+        summary.update({"boutique_mediane": block["shop_median"], "rachat_estime": block["buyback_estimate"]})
+    # Prix « vendre seul » : même règle que frontend/lib/verdict.ts (eBay d'abord, sinon boutiques moins 15 %).
+    if eb["etat"] == "ok":
+        low, high, mid, source = eb["bas"], eb["haut"], eb["conseille"], "ebay"
+    elif block:
         k = 1 - SELL_ALONE_DISCOUNT
         low, high = round(block["shop_low"] * k), round(block["shop_median"] * k)
-        mid = round((low + high) / 2)
-        summary.update({
-            "boutique_mediane": block["shop_median"], "rachat_estime": block["buyback_estimate"],
-            "vendre_seul_bas": low, "vendre_seul_haut": high, "prix_conseille": mid,
-        })
+        mid, source = round((low + high) / 2), "boutiques"
+    else:
+        low = high = mid = source = None
+    if mid is not None:
+        summary.update({"vendre_seul_bas": low, "vendre_seul_haut": high, "prix_conseille": mid, "source_prix": source})
         if ref:
             summary["ecart_pct"] = round(100 * (mid - ref) / ref, 1)
             summary["ref_dans_fourchette"] = "oui" if low <= ref <= high else "non"
@@ -127,6 +196,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--csv", default=str(ROOT / "mesures" / "objets_a_mesurer.csv"))
     ap.add_argument("--limite", type=int, default=0, help="n'en mesurer que les N premiers")
+    ap.add_argument("--parallele", type=int, default=1, help="nombre d'objets mesurés en même temps (défaut : 1)")
     a = ap.parse_args()
 
     objs = [o for o in csv.DictReader(open(a.csv, encoding="utf-8")) if (o.get("objet") or "").strip()]
@@ -137,18 +207,27 @@ def main() -> None:
         objs = objs[: a.limite]
     log(f"{len(objs)} objet(s), agent {AGENT}, {PARALLEL} sessions H en parallèle au plus.")
 
-    client, slots = Client(), threading.Semaphore(PARALLEL)
-    summaries, site_rows = [], []
-    for i, obj in enumerate(objs, 1):  # un objet après l'autre : les sites d'un objet tournent en parallèle
-        log(f"[{i}/{len(objs)}] {obj['objet']} …")
-        s, rows = measure(client, obj, slots)
-        summaries.append(s)
-        site_rows += rows
-        log(f"    {s['sites_reussis']}/{s['sites']} sites à ≥ {MIN_PRICES_OK} prix, {s['n_prix']} prix, {s['duree_totale_s']} s"
-            + (f", écart {s['ecart_pct']} %" if "ecart_pct" in s else ""))
-
+    client, slots, conc = Client(), threading.Semaphore(PARALLEL), Concurrency()
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d_%Hh%M")
     out = ROOT / "mesures"
+    partial = out / f"mesure_partielle_{stamp}.jsonl"
+    write_lock = threading.Lock()
+
+    def run(i: int, obj: dict) -> tuple[dict, list[dict]]:
+        log(f"[{i}/{len(objs)}] {obj['objet']} …")
+        s, rows = measure(client, obj, slots, conc)
+        with write_lock, open(partial, "a", encoding="utf-8") as f:  # rien n'est perdu si un objet bloque ensuite
+            f.write(json.dumps({"objet": s, "sites": rows}, ensure_ascii=False) + "\n")
+        log(f"    {obj['objet']} : {s['sites_reussis']}/{s['sites']} sites à ≥ {MIN_PRICES_OK} prix, {s['n_prix']} prix, "
+            f"eBay {s['ebay_etat']}, {s['duree_totale_s']} s" + (f", écart {s['ecart_pct']} %" if "ecart_pct" in s else ""))
+        return s, rows
+
+    # Les sites d'un objet tournent toujours en parallèle ; --parallele N lance aussi N objets à la fois.
+    with ThreadPoolExecutor(max_workers=max(1, a.parallele)) as ex:
+        results = list(ex.map(lambda p: run(*p), enumerate(objs, 1)))
+    summaries = [s for s, _ in results]
+    site_rows = [r for _, rows in results for r in rows]
+
     for name, data in ((f"mesure_sites_{stamp}.csv", site_rows), (f"mesure_objets_{stamp}.csv", summaries)):
         cols = list(dict.fromkeys(k for row in data for k in row))
         with open(out / name, "w", newline="", encoding="utf-8") as f:
@@ -170,6 +249,7 @@ def main() -> None:
     if allr:
         ok = sum(r["reussi"] == "oui" for r in site_rows)
         log(f"Toutes boutiques : {ok}/{allr} sessions réussies ({100 * ok / allr:.0f} %, objectif des Specs ≥ 80 %)")
+    log(f"Pic de sessions H simultanées : {conc.peak} (plafond {PARALLEL})")
     if summaries:
         log(f"Durée médiane d'une estimation : {statistics.median(s['duree_totale_s'] for s in summaries):.0f} s (objectif < 120 s)")
     ecarts = [abs(s["ecart_pct"]) for s in summaries if "ecart_pct" in s]

@@ -45,6 +45,16 @@ CASES = [
     ("Sony PlayStation 4", "console", "PlayStation 4 Pro 1 To", False),
     ("Sony PlayStation 4", "console", "PlayStation 4 Slim 500 Go", False),
     ("Zelda Breath of the Wild", "jeu_video", "Jeu Zelda Breath of the Wild Switch", True),
+    # Mesure du 19/11 : génération écrite de plusieurs façons, préfixe « The Legend of »
+    ("Apple iPad 9 64 Go", "tablette", "Apple iPad (9e génération) 64 Go Wi-Fi", True),
+    ("Apple iPad 9 64 Go", "tablette", "iPad 2021 (9e gen) 64 Go gris sidéral", True),
+    ("Apple iPad 9 64 Go", "tablette", "iPad 9th generation 64GB", True),
+    ("Apple iPad 9e génération 64 Go", "tablette", "iPad 9 64Go Wi-Fi", True),
+    ("Apple iPad 9 64 Go", "tablette", "Apple iPad (10e génération) 64 Go", False),
+    ("Apple iPad 9 64 Go", "tablette", "iPad Air 9 64 Go", False),
+    ("Zelda Tears of the Kingdom", "jeu_video", "The Legend of Zelda : Tears of the Kingdom - Switch", True),
+    ("The Legend of Zelda: Tears of the Kingdom", "jeu_video", "Zelda Tears of the Kingdom Switch", True),
+    ("The Legend of Zelda: Tears of the Kingdom", "jeu_video", "Zelda Breath of the Wild Switch", False),
     # Manette cherchée (test réel du 17/11 : les manettes étaient écartées comme « accessoire »)
     ("Sony DualSense", "console", "Manette PS5 DualSense blanche", True),
     ("Sony DualSense", "console", "Manette Sony DualSense PS5", True),

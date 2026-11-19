@@ -2,7 +2,7 @@
 
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { CATEGORY_LABELS, type Category, euros, identifyPhotos } from "@/lib/api";
+import { CATEGORY_LABELS, type Category, euros, identifyPhotos, wakeServer } from "@/lib/api";
 import { onGrenierChange, readGrenier, totals } from "@/lib/grenier";
 import { CONDITIONS, type Condition } from "@/lib/listing";
 import { applyVariant, guessCategory, variantSuggestion } from "@/lib/variants";
@@ -23,6 +23,7 @@ const CAPACITY = /\b\d{2,4}\s?(go|gb|to|tb)\b/i; // « 128 GB » rendu en anglai
 
 export default function Home() {
   const [step, setStep] = useState<Step>("home");
+  useEffect(() => wakeServer(), []); // réveille le serveur pendant que l'utilisateur prend sa photo
   const [error, setError] = useState<string | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
   const [shots, setShots] = useState<(File | null)[]>([null, null, null]);

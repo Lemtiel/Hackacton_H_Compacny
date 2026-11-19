@@ -4,11 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import {
   CATEGORY_LABELS,
   type Category,
+  type DraftEvent,
   type EbayCategoryResult,
   type EbayResult,
   type Offer,
   type SearchEvent,
   type ShopBlock,
+  draftAvailable,
   euros,
   fetchEbay,
   fetchEbayCategory,
@@ -18,6 +20,7 @@ import {
   marketplaceLinks,
   searchPrices,
   shotUrl,
+  startEbayDraft,
 } from "@/lib/api";
 import { type GrenierItem, newId, updateItem, upsertItem } from "@/lib/grenier";
 import { type Condition, type ListingFormat, type Platform, ebayCondition, fallbackListing } from "@/lib/listing";
@@ -60,6 +63,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
   const [myPrice, setMyPrice] = useState<number | null>(null);
   const [sharePhotos, setSharePhotos] = useState<string[]>(photos); // photos à partager : studio ou originale, comme affichées
   const idRef = useRef(newId());
+  const ensureStudioRef = useRef<EnsureStudio | null>(null);
   const shopRef = useRef<ShopBlock | null>(null);
   const [ebay, setEbay] = useState<EbayResult | null>(null);
   const ebayRef = useRef<EbayResult | null>(null);
@@ -176,7 +180,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
       <p className="muted" style={{ margin: "0.5rem 0 0" }}>{CATEGORY_LABELS[category]}, {condition.toLowerCase()}</p>
       <h1 className="display search-title">{product}</h1>
 
-      {failed && <p className="notice error">{refused ?? "L'estimation n'a pas pu aboutir. Vérifiez votre connexion, puis réessayez."}</p>}
+      {failed && <p className="notice error">{refused ?? "L'estimation n'a pas pu aboutir. Le serveur était peut-être en train de démarrer : réessayez dans quelques secondes."}</p>}
 
       <SearchProgress rows={rows} done={done} demo={demo} />
 
@@ -188,7 +192,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
 
       {shop && verdict && (
         <>
-          <VerdictCard verdict={verdict} running={running} />
+          <VerdictCard verdict={verdict} running={running} shopPrices={shop.n_kept} />
           <PriceScale shop={shop} verdict={verdict} />
           {myPrice !== null && (
             <PriceSlider shop={shop} verdict={verdict} value={myPrice} onChange={(v) => { priceTouched.current = true; setMyPrice(v); }} />
@@ -200,6 +204,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
       <ListingPanel
         input={input}
         sharePhotos={sharePhotos}
+        ensureStudio={ensureStudioRef}
         myPrice={myPrice}
         onPublish={(platform) => updateItem(idRef.current, { status: "en_vente", platform })}
         canTrack={done && !failed}
@@ -245,7 +250,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
             {marketplaceLinks(product)
               .filter((l) => !(ebay?.block && l.name.startsWith("eBay")))
               .map((l) => (
-                <a key={l.name} className="btn btn-quiet" href={l.url} target="_blank" rel="noopener noreferrer" style={{ background: "#fff" }}>
+                <a key={l.name} className="btn btn-quiet" href={l.url} target="_blank" rel="noopener noreferrer">
                   Voir sur {l.name}
                 </a>
               ))}
@@ -253,7 +258,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
         </div>
       )}
 
-      {photos.length > 0 && <StudioPhotos photos={photos} onShareable={setSharePhotos} />}
+      {photos.length > 0 && <StudioPhotos photos={photos} onShareable={setSharePhotos} ensureRef={ensureStudioRef} />}
 
       <div className="stack" style={{ marginTop: "2rem" }}>
         {done && !failed && <a href="/grenier" className="btn btn-quiet">Voir Mon grenier</a>}
@@ -313,16 +318,20 @@ export function SearchProgress({ rows, done, demo }: { rows: Row[]; done: boolea
   );
 }
 
-function VerdictCard({ verdict, running }: { verdict: Verdict; running: boolean }) {
+// En dessous de 3 prix boutique, le prix magasin repose sur trop peu d'offres (critère des Specs, ligne 101) : on le dit.
+const MIN_SHOP_PRICES = 3;
+
+function VerdictCard({ verdict, running, shopPrices }: { verdict: Verdict; running: boolean; shopPrices: number }) {
   const seul = verdict.recommend === "seul";
+  const fragile = shopPrices < MIN_SHOP_PRICES;
   return (
     <div className="verdict-card" aria-live="polite">
       <CoinRain />
       <p className="muted" style={{ margin: 0 }}>Où vendre ?</p>
-      <h2 className="verdict-title">{seul ? "Vendez-le vous-même." : "Passez en magasin."}</h2>
+      <h2 className="verdict-title">{seul ? (fragile ? "Plutôt : vendez-le vous-même." : "Vendez-le vous-même.") : (fragile ? "Plutôt : passez en magasin." : "Passez en magasin.")}</h2>
       <p style={{ margin: "0.25rem 0 0" }}>
         {seul
-          ? <>Vous gagnez environ <strong><CountUp value={verdict.gain} /></strong> de plus qu&apos;en magasin, en échange d&apos;une annonce à publier et d&apos;un envoi.</>
+          ? <>Vous gagnez environ <strong><CountUp value={verdict.gain} /></strong> de plus qu&apos;en magasin{fragile ? " (à confirmer)" : ""}, en échange d&apos;une annonce à publier et d&apos;un envoi.</>
           : <>Vendre seul ne rapporterait qu&apos;environ <strong className="num">{euros(Math.max(verdict.gain, 0))}</strong> de plus. En magasin, vous êtes payé tout de suite.</>}
       </p>
       <div className="verdict-options">
@@ -334,11 +343,14 @@ function VerdictCard({ verdict, running }: { verdict: Verdict; running: boolean 
         <div className="verdict-option" data-chosen={!seul}>
           <span className="small">Offre de rachat typique</span>
           <span className="verdict-amount">≈ <CountUp value={verdict.buyback} /></span>
-          <span className="small">Un passage en boutique</span>
+          <span className="small">{fragile ? `Fragile : ${shopPrices} prix en boutique` : "Un passage en boutique"}</span>
         </div>
       </div>
       <p className="small" style={{ margin: "0.75rem 0 0" }}>
         {running ? "L'estimation s'affine encore." : "Prix indicatifs."}
+        {fragile && !running && (
+          <> Estimation magasin fragile : {shopPrices} seul{shopPrices > 1 ? "s" : ""} prix relevé{shopPrices > 1 ? "s" : ""} en boutique (objet peu en stock). Comparez avant de décider.</>
+        )}
       </p>
     </div>
   );
@@ -401,12 +413,14 @@ function PriceSlider({ shop, verdict, value, onChange }: { shop: ShopBlock; verd
 function ListingPanel({
   input,
   sharePhotos,
+  ensureStudio,
   myPrice,
   onPublish,
   canTrack,
 }: {
   input: SearchInput;
   sharePhotos: string[];
+  ensureStudio: React.MutableRefObject<EnsureStudio | null>;
   myPrice: number | null;
   onPublish: (platform: string) => void;
   canTrack: boolean;
@@ -421,6 +435,11 @@ function ListingPanel({
   const ebayCatAsked = useRef(false);
   const [canShare, setCanShare] = useState(false);
   const [shareMsg, setShareMsg] = useState<string | null>(null);
+  // Brouillon eBay par un agent H (démo seulement : serveur de démo + clé de démo)
+  const [draftOn, setDraftOn] = useState(false);
+  const [draft, setDraft] = useState<{ running: boolean; label: string; result: Extract<DraftEvent, { type: "result" }> | null; error: string | null; note?: string | null } | null>(null);
+  const [consentOpen, setConsentOpen] = useState(false); // écran d'autorisation, demandé à chaque brouillon
+  useEffect(() => { draftAvailable().then(setDraftOn); }, []);
 
   // Le partage natif n'existe qu'en HTTPS (ou localhost) et sur les navigateurs qui le gèrent : sinon on ne montre pas le bouton.
   useEffect(() => setCanShare(typeof navigator !== "undefined" && typeof navigator.share === "function"), []);
@@ -490,6 +509,36 @@ function ListingPanel({
 
   const ebayCategory = ebayCat?.state === "ok" ? ebayCat.categories[0] : null;
 
+  // Un agent H prépare le brouillon dans le Chrome de l'ordinateur ; l'utilisateur publie lui-même depuis eBay.
+  async function prepareDraft() {
+    if (!ad) return;
+    if (myPrice === null) {
+      setDraft({ running: false, label: "", result: null, error: "Attendez la fin de l'estimation : le prix de l'annonce en dépend." });
+      return;
+    }
+    setDraft({ running: true, label: "Préparation des photos studio…", result: null, error: null, note: null });
+    try {
+      // eBay reçoit les photos studio : on crée d'abord celles qui manquent
+      const prepared = ensureStudio.current
+        ? await ensureStudio.current((label) => setDraft((d) => (d ? { ...d, label } : d)))
+        : { urls: sharePhotos, failed: 0 };
+      const note = prepared.failed
+        ? `${prepared.failed} photo${prepared.failed > 1 ? "s" : ""} studio n'${prepared.failed > 1 ? "ont" : "a"} pas pu être créée${prepared.failed > 1 ? "s" : ""} : l'originale part à sa place.`
+        : null;
+      setDraft((d) => (d ? { ...d, label: "Envoi des photos à l'agent…", note } : d));
+      await startEbayDraft(
+        { photos: prepared.urls, title: ad.title, description: ad.description, price: myPrice, categoryId: ebayCategory?.id, condition, consent: true },
+        (e) => {
+          if (e.type === "step") setDraft((d) => (d ? { ...d, label: e.label } : d));
+          if (e.type === "result") setDraft((d) => (d ? { ...d, running: false, result: e } : d));
+        },
+      );
+      setDraft((d) => (d && d.running ? { ...d, running: false } : d));
+    } catch (err) {
+      setDraft({ running: false, label: "", result: null, error: (err as Error).message });
+    }
+  }
+
   return (
     <div className="panel">
       <h3>Votre annonce</h3>
@@ -528,14 +577,36 @@ function ListingPanel({
               <button className="btn btn-primary" onClick={() => copy("annonce")}>{copied === "annonce" ? "Annonce copiée" : "Copier l'annonce"}</button>
             )}
             {canShare && (
-              <button type="button" className="btn btn-quiet" style={{ background: "#fff" }} onClick={shareAd}>
+              <button type="button" className="btn btn-quiet" onClick={shareAd}>
                 Partager photos et annonce
               </button>
+            )}
+            {platform === "ebay" && draftOn && sharePhotos.length > 0 && (
+              <button type="button" className="btn btn-quiet" onClick={() => setConsentOpen(true)} disabled={draft?.running || consentOpen}>
+                {draft?.running ? "L'agent prépare le brouillon…" : "Laisser un agent H préparer le brouillon eBay"}
+              </button>
+            )}
+            {platform === "ebay" && consentOpen && (
+              <div className="panel" role="region" aria-labelledby="consent-title" style={{ background: "var(--bg)" }}>
+                <h3 id="consent-title" style={{ margin: 0 }}>Autoriser l&apos;agent à agir sur votre compte eBay ?</h3>
+                <ul className="small" style={{ margin: "0.6rem 0", paddingLeft: "1.1rem" }}>
+                  <li>Un agent IA de H Company ouvre eBay dans votre navigateur, connecté à votre compte.</li>
+                  <li>Il remplit un brouillon : titre, description, prix, caractéristiques et photos de cette annonce.</li>
+                  <li>Il ne publie jamais : c&apos;est vous qui cliquez sur « Mettre en vente ».</li>
+                  <li>Les captures de son écran passent par H Company. Votre mot de passe ne quitte pas votre navigateur.</li>
+                </ul>
+                <div className="stack">
+                  <button type="button" className="btn btn-primary" onClick={() => { setConsentOpen(false); prepareDraft(); }}>
+                    Autoriser et lancer l&apos;agent
+                  </button>
+                  <button type="button" className="btn btn-quiet" onClick={() => setConsentOpen(false)}>Annuler</button>
+                </div>
+              </div>
             )}
             {publish && (
               <a
                 className="btn btn-quiet"
-                style={{ background: "#fff" }}
+               
                 href={platform === "ebay" && ad ? ebayListingUrl({ title: ad.title, categoryId: ebayCategory?.id, condition }) : publish.url}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -547,6 +618,31 @@ function ListingPanel({
           </div>
 
           {shareMsg && <p className="notice warn" style={{ marginTop: "0.75rem" }}>{shareMsg}</p>}
+
+          {platform === "ebay" && draft && (
+            <div className="panel" style={{ marginTop: "0.9rem", background: "var(--bg)" }} aria-live="polite">
+              <h3 style={{ margin: 0 }}>Brouillon eBay par un agent</h3>
+              {draft.running && (
+                <p className="small" style={{ margin: "0.4rem 0 0" }}>
+                  {draft.label.endsWith("…") ? draft.label : `${draft.label}. Regardez la fenêtre Chrome eBay : l'agent y travaille. Il ne publie jamais.`}
+                </p>
+              )}
+              {draft.note && <p className="small" style={{ margin: "0.4rem 0 0" }}>{draft.note}</p>}
+              {draft.error && <p className="notice error" style={{ marginTop: "0.5rem" }}>{draft.error}</p>}
+              {draft.result && draft.result.status === "draft_saved" && (
+                <p style={{ margin: "0.4rem 0 0" }}>
+                  <strong>Brouillon enregistré</strong> ({draft.result.photos_uploaded ?? 0} photo{(draft.result.photos_uploaded ?? 0) > 1 ? "s" : ""}, description, prix). Ouvrez-le dans eBay et cliquez vous-même sur « Mettre en vente ».
+                  {draft.result.draft_url && <> <a href={draft.result.draft_url} target="_blank" rel="noopener noreferrer">Ouvrir le brouillon</a>.</>}
+                </p>
+              )}
+              {draft.result && draft.result.status === "login_required" && (
+                <p className="notice warn" style={{ marginTop: "0.5rem" }}>L&apos;agent a rencontré une page de connexion ou de vérification d&apos;eBay. Connectez-vous dans la fenêtre Chrome eBay, puis relancez.</p>
+              )}
+              {draft.result && !["draft_saved", "login_required"].includes(draft.result.status) && (
+                <p className="notice warn" style={{ marginTop: "0.5rem" }}>Brouillon incomplet. {draft.result.note}</p>
+              )}
+            </div>
+          )}
 
           {/* Fiche eBay : ce qu'il faut remplir sur eBay, dans l'ordre. L'utilisateur publie lui-même. */}
           {platform === "ebay" && (
@@ -621,7 +717,7 @@ function EbayPanel({ result }: { result: EbayResult | null }) {
       {result && result.items.length > 0 && (
         <details className="site-detail">
           <summary>
-            <span>Annonces eBay, même modèle</span>
+            <span>Prix affichés sur eBay (avant négociation)</span>
             <span className="num muted">{priceRange(result.items.map((o) => o.price_eur))}</span>
           </summary>
           {result.items.map((o, i) => (
@@ -638,7 +734,9 @@ function EbayPanel({ result }: { result: EbayResult | null }) {
 }
 
 // Photos pour l'annonce, avec leur version studio (objet détouré sur fond clair, objet non modifié).
-function StudioPhotos({ photos, onShareable }: { photos: string[]; onShareable: (urls: string[]) => void }) {
+export type EnsureStudio = (onProgress: (label: string) => void) => Promise<{ urls: string[]; failed: number }>;
+
+function StudioPhotos({ photos, onShareable, ensureRef }: { photos: string[]; onShareable: (urls: string[]) => void; ensureRef?: React.MutableRefObject<EnsureStudio | null> }) {
   const [studio, setStudio] = useState<(string | null)[]>(photos.map(() => null));
   const [show, setShow] = useState<("studio" | "original")[]>(photos.map(() => "studio"));
   const [busy, setBusy] = useState(false);
@@ -666,6 +764,31 @@ function StudioPhotos({ photos, onShareable }: { photos: string[]; onShareable: 
       }
     }
     setBusy(false);
+  }
+
+  // Pour le brouillon eBay : crée les versions studio manquantes, garde l'originale là où l'utilisateur l'a choisie.
+  if (ensureRef) {
+    ensureRef.current = async (onProgress) => {
+      const urls: string[] = [];
+      let failed = 0;
+      for (let i = 0; i < photos.length; i++) {
+        if (show[i] === "original") urls.push(photos[i]);
+        else if (studio[i]) urls.push(studio[i]!);
+        else {
+          onProgress(`Création de la photo studio ${i + 1} sur ${photos.length}…`);
+          try {
+            const out = await makeStudio(await fetch(photos[i]).then((r) => r.blob()));
+            const url = URL.createObjectURL(out);
+            setStudio((st) => st.map((v, j) => (j === i ? url : v)));
+            urls.push(url);
+          } catch {
+            failed += 1;
+            urls.push(photos[i]);
+          }
+        }
+      }
+      return { urls, failed };
+    };
   }
 
   const done = studio.some(Boolean);
