@@ -28,6 +28,8 @@ jobs:
         run: python tests/test_garde_fous.py
       - name: Tests du brouillon eBay (sans réseau)
         run: python tests/test_brouillon_ebay.py
+      - name: Script de mesure (sans réseau)
+        run: python tests/test_mesure_objets.py
 
   interface:
     name: Compilation de l'interface
