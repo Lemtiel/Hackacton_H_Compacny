@@ -59,12 +59,12 @@ L'utilisateur photographie un objet high-tech ou un jeu vidéo. Un modèle Huggi
 |---|---|
 | Stephen | CEO |
 | Jude | CTO, et pilote du projet |
-| Josia | CAO, conception des agents |
+| Josias | CAO, conception des agents |
 | Sebastian | CAIO, modèles IA |
 | Kevin | CDO, données et mesures |
 | Tristan | CPO, expérience utilisateur |
 
-À confirmer : le doc d'équipe indique une autre répartition (Tristan CTO, Jude CAIO, Sebastian CPO). L'équipe doit trancher.
+Répartition retenue par l'équipe, celle du deck et du README : Stephen CEO, Jude CTO, Josias CAO, Sebastian CAIO, Kevin CDO, Tristan CPO.
 
 **Rôles décrits par le brief, rattachés au projet :**
 - **CEO :** vision, arbitrages, planning des livrables ; porte le pitch final et les questions du jury.
@@ -80,7 +80,7 @@ L'utilisateur photographie un objet high-tech ou un jeu vidéo. Un modèle Huggi
 | eBay | API Browse officielle, résultats affichés dans un bloc séparé | Autorisé |
 | Easy Cash | Agent H, pages de catégorie seulement (recherche bloquée par le robots.txt) | Autorisé |
 | Gamecash | Agent H | Autorisé |
-| Troc.com | Agent H | Autorisé |
+| Troc.com | Agent H | Autorisé, en pause depuis le 19/11 (0 prix sur 10 objets) |
 | Cash Converters | Agent H, derrière Cloudflare | Autorisé si l'agent passe sans artifice |
 | Certideal | Agent H, pages de catégorie seulement (recherche interdite par le robots.txt) | Autorisé (vérifié le 17/11) |
 | Swappie | Agent H, sans filtres ni tri (interdits par le robots.txt), derrière Cloudflare | Autorisé, l'agent est passé le 17/11 |
