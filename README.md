@@ -13,7 +13,7 @@
 ## Tester le prototype
 1. Ouvrez **https://snapncash.vercel.app**, sur ordinateur ou sur téléphone.
 2. Touchez **Estimer**, puis prenez en photo un objet high-tech ou un jeu vidéo (téléphone, console, tablette, ordinateur portable, jeu). Sans objet sous la main, tapez son nom, par exemple « Apple iPhone 13 128 Go ».
-3. Regardez les agents H Company travailler : leurs écrans s'affichent en direct sous la barre de progression, une session par boutique. Une estimation prend 2 à 4 min : notre offre H gratuite fait travailler 3 agents à la fois, les autres boutiques attendent leur tour.
+3. Regardez les agents H Company travailler : leurs écrans s'affichent en direct sous la barre de progression, une session par boutique. Une estimation prend environ 1 à 2 min : toutes les boutiques sont visitées en même temps.
 4. Lisez le verdict : vendre soi-même (prix tirés d'eBay) ou revendre en magasin (prix relevés par les agents), avec le gain en euros.
 5. Ouvrez l'annonce : titre, description, caractéristiques et photos studio, prêts à publier sur eBay, Vinted ou Leboncoin.
 
@@ -60,7 +60,7 @@ Téléphone ou ordinateur                Notre serveur                         S
 |---|---|---|
 | Interface | Next.js 15, déployée sur Vercel | en ligne |
 | Serveur | FastAPI, dans un Space Hugging Face (Docker, CPU upgrade) | en ligne |
-| Agents | H Company Agent API, `h/web-surfer-flash`, une session par site, 3 en parallèle (offre gratuite de H ; 10 avec l'offre Builder, sans changer le code) | 24 à 90 s par site |
+| Agents | H Company Agent API, `h/web-surfer-flash`, une session par site, jusqu'à 10 en parallèle (limite de notre organisation H, relevée par H Company le 19/11) | 24 à 90 s par site |
 | Identification | `google/gemma-4-31B-it` via le routeur Hugging Face, jusqu'à 3 photos | 1 à 3 s |
 | Annonce | `google/gemma-4-31B-it` | 1 à 4 s |
 | Contrôle des visages | `opencv/face_detection_yunet`, sur notre serveur | 10 à 300 ms |

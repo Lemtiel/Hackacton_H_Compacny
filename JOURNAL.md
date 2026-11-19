@@ -827,3 +827,8 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - Serveur : `/api/ebay/draft` refuse (403) toute demande sans `consent=1`, même avec la clé de démo. Tests 27/27 (2 nouveaux).
 - Rappel : l'accord de l'utilisateur ne remplace pas l'autorisation d'eBay, qui interdit les agents IA sans son accord (risque accepté, en local seulement, entrée de 8h45). Connexion officielle eBay (OAuth + API) écartée pour vendredi : 1 à 2 jours, configuration eBay, pas de vrai brouillon via l'API Inventory.
 - Pas testé : l'affichage de l'écran dans le navigateur (le bouton n'apparaît qu'avec le serveur local `EBAY_DRAFT_LOCAL=1`).
+
+### Jeudi 19/11, 11h40 : 10 sessions H simultanées
+- H Company (Amel Negra, Slack) a relevé la limite de notre organisation à 10 sessions. Vérifié : 10 sessions courtes lancées ensemble, toutes en « running » en 8 s, annulées aussitôt.
+- Space : `HAI_MAX_PARALLEL=10` (vérifié par `/api/health`, `max_agents:10`). README et deck mis à jour.
+- La mesure #8 du matin a tourné à 3 agents (durée médiane 196 s) : la durée à 10 agents n'est pas encore mesurée.

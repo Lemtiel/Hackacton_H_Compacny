@@ -67,7 +67,7 @@ Interface Next.js (Vercel) ──▶ Serveur FastAPI (Space Hugging Face)
 ```
 - **Un agent pour cinq sites** : aucune ligne de code propre à une boutique. Certideal et Swappie se sont ajoutés par une ligne de configuration.
 - **Résultats envoyés site par site**, écrans des agents relayés en direct.
-- **Passage à l'échelle sans recoder** : 3 agents simultanés sur l'offre gratuite de H, 10 avec l'offre Builder (20 $ par mois), 100 avec Startup.
+- **Passage à l'échelle sans recoder** : 10 agents simultanés depuis le 19/11 (limite relevée par H Company), 100 avec l'offre Startup.
 - **Mesuré sur 10 objets, 44 sessions** : 100 % des sessions aboutissent à une réponse vérifiée (prix ou « pas en stock ») ; prix de vente eBay pour 10 objets sur 10 ; durée médiane 196 s avec 3 agents.
 
 ## 8. Ce qu'on a refusé de faire
