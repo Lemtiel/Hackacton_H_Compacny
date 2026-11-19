@@ -863,3 +863,7 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - Place réservée à la démo : la clé de démo peut lancer une estimation même quand les 2 places publiques sont prises (`_take_search_place`). Deux visiteurs ne peuvent plus bloquer la démo live.
 - Message d'échec de la rédaction : la phrase « Voici un brouillon simple à compléter » n'apparaît plus deux fois.
 - Garde-fous 42/42 (4 nouveaux), autres tests inchangés et au vert.
+
+### Jeudi 19/11, 15h15 : pastille de la clé de démo (4e revue, point 2)
+- Réglages, section Démonstration : « Clé de démo » affiche Active, Absente ou Inactive, avec la raison (refusée après un changement de clé, trop d'essais depuis ce réseau, serveur injoignable). Réutilise le jeton déjà obtenu : pas d'essai consommé en plus.
+- Non corrigé (choix de Jude) : le point 1 de la 4e revue (les bons essais comptent dans la limite de 20 par heure, jeton perdu au rechargement).

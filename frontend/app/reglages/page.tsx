@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { DEFAULT_PREFS, type Prefs, type Theme, onPrefsChange, readPrefs, writePrefs } from "@/lib/prefs";
 import { LEGAL_PAGES } from "@/lib/legal";
+import { type DemoKeyStatus, demoKeyStatus } from "@/lib/api";
 
 const THEMES: { key: Theme; label: string }[] = [
   { key: "system", label: "Auto" },
@@ -15,6 +16,8 @@ export default function SettingsPage() {
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [confirm, setConfirm] = useState(false);
   const [cleared, setCleared] = useState(false);
+  const [keyStatus, setKeyStatus] = useState<DemoKeyStatus | null>(null);
+  useEffect(() => { demoKeyStatus().then(setKeyStatus); }, []);
 
   useEffect(() => {
     setPrefs(readPrefs());
@@ -58,6 +61,22 @@ export default function SettingsPage() {
           <span>Mode démo<span className="small settings-hint">Montre l&apos;écran de chaque agent pendant la recherche.</span></span>
           <input id="demo" type="checkbox" className="switch" checked={prefs.demo} onChange={(e) => writePrefs({ demo: e.target.checked })} />
         </label>
+        <div className="settings-row" aria-live="polite">
+          <span>
+            Clé de démo
+            <span className="small settings-hint">
+              {keyStatus === null && "Vérification…"}
+              {keyStatus === "absente" && "Aucune. Ouvrez le site une fois avec ?cle=VOTRE_CLE dans l'adresse."}
+              {keyStatus === "active" && "Active : limites levées et place réservée pour la démo."}
+              {keyStatus === "refusee" && "Refusée. La clé a peut-être changé : rouvrez le site avec ?cle=NOUVELLE_CLE."}
+              {keyStatus === "trop_essais" && "Trop d'essais depuis ce réseau. Réessayez dans une heure."}
+              {keyStatus === "injoignable" && "Serveur injoignable pour l'instant. Réessayez dans quelques secondes."}
+            </span>
+          </span>
+          <span className={`small${keyStatus === "active" ? "" : " muted"}`} style={{ fontWeight: 600, color: keyStatus === "active" ? "#16a34a" : keyStatus && keyStatus !== "absente" ? "#dc2626" : undefined }}>
+            {keyStatus === "active" ? "Active" : keyStatus === "absente" ? "Absente" : keyStatus ? "Inactive" : ""}
+          </span>
+        </div>
       </section>
 
       <section className="settings-group" aria-labelledby="g-region">
