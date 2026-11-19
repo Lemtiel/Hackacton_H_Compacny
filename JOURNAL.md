@@ -884,4 +884,4 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - « Agents en direct » : plus d'`aria-live` (déjà porté par la barre de progression) ; les libellés « Navigue, étape N » n'entrent plus dans la liste des dernières actions.
 - Mon grenier : le raccourci « Panier revendeur » n'apparaît que si le panier contient au moins un objet.
 - Ligne du 16h30 corrigée : les captures restent visibles en mode démo sur `/pro`.
-- Question ouverte, non tranchée : la marge revendeur se calcule sur le prix médian des boutiques, probablement optimiste pour un revendeur particulier. À voir avec Tristan.
+- Question ouverte, non tranchée : la marge revendeur se calcule sur le prix médian des boutiques, probablement optimiste pour un revendeur particulier. À trancher par Jude.
