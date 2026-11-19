@@ -76,7 +76,7 @@ H Company sert à une seule tâche : naviguer sur les sites sans API. Hugging Fa
 | Hypothèse | Ce qui fait changer d'avis |
 |---|---|
 | Les agents H accèdent à au moins 2 des 4 sites | Moins de 2 au test de mardi : chercher d'autres sources autorisées (Certideal, Recommerce, Largo, après vérification de leurs CGU) |
-| Une session d'agent coûte moins de 0,25 $ et dure moins de 90 s | Dépassement au test de mardi : passer aux scripts sur les sites simples (décision de Josia) |
+| Une session d'agent coûte moins de 0,25 $ et dure moins de 90 s | Dépassement au test de mardi : passer aux scripts sur les sites simples (décision de Josias) |
 | Coefficient de rachat en magasin autour de 40 % | Les 5 offres réelles relevées jeudi le remplacent |
 | Décote eBay autour de 10 % | Les 10 objets de test la recalculent |
 | L'API H permet d'afficher l'agent en direct | Non au test de mardi : afficher les étapes de chaque agent, puis le replay de la session |
@@ -120,7 +120,7 @@ Responsables : Stephen (CEO) et Tristan (CPO). Présenté au point business du m
 - **Temps :** livrables lundi 16/11 17h, mercredi 18/11 17h, vendredi 20/11 11h (prototype, repo, vidéo) et 15h (pitch deck).
 - **Budget :** crédits du hackathon (H Company, Hugging Face 50 €, v0 30 $), rien de payant en plus.
 - **Stack imposée :** H Company, Hugging Face, GitHub.
-- **Équipe :** Stephen (CEO), Jude (CTO, pilote du projet), Josia (CAO), Sebastian (CAIO), Kevin (CDO), Tristan (CPO).
+- **Équipe :** Stephen (CEO), Jude (CTO, pilote du projet), Josias (CAO), Sebastian (CAIO), Kevin (CDO), Tristan (CPO).
 - **Démo :** Nintendo Switch d'abord (prix relevés sur 3 boutiques au test du 16/11). Le Redmi Note 10S passe en second : aucune boutique n'en avait en vente au test, il sert donc à montrer le cas « aucun résultat en magasin », avec le seul bloc eBay. Objet préparé à l'avance et recherche en direct, avec adaptation si besoin.
 - **Plan B de la démo (exigé du CTO par le brief) :** une vidéo du parcours complet enregistrée la veille, plus le replay des sessions d'agent H. Si un site bloque ou dépasse 90 s en live, on bascule dessus sans improviser.
 - **Fiche projet sur GitHub (vendredi 11h) :** le README contient le problème, la solution, la stack, l'architecture, le lien du proto et « comment tester ». Tous les liens sont vérifiés en navigation privée avant le dépôt.
@@ -129,9 +129,9 @@ Responsables : Stephen (CEO) et Tristan (CPO). Présenté au point business du m
 | # | Action | Responsable | Échéance |
 |---|---|---|---|
 | 1 | Créer le compte développeur eBay et la clé API | Jude | Lundi 16/11 au soir |
-| 2 | Tester les agents H sur les 4 sites (accès, temps, coût) | Jude et Josia | Mardi 17/11 midi |
+| 2 | Tester les agents H sur les 4 sites (accès, temps, coût) | Jude et Josias | Mardi 17/11 midi |
 | 3 | Demander aux mentors H si l'usage commercial de l'API est autorisé (§9.4) | Jude | Mardi 17/11 11h |
-| 4 | Décider script ou agent, site par site, selon le test | Josia | Mardi 17/11 au soir |
+| 4 | Décider script ou agent, site par site, selon le test | Josias | Mardi 17/11 au soir |
 | 5 | Sondage maison sur le temps passé à fixer un prix et publier (5 à 10 personnes) | Tristan | Lundi 16/11 au soir |
 | 6 | Constituer le jeu de 10 objets avec leur prix eBay réellement vendu, et les mesurer | Kevin | Mercredi 18/11 17h |
 | 7 | Relever 5 offres de rachat réelles pour caler le coefficient | Kevin | Jeudi 19/11 midi |

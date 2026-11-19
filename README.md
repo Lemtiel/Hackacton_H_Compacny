@@ -60,12 +60,12 @@ Téléphone ou ordinateur                Notre serveur                         S
 |---|---|---|
 | Interface | Next.js 15, déployée sur Vercel | en ligne |
 | Serveur | FastAPI, dans un Space Hugging Face (Docker, CPU upgrade) | en ligne |
-| Agents | H Company Agent API, `h/web-surfer-flash`, une session par site, jusqu'à 10 en parallèle (limite de notre organisation H, relevée par H Company le 19/11) | 24 à 90 s par site |
+| Agents | H Company Agent API, `h/web-surfer-flash`, une session par site, jusqu'à 10 en parallèle (limite de notre organisation H, relevée par H Company le 19/11) | 24 à 90 s par site en test, 82 à 97 s en ligne le 19/11 |
 | Identification | `google/gemma-4-31B-it` via le routeur Hugging Face, jusqu'à 3 photos | 1 à 3 s |
 | Annonce | `google/gemma-4-31B-it` | 1 à 4 s |
 | Contrôle des visages | `opencv/face_detection_yunet`, sur notre serveur | 10 à 300 ms |
-| Studio photo | `briaai/RMBG-2.0` via fal.ai ; secours `ZhengPeng7/BiRefNet_lite` en local | 1 à 2 s |
-| Prix entre particuliers | eBay API Browse, dans un bloc séparé | 1 à 2 s, 61 annonces pour un iPhone 13 |
+| Studio photo | `briaai/RMBG-2.0` via fal.ai ; secours `ZhengPeng7/BiRefNet_lite` en local | 1 à 2 s en local, 20 s en ligne (19/11) |
+| Prix entre particuliers | eBay API Browse (annonces en cours), dans un bloc séparé | 1 à 2 s, 61 annonces pour un iPhone 13 |
 
 Boutiques consultées par les agents : Easy Cash, Gamecash, Cash Converters, Certideal, Swappie (iPhone et iPad seulement). Troc.com est en pause depuis le 19/11 : 0 prix sur 10 objets mesurés. Vinted et Leboncoin interdisent l'accès automatisé : un bouton ouvre leur recherche chez l'utilisateur.
 
@@ -140,13 +140,14 @@ Le serveur va sur un Space Hugging Face, l'interface sur Vercel. L'image du serv
 
 **1. Serveur (Space Hugging Face)**
 1. Créer un jeton **avec droit d'écriture** sur huggingface.co/settings/tokens (celui du `.env` n'a que l'inférence).
-2. Créer le Space : New Space, SDK **Docker**, modèle « Blank », visibilité **Public** (l'interface Vercel doit pouvoir l'appeler). Depuis novembre 2026, un Space Docker sur « CPU basic » gratuit exige un compte PRO : nous utilisons « CPU upgrade » (0,03 $/h), payé par les crédits du hackathon, avec une mise en veille après 1 h d'inactivité.
+2. Créer le Space : New Space, SDK **Docker**, modèle « Blank », visibilité **Public** (l'interface Vercel doit pouvoir l'appeler). Depuis novembre 2026, un Space Docker sur « CPU basic » gratuit exige un compte PRO : nous utilisons « CPU upgrade » (0,03 $/h), payé par les crédits du hackathon, avec une mise en veille après 48 h d'inactivité.
 3. Envoyer le code : `scripts/deploy_space.sh <compte>/<nom-du-space>` (Git demande l'identifiant, puis le jeton d'écriture comme mot de passe).
 4. Dans Settings du Space, **Secrets** : `HAI_API_KEY`, `HF_TOKEN` (le jeton d'inférence), `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET`, `DEMO_KEY`.
    **Variables** : `ALLOWED_ORIGINS` (adresse Vercel, voir 2), `DEMO_SHOTS=1`, `TRUSTED_PROXIES=1`, `SEARCH_PER_HOUR=200` (une salle partage une adresse IP).
 5. Ouvrir `https://<compte>-<nom-du-space>.hf.space/api/health` : tout doit être à `true`. Un Space inactif s'endort : l'ouvrir 5 minutes avant la démo.
 
 **2. Interface (Vercel)**
+Le projet Vercel n'est pas relié à GitHub : une fusion dans `main` ne change pas le site en ligne. Chaque mise en ligne se fait depuis `frontend/` avec `vercel deploy --prod`.
 1. `cd frontend && vercel login`, puis `vercel` (dossier racine : `frontend`).
 2. Variable d'environnement `NEXT_PUBLIC_API_URL` = adresse du Space (`https://<compte>-<nom-du-space>.hf.space`), puis `vercel --prod`.
 3. Reporter l'adresse Vercel dans `ALLOWED_ORIGINS` du Space (le Space redémarre).
@@ -160,11 +161,13 @@ Ouvrir l'interface une fois avec `?cle=<DEMO_KEY>` pour lever la limite par adre
 | `frontend/` | Interface Next.js |
 | `backend/` | Serveur FastAPI : identification, tri, prix, eBay, annonce, studio |
 | `agents/` | Agents H Company : consigne, configuration des boutiques, script de test |
-| `tests/` | Tests du tri par modèle et du bloc eBay |
-| `mesures/` | Journal chiffré des sessions d'agent |
+| `tests/` | 7 fichiers de tests sans réseau : tri par modèle, bloc et catégorie eBay, garde-fous, brouillon eBay, pages de départ des agents, script de mesure |
+| `mesures/` | Journal chiffré des sessions d'agent et mesures sur 10 objets (19/11) |
 | `docs/produit/` | Parcours d'écrans, mentions, espace revendeurs |
 | `docs/business-model/` | Modèle économique, coût de run et projections sur 3 ans (document et tableur) |
 | `docs/sondage/` | Sondage maison et réponses anonymes |
+| `docs/retours-agent-api-h.md` | Nos retours sur l'Agent API de H Company |
+| `docs/pitch/` | Contenu du pitch deck |
 | `docs/demo/` | Simulation vidéo pour le pitch (imitation, marquée comme telle) |
 | `Specs.md`, `CONTEXT.md`, `JOURNAL.md` | Ce qu'on construit, le cadre, les décisions datées |
 
@@ -173,7 +176,7 @@ Ouvrir l'interface une fois avec `?cle=<DEMO_KEY>` pour lever la limite par adre
 **Testé en local seulement :** espace revendeurs de bout en bout (classement par marge, panier), brouillon eBay par agent sur le Mac de la démo.
 **Vidéo de démonstration :** lien ajouté ici dès sa mise en ligne.
 
-### Au 18/11
+### Historique : au 18/11
 **Testé :** parcours complet sur ordinateur et sur téléphone, 3 photos guidées (réduites à 1600 px avant l'envoi), agents sur les 6 boutiques, studio photo, nouvelle interface (clair et sombre), espace revendeurs, arrêt des agents quand l'utilisateur quitte une recherche (en réel), limites d'usage, coefficient de rachat mesuré par catégorie sur 30 objets ([docs/calibrage-rachat.md](docs/calibrage-rachat.md)), **API eBay en réel** (annonces « Vendre seul », catégorie suggérée sur 15 produits), classement des offres par état (Gamecash n'est plus à 0 prix), lien « Publier sur eBay » qui ouvre l'éditeur avec titre, catégorie et état remplis (vérifié sur un compte connecté).
 **Pas encore :** mesure sur 10 objets, bouton « Partager photos et annonce » sur un vrai iPhone (testé avec un partage simulé ; il exige du HTTPS), publication en 1 clic sur eBay (maquette et plan dans [docs/produit/publication-ebay.md](docs/produit/publication-ebay.md), hors Specs actuelles). Le prix, la description et les photos ne passent pas par le lien eBay. Suivi dans les [issues](https://github.com/Lemtiel/Hackacton_H_Compacny/issues).
 
@@ -182,7 +185,7 @@ Ouvrir l'interface une fois avec `?cle=<DEMO_KEY>` pour lever la limite par adre
 |---|---|
 | Stephen Morlot | CEO |
 | Jude Buyikana | CTO, pilote du projet |
-| Josia Tatou | CAO, orchestration des agents |
+| Josias Tatou | CAO, orchestration des agents et espace revendeurs |
 | Sebastian Espinosa | CAIO, modèles et calibrage |
 | Kevin Assombi | CDO, données et mesures |
 | Tristan David | CPO, produit et modèle économique |
