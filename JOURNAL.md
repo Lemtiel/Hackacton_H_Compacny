@@ -832,3 +832,9 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - H Company (Amel Negra, Slack) a relevé la limite de notre organisation à 10 sessions. Vérifié : 10 sessions courtes lancées ensemble, toutes en « running » en 8 s, annulées aussitôt.
 - Space : `HAI_MAX_PARALLEL=10` (vérifié par `/api/health`, `max_agents:10`). README et deck mis à jour.
 - La mesure #8 du matin a tourné à 3 agents (durée médiane 196 s) : la durée à 10 agents n'est pas encore mesurée.
+
+### Jeudi 19/11, 12h : mesure #8 à 10 agents
+- 10 objets, 33 sessions, pic de 8 sessions simultanées (`mesures/mesure_*_2026-11-19_10h30.csv`).
+- Durée médiane d'une estimation : 91 s (toutes entre 82 et 100 s), contre 196 s à 3 agents. Objectif des Specs (< 120 s) tenu.
+- eBay 10/10, prix boutiques ≥ 1 pour 10/10, ≥ 3 pour 6/10. Sessions abouties 33/33, sessions avec au moins 1 prix 21/33. Critère strict des Specs (≥ 3 prix par boutique) : 10/33.
+- Jetons : 506 000 par estimation en moyenne (784 000 le matin).
