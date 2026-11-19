@@ -20,8 +20,8 @@ Team 13 · snapncash.vercel.app
 > Note orale : « Tout le monde a un vieux téléphone dans un tiroir. Personne ne sait combien il vaut, ni où le vendre. »
 
 ## 3. La solution
-Une photo. Des agents H Company visitent en direct cinq boutiques d'occasion qui n'ont pas d'API. En moins de deux minutes, l'app répond :
-- **où vendre** : soi-même (prix eBay) ou en magasin (prix des boutiques), avec le gain en euros ;
+Une photo. Des agents H Company visitent en direct jusqu'à cinq boutiques d'occasion sans API. En moins de deux minutes, l'app répond :
+- **où vendre** : soi-même (annonces eBay en cours) ou en magasin (rachat estimé à partir des prix boutique), avec le gain en euros ;
 - **à quel prix** : fourchette et prix conseillé ;
 - **l'annonce prête** : titre, description, caractéristiques, photos studio.
 
@@ -30,8 +30,8 @@ En direct sur snapncash.vercel.app : photo d'un iPhone, identification, écrans 
 Puis, sur notre Mac : un agent H prépare le brouillon eBay dans le navigateur du vendeur.
 
 Exemple mesuré le 19/11 en ligne, « iPhone 13 128 Go, bon état » :
-- vendre soi-même : **261 €** (61 annonces eBay) ;
-- revendre en magasin : **155 €** (11 prix relevés sur 4 boutiques) ;
+- vendre soi-même : **261 €** (61 annonces eBay en cours) ;
+- rachat estimé en magasin : **155 €** (11 prix boutique × 0,60) ;
 - gain : **+106 €**, en 89 s.
 
 > Plan B : la vidéo de 5 min si le réseau tombe.
@@ -49,13 +49,13 @@ Exemple mesuré le 19/11 en ligne, « iPhone 13 128 Go, bon état » :
 
 | Phase | Qui | Comment | Objectif |
 |---|---|---|---|
-| **1. Lancement** (mois 1 à 6) | Particuliers | 3 estimations gratuites comme produit d'appel. Vidéos courtes « ce que vaut ton vieux téléphone » sur TikTok et Instagram, avec les écrans des agents. Temps forts : déménagements, rentrée, avant Noël. Écoles et campus. | 500 inscrits le 1er mois 🟡, puis +12 % par mois |
+| **1. Lancement** (mois 1 à 6) | Particuliers | 3 estimations gratuites comme produit d'appel. Vidéos courtes « ce que vaut ton vieux téléphone » sur TikTok et Instagram, avec les écrans des agents. Temps forts : déménagements, rentrée, avant Noël. Écoles et campus. | 500 inscrits organiques le 1er mois 🟡, puis +12 % par mois |
 | **2. Pros** (dès le mois 4) | Dépôts-ventes, ressourceries, petites enseignes | Démarchage direct avec l'espace `/pro`, qui classe les annonces par marge de revente | Offre Entreprise, 7 clients en fin d'an 1 🟡 |
 | **3. Plateformes** (an 2) | Vinted, Leboncoin | Nous leur apportons des annonces bien remplies, d'objets qui dormaient. Payé par annonce publiée, puis licence | 26 800 € en an 2 🟡 |
 
-**Chiffres clés :** 4 % des inscrits passent en Bronze 🟡 ; publicité à 3 € par inscrit 🟡 ; 16 100 inscrits en an 1.
+**Chiffres clés :** 16 100 inscrits en an 1 (12 100 organiques, 4 000 par la publicité à 3 € l'inscrit 🟡) ; 4 % passent en Bronze 🟡.
 
-> Note orale : « On ne va pas chercher les vendeurs Vinted. On va chercher les 83 % qui n'ont jamais vendu, avec trois estimations offertes. »
+> Note orale : « On ne va pas chercher les vendeurs Vinted. On va chercher les 83 % qui n'ont jamais revendu, avec trois estimations offertes. »
 
 ## 7. Architecture technique
 ```
@@ -65,10 +65,10 @@ Interface Next.js (Vercel) ──▶ Serveur FastAPI (Space Hugging Face)
                                    ├─▶ eBay API Browse (bloc séparé)
                                    └─▶ Bria RMBG-2.0 (photos studio)
 ```
-- **Un agent pour cinq sites** : aucune ligne de code propre à une boutique. Certideal et Swappie se sont ajoutés par une ligne de configuration.
+- **Un agent par boutique, en parallèle** : aucune ligne de code propre à une boutique. Certideal et Swappie se sont ajoutés par une ligne de configuration.
 - **Résultats envoyés site par site**, écrans des agents relayés en direct.
 - **Passage à l'échelle sans recoder** : 10 agents simultanés depuis le 19/11 (limite relevée par H Company), 100 avec l'offre Startup.
-- **Mesuré sur 10 objets, 33 sessions, 10 agents** : 100 % des sessions aboutissent à une réponse vérifiée (prix ou « pas en stock ») ; prix de vente eBay pour 10 objets sur 10 ; **durée médiane 91 s** (toutes sous 100 s, objectif < 120 s).
+- **Mesuré sur 10 objets, 33 sessions, 10 agents** : 100 % des sessions aboutissent à une réponse vérifiée (prix ou « pas en stock ») ; annonces eBay en cours pour 10 objets sur 10 ; **durée médiane 91 s** (toutes sous 100 s, objectif < 120 s).
 
 ## 8. Ce qu'on a refusé de faire
 - Aucun agent sur Vinted, Leboncoin, Back Market et les autres sites dont les CGU l'interdisent.
@@ -77,7 +77,7 @@ Interface Next.js (Vercel) ──▶ Serveur FastAPI (Space Hugging Face)
 - **Brouillon eBay par agent** : il fonctionne, mais seulement sur l'ordinateur du vendeur. Nous refusons de faire passer ses identifiants par notre serveur, et eBay interdit les agents IA sans son autorisation depuis février 2026.
 
 ## 9. Limites et roadmap
-**Limites mesurées :** prix magasin complet (au moins 3 prix) pour 6 objets sur 10. Cause principale, lue dans les notes des agents : l'objet n'est pas en stock (PS5, Xbox, jeux récents, iPad 9). Durée tenue : 91 s en médiane avec 10 agents (196 s à 3 agents le matin).
+**Limites mesurées :** prix magasin complet (au moins 3 prix) pour 6 objets sur 10. Cause principale, lue dans les notes des agents : l'objet n'est pas en stock (PS5, iPad 9, jeux récents). Durée tenue : 91 s en médiane avec 10 agents (196 s à 3 agents le matin).
 **Corrigé pendant la mesure :** prix eBay d'une PS5 faussé par des jeux (18 € → 580 €), Troc.com mis en pause (0 prix sur 10).
 **Roadmap :**
 1. Publication en un clic via le programme partenaire d'eBay (Listing API).
@@ -89,9 +89,11 @@ Interface Next.js (Vercel) ──▶ Serveur FastAPI (Space Hugging Face)
 |---|---|---|
 | Agents H, 6 boutiques | 0,285 $ | 0,023 $ |
 | Hugging Face | 0,002 $ | 0,002 $ |
-| **Par estimation** | **0,25 €** | **0,02 €** |
+| **Par estimation** | **0,26 €** | **0,02 €** |
+| Photos studio en plus | 0,018 $ par photo | 0,018 $ par photo |
 
-Hébergement : Space Hugging Face à 0,03 $/h, Vercel gratuit. Aucun abonnement ne perd d'argent tant qu'une estimation coûte moins de 0,58 €.
+Hébergement : Space Hugging Face à 0,03 $/h, Vercel Pro à 20 $/mois (le plan gratuit interdit l'usage commercial). À l'usage moyen, aucun abonnement ne perd d'argent sous 0,58 € par estimation.
+Calcul prudent : 1 140 000 jetons par estimation (6 boutiques, 17/11), au taux de 1 € ≈ 1,10 $.
 Mesuré le 19/11 : 506 000 jetons par estimation en moyenne (10 objets, 5 boutiques, départ sur la page de résultats ou du modèle).
 
 ---

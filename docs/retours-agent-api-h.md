@@ -3,7 +3,7 @@
 *Team 13, Snap N Cash. Rédigé le 19/11/2026 à partir de nos essais du 16 au 19/11. Chaque constat renvoie à une mesure du dépôt : `mesures/agent_runs.csv`, `mesures/mesure_*.csv` et [JOURNAL.md](../JOURNAL.md).*
 
 ## Notre usage
-Nos agents relèvent des prix d'occasion sur cinq boutiques françaises sans API : Easy Cash, Gamecash, Cash Converters, Certideal et Swappie (Troc.com mis en pause le 19/11 : 0 prix sur 10 objets). Chaque estimation ouvre une session `h/web-surfer-flash` par boutique, toutes en parallèle, avec une réponse structurée (titre, prix, état, lien) et un délai de 90 s. Un second agent, en démo sur notre Mac, prépare un brouillon d'annonce eBay dans le Chrome du vendeur (mode `user_device`).
+Nos agents relèvent des prix d'occasion sur cinq boutiques françaises sans API : Easy Cash, Gamecash, Cash Converters, Certideal et Swappie (Troc.com mis en pause le 19/11 : 0 prix sur 10 objets). Chaque estimation ouvre une session `h/web-surfer-flash` par boutique concernée (3 ou 4 selon la catégorie de l'objet), toutes en parallèle, avec une réponse structurée (titre, prix, état, lien) et un délai de 90 s. Un second agent, en démo sur notre Mac, prépare un brouillon d'annonce eBay dans le Chrome du vendeur (mode `user_device`).
 
 ## Ce qui marche bien
 - **Un agent pour cinq sites.** Aucune ligne de code n'est propre à une boutique. Nous avons ajouté Certideal et Swappie le 17/11 par une simple entrée de configuration, et ils ont marché au premier essai.
@@ -23,7 +23,7 @@ Nos agents relèvent des prix d'occasion sur cinq boutiques françaises sans API
 | Durée très variable selon le site : 24 à 124 s pour la même consigne | `mesures/agent_runs.csv` | Réponse forcée à 70 s, annulation à 90 s |
 | Consommation de jetons élevée sur les sites à feuilleter : 313 000 jetons et 19 étapes sur Easy Cash sans moteur de recherche | 16/11 | Navigation par catégorie imposée par robots.txt, nous l'acceptons |
 | Coût par session difficile à prévoir : le prix du jeton au-delà du forfait n'est pas publié clairement | 16/11 | Pire cas estimé à 0,25 € par estimation (6 boutiques) |
-| Limite de sessions simultanées invisible : au-delà de 3 (offre gratuite), les sessions attendent dans la file de H sans le signaler, puis sont coupées sans avoir consommé un jeton | mesure du 19/11 : 10 sessions demandées, plusieurs « indisponibles » à 0 jeton après 92 s | Plafond réglé à 3 sur notre serveur (`HAI_MAX_PARALLEL`), file d'attente de notre côté |
+| Limite de sessions simultanées invisible : au-delà de 3 (offre gratuite), les sessions attendent dans la file de H sans le signaler, puis sont coupées sans avoir consommé un jeton | mesure du 19/11 : 10 sessions demandées, plusieurs « indisponibles » à 0 jeton après 92 s | File d'attente de notre côté, plafond `HAI_MAX_PARALLEL` réglé sur l'offre (3, puis 10 après le relèvement de la limite par H le 19/11) |
 | La réponse structurée arrive parfois en texte JSON glissé dans la liste (`{"offers": ["[{…}]"]}`) au lieu d'objets | Easy Cash, iPad 9, 19/11 : offres valides perdues | Lecture tolérante (`coerce_answer`) |
 | Quota visible seulement par le SDK (`quota.get_token_quota`), pas la limite de sessions ni l'offre en cours | 19/11 | Contrôle manuel avant la démo |
 

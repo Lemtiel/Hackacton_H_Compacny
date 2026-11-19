@@ -14,7 +14,7 @@
 1. Ouvrez **https://snapncash.vercel.app**, sur ordinateur ou sur téléphone.
 2. Touchez **Estimer**, puis prenez en photo un objet high-tech ou un jeu vidéo (téléphone, console, tablette, ordinateur portable, jeu). Sans objet sous la main, tapez son nom, par exemple « Apple iPhone 13 128 Go ».
 3. Regardez les agents H Company travailler : leurs écrans s'affichent en direct sous la barre de progression, une session par boutique. Une estimation prend environ 1 à 2 min : toutes les boutiques sont visitées en même temps.
-4. Lisez le verdict : vendre soi-même (prix tirés d'eBay) ou revendre en magasin (prix relevés par les agents), avec le gain en euros.
+4. Lisez le verdict : vendre soi-même (prix des annonces eBay en cours) ou revendre en magasin (rachat estimé à partir des prix relevés par les agents en boutique), avec le gain en euros.
 5. Ouvrez l'annonce : titre, description, caractéristiques et photos studio, prêts à publier sur eBay, Vinted ou Leboncoin.
 
 Le mode démo (écrans des agents) est actif par défaut. Il se coupe dans **Réglages**. Une adresse IP a droit à un nombre limité de recherches par heure : en cas de refus, réessayez un peu plus tard.
@@ -25,7 +25,7 @@ Serveur : https://judebkn95-snapncash.hf.space/api/health répond `ok`.
 86 % des Français gardent des objets inutilisés, 320 € par foyer en moyenne, mais 17 % seulement les ont déjà revendus. Ils citent le manque de temps (29 %), des démarches jugées complexes (20 %) et la peur de se tromper de prix (16 %) (OpinionWay pour Leboncoin, septembre 2025). Pour le high-tech, 46 millions de téléphones dorment dans les tiroirs (Harris Interactive et Crédoc pour Ecologic, 2023).
 
 ## La solution
-L'utilisateur photographie son objet high-tech ou son jeu vidéo. Un modèle Hugging Face le reconnaît. **Des agents H Company visitent en direct cinq boutiques d'occasion françaises** qui n'ont pas d'API, et relèvent les prix. L'app répond en moins de deux minutes :
+L'utilisateur photographie son objet high-tech ou son jeu vidéo. Un modèle Hugging Face le reconnaît. **Des agents H Company visitent en direct jusqu'à cinq boutiques d'occasion françaises** qui n'ont pas d'API (3 ou 4 par objet, selon sa catégorie), et relèvent les prix. L'app répond en moins de deux minutes :
 - **où vendre** : vendre soi-même ou en magasin, avec le gain en euros ;
 - **à quel prix** : fourchette, prix conseillé, curseur « vente rapide, prix juste, ambitieux » ;
 - **l'annonce prête** aux formats Vinted, Leboncoin, eBay et texte libre, plus des **photos studio** (objet détouré sur fond clair, objet non modifié).
@@ -115,6 +115,10 @@ Ces scripts tournent à chaque push (onglet Actions), sauf `test_ebay_categorie.
 ```
 Sortie : taux de réussite par boutique (au moins 3 prix), durée d'une estimation, écart entre le prix conseillé et le prix vendu, identification correcte, cas d'échec, face aux objectifs des Specs. Les sessions d'agent sont aussi dans [`mesures/agent_runs.csv`](mesures/agent_runs.csv), les décisions et cas d'échec dans [`JOURNAL.md`](JOURNAL.md).
 
+**Mesure du 19/11 (10 objets, 10 agents simultanés) :**
+- **Mesuré :** 33 sessions d'agent sur 33 abouties (prix ou absence de stock vérifiée), 21 avec au moins un prix ; prix eBay pour 10 objets sur 10 ; prix magasin complet (au moins 3 prix) pour 6 objets sur 10 ; durée médiane d'une estimation 91 s (toutes sous 100 s) ; 506 000 jetons par estimation en moyenne.
+- **Pas encore mesuré :** l'identification par photo sur le jeu de 10 objets (la mesure est partie du nom de l'objet), l'écart entre le prix conseillé et le prix réellement vendu sur eBay, la part des prix vendus comprise dans la fourchette, et le temps gagné avec 3 testeurs. Les colonnes existent dans le fichier de mesure, elles sont vides : aucun chiffre n'est avancé pour ces critères.
+
 ## Brouillon eBay par un agent H (démo sur le Mac)
 Un agent H Company pilote **le Chrome de cet ordinateur**, où tu t'es connecté toi-même à eBay : ni mot de passe ni cookie ne quittent l'ordinateur. Il ouvre l'éditeur prérempli, dépose les photos (par un outil à nous, car ce mode n'a pas d'envoi de fichier), colle la description, règle le prix et **enregistre un brouillon**. Il ne publie jamais : tu cliques toi-même sur « Mettre en vente ». Réservé à la démo : il agit sur un seul compte eBay, la route est fermée sans clé de démo et absente du Space.
 
@@ -159,8 +163,9 @@ Ouvrir l'interface une fois avec `?cle=<DEMO_KEY>` pour lever la limite par adre
 | `Specs.md`, `CONTEXT.md`, `JOURNAL.md` | Ce qu'on construit, le cadre, les décisions datées |
 
 ## État au 19/11
-**En ligne et vérifié :** interface sur Vercel, serveur sur le Space, estimation réelle « iPhone 13 128 Go » (eBay 61 annonces, 4 boutiques sur 5 avec des prix, 89 s), écrans des agents relayés en direct (41 captures sur une recherche « Nintendo Switch »).
-**Pas encore testé en ligne :** identification par photo, annonce générée et studio photo depuis le site.
+**En ligne et vérifié le 19/11 au soir :** interface sur Vercel, serveur sur le Space. Recherche « Nintendo Switch » : 7 prix sur 3 boutiques et le bloc eBay, en 98 s. Identification par photo (3 photos d'un téléphone) : « Apple iPhone 13 », confiance 0,9. Annonce rédigée par IA dans les 4 formats. Photo studio détourée en 20 s. Écrans des agents relayés en direct, y compris dans l'espace revendeurs (`/pro`).
+**Testé en local seulement :** espace revendeurs de bout en bout (classement par marge, panier), brouillon eBay par agent sur le Mac de la démo.
+**Vidéo de démonstration :** lien ajouté ici dès sa mise en ligne.
 
 ### Au 18/11
 **Testé :** parcours complet sur ordinateur et sur téléphone, 3 photos guidées (réduites à 1600 px avant l'envoi), agents sur les 6 boutiques, studio photo, nouvelle interface (clair et sombre), espace revendeurs, arrêt des agents quand l'utilisateur quitte une recherche (en réel), limites d'usage, coefficient de rachat mesuré par catégorie sur 30 objets ([docs/calibrage-rachat.md](docs/calibrage-rachat.md)), **API eBay en réel** (annonces « Vendre seul », catégorie suggérée sur 15 produits), classement des offres par état (Gamecash n'est plus à 0 prix), lien « Publier sur eBay » qui ouvre l'éditeur avec titre, catégorie et état remplis (vérifié sur un compte connecté).
