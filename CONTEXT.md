@@ -21,7 +21,7 @@ Le jury attend avant tout une démo live sur un vrai cas, avec des résultats ch
 | Quand | Livrable | Statut |
 |---|---|---|
 | Lun. 16/11, 17h | Validation de l'idée (5 slides) | Déposé |
-| Mer. 18/11, 17h | Parcours utilisateur, architecture, Loom de 2 min, roadmap | À faire |
+| Mer. 18/11, 17h | Parcours utilisateur, architecture, Loom de 2 min, roadmap | Déposé |
 | Ven. 20/11, 11h | Prototype live, fiche projet et repo GitHub, vidéo de 5 min | À faire |
 | Ven. 20/11, 15h | Pitch deck de 8 à 12 slides (dont le coût de run) | À faire |
 | Chaque soir, 17h à 9h | Peer review | En cours |

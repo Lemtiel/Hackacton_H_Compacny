@@ -69,6 +69,10 @@ Téléphone ou ordinateur                Notre serveur                         S
 
 Boutiques consultées par les agents : Easy Cash, Gamecash, Cash Converters, Certideal, Swappie (iPhone et iPad seulement). Troc.com est en pause depuis le 19/11 : 0 prix sur 10 objets mesurés. Vinted et Leboncoin interdisent l'accès automatisé : un bouton ouvre leur recherche chez l'utilisateur.
 
+## Retours sur l'Agent API de H Company
+Ce que l'Agent API nous a permis de faire, ce qui nous a freinés (preuves et mesures à l'appui) et ce que nous demanderions à H : **[docs/retours-agent-api-h.md](docs/retours-agent-api-h.md)**.
+En bref : un agent pour cinq boutiques sans code propre à chacune, 33 sessions sur 33 abouties le 19/11 ; nos demandes portent sur la vidéo en direct, les offres partielles d'une session coupée et une grille de prix publique.
+
 ## Règles que le produit respecte
 - **Aucun agent sur un site qui l'interdit**, aucun contournement d'anti-robot (Fnac, qui bloque l'agent, est sorti de la liste).
 - **robots.txt respecté** : Easy Cash et Certideal par leurs catégories, Swappie sans filtres.
