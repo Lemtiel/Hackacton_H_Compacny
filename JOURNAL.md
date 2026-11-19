@@ -624,6 +624,10 @@ avec la table en secours (cotation manuelle sur les modèles récents). Faisabil
 relancée (seul un texte de « Comment ça marche » change). Limites : Easy Cash seulement, 3 objets en tablette
 et en informatique.
 
+### Jeudi 19/11 : repères visuels et panier revendeur
+
+Sans modifier le calcul revendeur, les marges positives sont affichées en vert et les pertes en rouge. Chaque offre peut être retenue dans un panier conservé uniquement dans le navigateur. Un raccourci avec compteur est ajouté dans « Mon grenier ». Aucun bouton flottant de retour aux filtres n'est conservé.
+
 ### Mercredi 18/11, fin d'après-midi : aide à la publication sur eBay (Kevin)
 Chantier commencé par Jude, rien de poussé : repris par Kevin, branche `publication-ebay`.
 
@@ -867,3 +871,10 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 ### Jeudi 19/11, 15h15 : pastille de la clé de démo (4e revue, point 2)
 - Réglages, section Démonstration : « Clé de démo » affiche Active, Absente ou Inactive, avec la raison (refusée après un changement de clé, trop d'essais depuis ce réseau, serveur injoignable). Réutilise le jeton déjà obtenu : pas d'essai consommé en plus.
 - Non corrigé (choix de Jude) : le point 1 de la 4e revue (les bons essais comptent dans la limite de 20 par heure, jeton perdu au rechargement).
+
+### Jeudi 19/11, 16h30 : accès revendeur et suivi des agents rendus visibles
+- **Accueil :** le lien discret vers l'espace revendeur devient une carte d'accès compacte, sans modifier le parcours d'estimation principal.
+- **Espace revendeur uniquement :** ajout d'un tableau « Agents en direct » qui affiche, pour chaque site, l'étape courante, les dernières actions, le temps écoulé et le résultat de la visite. Les captures des pages sources ne sont pas affichées.
+- **Périmètre préservé :** hors espace revendeur, seul le raccourci déjà demandé vers le panier revendeur dans le Grenier et cette nouvelle carte d'accueil sont modifiés. Aucun bouton flottant de retour aux filtres.
+- **Vérifications :** TypeScript et contrôle du diff OK. Changements préparés sur une branche dédiée pour revue avant fusion dans `main`.
+- **Panier :** les objets retenus ouvrent désormais directement l’annonce source dans un nouvel onglet. Une offre sans URL ne peut pas être retenue, afin que le panier ne contienne jamais de simple texte sans article accessible.

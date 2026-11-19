@@ -266,9 +266,16 @@ function HomeScreen({ onPhoto, onText }: { onPhoto: (f?: File) => void; onText: 
         <button className="btn btn-quiet" type="submit" disabled={text.trim().length < 2}>Continuer</button>
       </form>
 
-      <p className="pro-entry">
-        <Link href="/pro">Vous êtes revendeur ?</Link>
-      </p>
+      <Link href="/pro" className="pro-entry-card">
+        <span className="pro-entry-icon" aria-hidden>
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 7.5h16v11H4zM8 7.5V5.8A1.8 1.8 0 0 1 9.8 4h4.4A1.8 1.8 0 0 1 16 5.8v1.7M4 12h16M10 12v1.5h4V12" /></svg>
+        </span>
+        <span>
+          <strong>Vous êtes revendeur ?</strong>
+          <span className="small">Repérez les bonnes affaires et calculez votre marge.</span>
+        </span>
+        <span className="pro-entry-arrow" aria-hidden>→</span>
+      </Link>
 
       {summary && (
         <Link href="/grenier" className="grenier-teaser">
