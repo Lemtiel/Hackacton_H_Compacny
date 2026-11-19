@@ -192,7 +192,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
 
       {shop && verdict && (
         <>
-          <VerdictCard verdict={verdict} running={running} />
+          <VerdictCard verdict={verdict} running={running} shopPrices={shop.n_prices} />
           <PriceScale shop={shop} verdict={verdict} />
           {myPrice !== null && (
             <PriceSlider shop={shop} verdict={verdict} value={myPrice} onChange={(v) => { priceTouched.current = true; setMyPrice(v); }} />
@@ -318,8 +318,12 @@ export function SearchProgress({ rows, done, demo }: { rows: Row[]; done: boolea
   );
 }
 
-function VerdictCard({ verdict, running }: { verdict: Verdict; running: boolean }) {
+// En dessous de 3 prix boutique, le prix magasin repose sur trop peu d'offres (critère des Specs, ligne 101) : on le dit.
+const MIN_SHOP_PRICES = 3;
+
+function VerdictCard({ verdict, running, shopPrices }: { verdict: Verdict; running: boolean; shopPrices: number }) {
   const seul = verdict.recommend === "seul";
+  const fragile = shopPrices < MIN_SHOP_PRICES;
   return (
     <div className="verdict-card" aria-live="polite">
       <CoinRain />
@@ -339,11 +343,14 @@ function VerdictCard({ verdict, running }: { verdict: Verdict; running: boolean 
         <div className="verdict-option" data-chosen={!seul}>
           <span className="small">Offre de rachat typique</span>
           <span className="verdict-amount">≈ <CountUp value={verdict.buyback} /></span>
-          <span className="small">Un passage en boutique</span>
+          <span className="small">{fragile ? `Fragile : ${shopPrices} prix en boutique` : "Un passage en boutique"}</span>
         </div>
       </div>
       <p className="small" style={{ margin: "0.75rem 0 0" }}>
         {running ? "L'estimation s'affine encore." : "Prix indicatifs."}
+        {fragile && !running && (
+          <> Estimation magasin fragile : {shopPrices} seul{shopPrices > 1 ? "s" : ""} prix relevé{shopPrices > 1 ? "s" : ""} en boutique (objet peu en stock). Comparez avant de décider.</>
+        )}
       </p>
     </div>
   );

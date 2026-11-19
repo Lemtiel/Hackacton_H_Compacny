@@ -42,13 +42,13 @@ ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env")
 
 MAX_UPLOAD = 8 * 1024 * 1024
-# Le compte H autorise jusqu'à 10 sessions simultanées. La variable permet de réduire
-# volontairement la consommation, mais jamais de dépasser cette limite contractuelle.
+# Notre organisation H autorise 10 sessions simultanées (relevé par H Company le 19/11). La variable permet de réduire
+# volontairement la consommation, mais jamais de dépasser cette limite.
 MAX_PARALLEL = max(1, min(int(os.getenv("HAI_MAX_PARALLEL", "10")), 10))
 _slots = threading.Semaphore(MAX_PARALLEL)
 
-# Mode démo (pitch, vidéo) : captures d'écran des agents. Coupé par défaut (règle 9 : pas de capture des sites
-# montrée aux utilisateurs). S'active avec DEMO_SHOTS=1 côté serveur ET ?demo=1 dans l'adresse de l'interface.
+# Mode démo : captures d'écran des agents, montrées en direct (règle 9, décision du 19/11). S'active avec DEMO_SHOTS=1
+# côté serveur ; l'interface l'affiche par défaut, l'interrupteur de Réglages le coupe.
 DEMO_SHOTS = os.getenv("DEMO_SHOTS", "") == "1"
 SHOT_TTL_S = 600
 # Jeton aléatoire -> (adresse H de la capture, heure d'expiration). En mémoire seulement, aucune image sur disque.
@@ -62,6 +62,10 @@ SEARCH_PER_HOUR = int(os.getenv("SEARCH_PER_HOUR") or "20")  # recherches par ad
 STUDIO_PER_HOUR = int(os.getenv("STUDIO_PER_HOUR") or "40")  # photos studio par adresse IP et par heure
 MAX_SEARCHES = int(os.getenv("MAX_SEARCHES") or "4")  # recherches en cours en même temps, toutes adresses confondues
 STUDIO_ENABLED = (os.getenv("STUDIO_ENABLED") or "1") == "1"
+# Routes facturées (routeur Hugging Face) ou soumises au quota quotidien d'eBay : plafond par IP aussi (revue du 19/11).
+IDENTIFY_PER_HOUR = int(os.getenv("IDENTIFY_PER_HOUR") or "60")  # identifications par IP et par heure
+LISTING_PER_HOUR = int(os.getenv("LISTING_PER_HOUR") or "60")  # rédactions d'annonce par IP et par heure
+EBAY_PER_HOUR = int(os.getenv("EBAY_PER_HOUR") or "120")  # appels eBay (prix + catégorie) par IP et par heure
 # Brouillon eBay par un agent H dans le Chrome local de l'utilisateur : démo sur son ordinateur seulement, jamais sur le Space
 # (le serveur ne peut pas piloter un Chrome distant). Réservé à la clé de démo : il agit sur UN compte eBay.
 EBAY_DRAFT_LOCAL = (os.getenv("EBAY_DRAFT_LOCAL") or "0") == "1"
@@ -104,6 +108,14 @@ def _allow(kind: str, ip: str, per_hour: int) -> bool:
             return False
         q.append(now)
         return True
+
+
+def _limit(request: Request, kind: str, per_hour: int) -> None:
+    """Refus 429 au-delà du plafond horaire par IP. La clé de démo (en-tête X-Demo-Key) lève la limite."""
+    if _demo_key_ok(request.headers.get("x-demo-key", "")):
+        return
+    if not _allow(kind, _client_ip(request), per_hour):
+        raise HTTPException(429, "Vous avez fait beaucoup de demandes en peu de temps. Réessayez dans un moment.")
 
 
 def _register_shot(url: str) -> str:
@@ -162,11 +174,12 @@ def config():
 
 
 @app.post("/api/identify")
-async def identify(files: list[UploadFile] = File(None), file: UploadFile = File(None)):
+async def identify(request: Request, files: list[UploadFile] = File(None), file: UploadFile = File(None)):
     # Jusqu'à 3 photos du même objet (« files ») ; « file » seul reste accepté par la page de test.
     uploads = [u for u in (files or []) if u] + ([file] if file else [])
     if not uploads:
         raise HTTPException(422, "Aucune photo reçue.")
+    _limit(request, "identify", IDENTIFY_PER_HOUR)
     if len(uploads) > photo.MAX_PHOTOS:
         raise HTTPException(422, f"{photo.MAX_PHOTOS} photos au maximum.")
     datas = []
@@ -309,9 +322,10 @@ async def make_studio(request: Request, file: UploadFile = File(...)):
 
 
 @app.post("/api/listing")
-async def make_listing(req: listing.ListingRequest):
+async def make_listing(req: listing.ListingRequest, request: Request):
     if req.condition not in listing.CONDITIONS:
         raise HTTPException(422, "État inconnu.")
+    _limit(request, "listing", LISTING_PER_HOUR)
     try:
         return await asyncio.to_thread(listing.generate, req)
     except listing.ListingError as e:
@@ -322,12 +336,14 @@ async def make_listing(req: listing.ListingRequest):
 
 @app.get("/api/ebay")
 async def ebay_prices(
+    request: Request,
     product: str = Query(..., min_length=2, max_length=120),
     category: str = Query("smartphone"),
 ):
     # Bloc séparé des boutiques (licence eBay) : ses prix ne passent ni dans shop_block ni dans un modèle de texte.
     if category not in CATEGORIES:
         raise HTTPException(422, "Catégorie inconnue.")
+    _limit(request, "ebay", EBAY_PER_HOUR)
     try:
         return await ebay.search(product, category)
     except ebay.EbayNotConfigured:
@@ -338,6 +354,7 @@ async def ebay_prices(
 
 @app.get("/api/ebay/category")
 async def ebay_category(
+    request: Request,
     product: str = Query(..., min_length=2, max_length=120),
     category: str | None = Query(None),
 ):
@@ -345,6 +362,7 @@ async def ebay_category(
     # L'utilisateur publie lui-même.
     if category is not None and category not in CATEGORIES:
         raise HTTPException(422, "Catégorie inconnue.")
+    _limit(request, "ebay", EBAY_PER_HOUR)
     try:
         return await ebay.suggest_category(product, category)
     except ebay.EbayNotConfigured:

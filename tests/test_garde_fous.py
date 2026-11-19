@@ -123,6 +123,30 @@ check("avec la clé, la limite par IP ne bloque plus (seul le plafond global ré
 main._running = 0
 del os.environ["DEMO_KEY"]
 
+# Routes facturées ou à quota (identification, annonce, eBay) : plafond par IP, levé par la clé de démo (revue du 19/11).
+from fastapi import HTTPException as _HE  # noqa: E402
+
+
+def _limited(kind, per_hour, headers=None):
+    req = FakeRequest(xff="198.51.100.77")
+    if headers:
+        req.headers = {**req.headers, **headers}
+    try:
+        main._limit(req, kind, per_hour)
+        return None
+    except _HE as e:
+        return e.status_code
+
+
+main._hits.pop(("ebay", "198.51.100.77"), None)
+check("eBay : appels sous le plafond acceptés", all(_limited("ebay", 3) is None for _ in range(3)))
+check("eBay : au-delà du plafond, refus 429", _limited("ebay", 3) == 429)
+os.environ["DEMO_KEY"] = "cle-demo-test"
+check("eBay : la clé de démo (en-tête X-Demo-Key) lève le plafond", _limited("ebay", 3, {"x-demo-key": "cle-demo-test"}) is None)
+del os.environ["DEMO_KEY"]
+check("identification, annonce, eBay : un plafond par route", {main.IDENTIFY_PER_HOUR, main.LISTING_PER_HOUR, main.EBAY_PER_HOUR} and all(
+    "_limit(request" in __import__("inspect").getsource(f) for f in (main.identify, main.make_listing, main.ebay_prices, main.ebay_category)))
+
 # 3. Coefficient de rachat mesuré : 0,59 par défaut, puis par catégorie (docs/calibrage-rachat.md).
 b = pricing.shop_block([150, 166, 180])
 check("rachat = médiane × 0,59 (166 € → 97,94 €)", pricing.BUYBACK_COEF == 0.59 and b["buyback_estimate"] == 97.94)

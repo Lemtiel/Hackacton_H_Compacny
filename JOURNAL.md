@@ -838,3 +838,9 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - Durée médiane d'une estimation : 91 s (toutes entre 82 et 100 s), contre 196 s à 3 agents. Objectif des Specs (< 120 s) tenu.
 - eBay 10/10, prix boutiques ≥ 1 pour 10/10, ≥ 3 pour 6/10. Sessions abouties 33/33, sessions avec au moins 1 prix 21/33. Critère strict des Specs (≥ 3 prix par boutique) : 10/33.
 - Jetons : 506 000 par estimation en moyenne (784 000 le matin).
+
+### Jeudi 19/11, 12h30 : corrections des points majeurs de la revue hostile
+- Estimation fragile : sous 3 prix boutique, le verdict affiche « Fragile : N prix en boutique » et « Estimation magasin fragile… comparez avant de décider » (`SearchScreen.tsx`, `VerdictCard`).
+- File d'attente : `MAX_SEARCHES=2` sur le Space (2 estimations × 5 boutiques = 10 agents). Au-delà, refus immédiat « agents tous occupés », plus d'attente de plusieurs minutes.
+- Routes facturées ou à quota : plafond par IP sur `/api/identify` (60/h), `/api/listing` (60/h), `/api/ebay` et `/api/ebay/category` (120/h), levé par l'en-tête `X-Demo-Key` que l'interface envoie quand la clé est présente. Garde-fous 31/31 (4 nouveaux).
+- Commentaires du serveur corrigés (10 sessions H, mode démo actif par défaut).

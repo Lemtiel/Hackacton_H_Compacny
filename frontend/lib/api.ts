@@ -88,7 +88,7 @@ export async function identifyPhotos(files: File[]): Promise<Identification> {
   const body = new FormData();
   const small = await Promise.all(files.slice(0, 3).map((f) => downscale(f)));
   small.forEach((b, i) => body.append("files", b, `photo-${i + 1}.jpg`));
-  const res = await fetch(`${API_URL}/api/identify`, { method: "POST", body });
+  const res = await fetch(`${API_URL}/api/identify`, { method: "POST", body, headers: demoHeaders() });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.detail || "L'identification a échoué. Tapez le nom de l'objet.");
   return data as Identification;
@@ -125,6 +125,12 @@ export const shotUrl = (token: string) => `${API_URL}/api/shot/${encodeURICompon
 
 // Clé de démo : ouverte une fois avec ?cle=… dans l'adresse, gardée dans ce navigateur. Elle lève la limite par
 // adresse IP côté serveur (DEMO_KEY), pour que la démo ne soit pas bloquée par les autres personnes du même Wi-Fi.
+// En-tête de la clé de démo pour les routes limitées par IP (identification, annonce, eBay) : vide sans clé.
+export function demoHeaders(): Record<string, string> {
+  const key = demoKey();
+  return key ? { "X-Demo-Key": key } : {};
+}
+
 export function demoKey(): string {
   // Une clé copiée depuis une phrase traîne souvent une virgule ou un point à la fin (« …?cle=abc, ») : on les retire,
   // y compris sur la clé déjà gardée dans le navigateur.
@@ -198,7 +204,7 @@ export type ListingRequest = {
 export async function generateListing(req: ListingRequest): Promise<import("./listing").ListingFormat[]> {
   const res = await fetch(`${API_URL}/api/listing`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...demoHeaders() },
     body: JSON.stringify(req),
   });
   const data = await res.json().catch(() => ({}));
@@ -231,7 +237,7 @@ export type EbayResult = {
 export async function fetchEbay(product: string, category: string, signal?: AbortSignal): Promise<EbayResult> {
   const url = `${API_URL}/api/ebay?product=${encodeURIComponent(product)}&category=${encodeURIComponent(category)}`;
   try {
-    const res = await fetch(url, { signal });
+    const res = await fetch(url, { signal, headers: demoHeaders() });
     if (!res.ok) return { state: "indisponible", block: null, items: [] };
     return (await res.json()) as EbayResult;
   } catch {
@@ -249,7 +255,7 @@ export type EbayCategoryResult = {
 
 export async function fetchEbayCategory(product: string, category: string): Promise<EbayCategoryResult> {
   try {
-    const res = await fetch(`${API_URL}/api/ebay/category?product=${encodeURIComponent(product)}&category=${encodeURIComponent(category)}`);
+    const res = await fetch(`${API_URL}/api/ebay/category?product=${encodeURIComponent(product)}&category=${encodeURIComponent(category)}`, { headers: demoHeaders() });
     if (!res.ok) return { state: "indisponible", categories: [] };
     return (await res.json()) as EbayCategoryResult;
   } catch {
