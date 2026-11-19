@@ -37,5 +37,14 @@ Nos agents relèvent des prix d'occasion sur cinq boutiques françaises sans API
 7. **Le respect strict du schéma de réponse** : jamais d'objets sérialisés en texte dans un champ de liste.
 8. **La durée de conservation des captures** chez H affichée dans la console. Le SDK propose `delete_screenshot_after_min`, mais la valeur par défaut n'est pas documentée.
 
-## Les chiffres (mesure sur 10 objets, #8)
-*À compléter avec la mesure du 19/11 : taux de réussite par boutique, durée médiane d'une estimation, jetons par session, pic de sessions simultanées, cas d'échec.*
+## Les chiffres (mesure sur 10 objets, #8, 19/11)
+| | Matin (3 agents) | Après (10 agents, pages de départ) |
+|---|---|---|
+| Sessions | 44 | 33 (Troc.com en pause, Swappie limité à Apple) |
+| Sessions abouties (prix ou absence de stock vérifiée) | 44/44 | 33/33 |
+| Sessions avec au moins 1 prix | 20/44 | 21/33 |
+| Durée médiane d'une estimation | 196 s | **91 s** |
+| Jetons par estimation (moyenne) | 784 000 | 506 000 |
+| Pic de sessions simultanées | 3 | 8 |
+
+Par boutique (après) : Easy Cash 6/10 sessions à au moins 3 prix, Certideal 2/5, Gamecash 1/5, Cash Converters 1/10, Swappie 0/3. Cause principale des sessions sans prix, lue dans les notes des agents : l'objet n'est pas en stock (PS5, Xbox Series S, jeux récents, iPad 9).
