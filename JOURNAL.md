@@ -806,7 +806,7 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - Corrigé : une seule boucle partagée pour eBay avec un délai de 60 s, écriture de chaque objet dès qu'il est fini (`mesures/mesure_partielle_<date>.jsonl`). Test qui reproduit le blocage : échoue sur l'ancien code (9/11), passe sur le nouveau (11/11).
 - Tri par modèle (validé par Jude) : « 9e génération », « 9th gen » valent « 9 » ; une année glissée (« iPad 2021 9e gen ») ne compte plus ; « The Legend of Zelda » vaut « Zelda ». 9 cas ajoutés, tri 101/101. Pas encore déployé sur le Space.
 
-### Jeudi 19/11, 10h15 : clé H de Jude, offre gratuite gardée
+### Jeudi 19/11, 10h15 : clé H de Jude, offre gratuite à 3 agents
 - La clé H du `.env` appartenait à un autre compte (29,4 M jetons utilisés sur 60 M). Jude a mis la sienne dans `.env` et dans les secrets du Space : 60 M jetons, 50 $ de crédits en réserve, offre Free (3 sessions simultanées). Vérifié par `quota.get_token_quota`, sans afficher la clé.
 - Panne de H vers 9h55 (« Nos services sont actuellement indisponibles ») : sessions jamais démarrées, mesure arrêtée. Rétabli vers 10h10 (Gamecash, Switch : 3 offres en 81 s).
-- Décision de Jude : pas d'offre Builder (10 sessions, 20 $ par mois). Le Space reste à `HAI_MAX_PARALLEL=3` ; une estimation prend 2 à 4 min. Au pitch : « 10 agents en changeant d'offre, sans recoder ».
+- Offre Builder (10 sessions, 20 $ par mois) discutée : contrainte de budget, l'équipe reste sur l'offre gratuite à 3 agents. Le Space reste à `HAI_MAX_PARALLEL=3` ; une estimation prend 2 à 4 min. Au pitch : « 10 agents en changeant d'offre, sans recoder ».
