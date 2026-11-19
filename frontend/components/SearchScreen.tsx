@@ -180,7 +180,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
       <p className="muted" style={{ margin: "0.5rem 0 0" }}>{CATEGORY_LABELS[category]}, {condition.toLowerCase()}</p>
       <h1 className="display search-title">{product}</h1>
 
-      {failed && <p className="notice error">{refused ?? "L'estimation n'a pas pu aboutir. Vérifiez votre connexion, puis réessayez."}</p>}
+      {failed && <p className="notice error">{refused ?? "L'estimation n'a pas pu aboutir. Le serveur était peut-être en train de démarrer : réessayez dans quelques secondes."}</p>}
 
       <SearchProgress rows={rows} done={done} demo={demo} />
 
@@ -328,10 +328,10 @@ function VerdictCard({ verdict, running, shopPrices }: { verdict: Verdict; runni
     <div className="verdict-card" aria-live="polite">
       <CoinRain />
       <p className="muted" style={{ margin: 0 }}>Où vendre ?</p>
-      <h2 className="verdict-title">{seul ? "Vendez-le vous-même." : "Passez en magasin."}</h2>
+      <h2 className="verdict-title">{seul ? (fragile ? "Plutôt : vendez-le vous-même." : "Vendez-le vous-même.") : (fragile ? "Plutôt : passez en magasin." : "Passez en magasin.")}</h2>
       <p style={{ margin: "0.25rem 0 0" }}>
         {seul
-          ? <>Vous gagnez environ <strong><CountUp value={verdict.gain} /></strong> de plus qu&apos;en magasin, en échange d&apos;une annonce à publier et d&apos;un envoi.</>
+          ? <>Vous gagnez environ <strong><CountUp value={verdict.gain} /></strong> de plus qu&apos;en magasin{fragile ? " (à confirmer)" : ""}, en échange d&apos;une annonce à publier et d&apos;un envoi.</>
           : <>Vendre seul ne rapporterait qu&apos;environ <strong className="num">{euros(Math.max(verdict.gain, 0))}</strong> de plus. En magasin, vous êtes payé tout de suite.</>}
       </p>
       <div className="verdict-options">
@@ -717,7 +717,7 @@ function EbayPanel({ result }: { result: EbayResult | null }) {
       {result && result.items.length > 0 && (
         <details className="site-detail">
           <summary>
-            <span>Annonces eBay, même modèle</span>
+            <span>Prix affichés sur eBay (avant négociation)</span>
             <span className="num muted">{priceRange(result.items.map((o) => o.price_eur))}</span>
           </summary>
           {result.items.map((o, i) => (

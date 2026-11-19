@@ -83,7 +83,7 @@ def mask_remote(img: Image.Image) -> Image.Image:
 
     token = os.getenv("HF_TOKEN")
     if not token:
-        raise StudioError("Studio indisponible : HF_TOKEN manque.")
+        raise StudioError("La photo studio est momentanément indisponible. Vos photos d'origine restent utilisables.")
     buf = io.BytesIO()
     img.convert("RGB").save(buf, "JPEG", quality=90)  # réencodage : aucune métadonnée (GPS, appareil) ne part
     client = InferenceClient(provider=PROVIDER, api_key=token, timeout=PROVIDER_TIMEOUT_S)

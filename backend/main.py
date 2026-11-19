@@ -469,7 +469,7 @@ async def search(
     shots = demo and DEMO_SHOTS
     hint = photo.clean_hint(hint)  # description générique (« manette PS5 ») pour élargir la recherche de l'agent
     if not os.getenv("HAI_API_KEY"):
-        raise HTTPException(503, "HAI_API_KEY manque dans .env.")
+        raise HTTPException(503, "Nos agents sont momentanément indisponibles. Réessayez dans quelques minutes.")
 
     # Refus envoyé comme un événement du flux : EventSource ne lit pas le code HTTP, l'interface affiche le message.
     def refuse(message: str):

@@ -131,6 +131,12 @@ export function demoHeaders(): Record<string, string> {
   return key ? { "X-Demo-Key": key } : {};
 }
 
+// Le serveur (Space Hugging Face) s'endort sans visite : on le réveille dès l'ouverture de l'app, pour que la première
+// estimation ne tombe pas sur un démarrage à froid. Sans attendre la réponse, sans erreur affichée.
+export function wakeServer(): void {
+  fetch(`${API_URL}/api/health`, { cache: "no-store" }).catch(() => undefined);
+}
+
 export function demoKey(): string {
   // Une clé copiée depuis une phrase traîne souvent une virgule ou un point à la fin (« …?cle=abc, ») : on les retire,
   // y compris sur la clé déjà gardée dans le navigateur.

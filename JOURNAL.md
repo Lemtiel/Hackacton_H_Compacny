@@ -850,3 +850,10 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - Alerte « estimation fragile » calculée sur les prix gardés après retrait des valeurs aberrantes (`n_kept`), plus sur tous les prix.
 - Clé de démo : `/api/search` (EventSource, sans en-tête possible) reçoit un jeton temporaire de 1 h, obtenu par `POST /api/demo/token` avec la clé en en-tête. La vraie clé ne passe plus dans aucune adresse.
 - Tests des plafonds réécrits : ils appellent les 4 routes avec le plafond atteint et vérifient le 429 (au lieu de chercher du texte dans le code). Garde-fous 38/38.
+
+### Jeudi 19/11, 14h : audit UX et 4 corrections
+- Audit sur le site en ligne (estimation réelle « Sony PlayStation 5 », environ 80 s, ordinateur) : accueil, attente avec écrans des agents, verdict, annonce lisibles. Téléphone non vérifié (redimensionnement non appliqué).
+- Serveur endormi après 1 h sans visite : mise en veille portée à 48 h jusqu'à vendredi soir, et l'accueil réveille le serveur dès l'ouverture. Message d'échec : « le serveur était peut-être en train de démarrer : réessayez dans quelques secondes ».
+- Messages de développeur (« HF_TOKEN manque dans .env », « HAI_API_KEY manque dans .env ») remplacés par des phrases pour l'utilisateur (identification, annonce, studio, agents).
+- Verdict fragile (moins de 3 prix boutique) : « Plutôt : vendez-le vous-même. », gain « à confirmer ».
+- Bloc eBay : « Prix affichés sur eBay (avant négociation) », pour le distinguer du prix conseillé « vendre seul ».
