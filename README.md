@@ -8,6 +8,8 @@
 
 <p align="center"><strong>Essayer : <a href="https://snapncash.vercel.app">snapncash.vercel.app</a></strong></p>
 
+<p align="center"><strong>Vidéo de démonstration (5 min) : <a href="https://www.loom.com/share/4b8604d3a9c24aed80c212bbae01643f">loom.com</a></strong></p>
+
 ---
 
 ## Tester le prototype
@@ -175,7 +177,7 @@ Ouvrir l'interface une fois avec `?cle=<DEMO_KEY>` pour lever la limite par adre
 ## État au 19/11
 **En ligne et vérifié le 19/11 au soir :** interface sur Vercel, serveur sur le Space. Recherche « Nintendo Switch » : 7 prix sur 3 boutiques et le bloc eBay, en 98 s. Identification par photo (3 photos d'un téléphone) : « Apple iPhone 13 », confiance 0,9. Annonce rédigée par IA dans les 4 formats. Photo studio détourée en 20 s. Écrans des agents relayés en direct, y compris dans l'espace revendeurs (`/pro`).
 **Testé en local seulement :** espace revendeurs de bout en bout (classement par marge, panier), brouillon eBay par agent sur le Mac de la démo.
-**Vidéo de démonstration :** lien ajouté ici dès sa mise en ligne.
+**Vidéo de démonstration (5 min) :** [https://www.loom.com/share/4b8604d3a9c24aed80c212bbae01643f](https://www.loom.com/share/4b8604d3a9c24aed80c212bbae01643f), enregistrée en local en mode démo : agents au travail, verdict, annonce, brouillon eBay par un agent, espace revendeurs.
 
 ### Historique : au 18/11
 **Testé :** parcours complet sur ordinateur et sur téléphone, 3 photos guidées (réduites à 1600 px avant l'envoi), agents sur les 6 boutiques, studio photo, nouvelle interface (clair et sombre), espace revendeurs, arrêt des agents quand l'utilisateur quitte une recherche (en réel), limites d'usage, coefficient de rachat mesuré par catégorie sur 30 objets ([docs/calibrage-rachat.md](docs/calibrage-rachat.md)), **API eBay en réel** (annonces « Vendre seul », catégorie suggérée sur 15 produits), classement des offres par état (Gamecash n'est plus à 0 prix), lien « Publier sur eBay » qui ouvre l'éditeur avec titre, catégorie et état remplis (vérifié sur un compte connecté).
