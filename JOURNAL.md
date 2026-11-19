@@ -885,3 +885,10 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - Mon grenier : le raccourci « Panier revendeur » n'apparaît que si le panier contient au moins un objet.
 - Ligne du 16h30 corrigée : les captures restent visibles en mode démo sur `/pro`.
 - Question ouverte, non tranchée : la marge revendeur se calcule sur le prix médian des boutiques, probablement optimiste pour un revendeur particulier. À trancher par Jude.
+
+### Jeudi 19/11, 19h : clé de démo changée, risques acceptés, contact de prototype
+- `DEMO_KEY` remplacée par Jude (Space et `.env`), vérifiée des deux côtés. L'ancienne clé ne marche plus.
+- Risques acceptés par Jude, condition du garde-fou de conformité levée : brouillon eBay par agent (sur le Mac de la démo seulement) et captures des agents publiques en mode démo.
+- Mentions légales : `team13@snapncash.example`, présentée comme adresse fictive de prototype. Le domaine `.example` est réservé, aucun tiers ne reçoit les messages. À remplacer avant tout lancement.
+- `/pro` : l'écran de chaque agent s'affiche dans sa carte « Agents en direct » en mode démo.
+- `.env` local : `DEMO_SHOTS=1` et `EBAY_DRAFT_LOCAL=1` pour la démo sur le Mac.
