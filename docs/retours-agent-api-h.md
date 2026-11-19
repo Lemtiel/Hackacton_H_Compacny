@@ -3,10 +3,10 @@
 *Team 13, Snap N Cash. Rédigé le 19/11/2026 à partir de nos essais du 16 au 19/11. Chaque constat renvoie à une mesure du dépôt : `mesures/agent_runs.csv`, `mesures/mesure_*.csv` et [JOURNAL.md](../JOURNAL.md).*
 
 ## Notre usage
-Nos agents relèvent des prix d'occasion sur six boutiques françaises sans API : Easy Cash, Gamecash, Troc.com, Cash Converters, Certideal et Swappie. Chaque estimation ouvre une session `h/web-surfer-flash` par boutique, toutes en parallèle, avec une réponse structurée (titre, prix, état, lien) et un délai de 90 s. Un second agent, en démo sur notre Mac, prépare un brouillon d'annonce eBay dans le Chrome du vendeur (mode `user_device`).
+Nos agents relèvent des prix d'occasion sur cinq boutiques françaises sans API : Easy Cash, Gamecash, Cash Converters, Certideal et Swappie (Troc.com mis en pause le 19/11 : 0 prix sur 10 objets). Chaque estimation ouvre une session `h/web-surfer-flash` par boutique, toutes en parallèle, avec une réponse structurée (titre, prix, état, lien) et un délai de 90 s. Un second agent, en démo sur notre Mac, prépare un brouillon d'annonce eBay dans le Chrome du vendeur (mode `user_device`).
 
 ## Ce qui marche bien
-- **Un agent pour six sites.** Aucune ligne de code n'est propre à une boutique. Nous avons ajouté Certideal et Swappie le 17/11 par une simple entrée de configuration, et ils ont marché au premier essai.
+- **Un agent pour cinq sites.** Aucune ligne de code n'est propre à une boutique. Nous avons ajouté Certideal et Swappie le 17/11 par une simple entrée de configuration, et ils ont marché au premier essai.
 - **Le passage des protections ordinaires.** Cash Converters et Swappie sont derrière Cloudflare : l'agent est passé sans captcha. Fnac l'a bloqué en 15,7 s (« You have been blocked ») : nous l'avons retiré de la liste, sans chercher à contourner.
 - **La réponse structurée.** Le schéma Pydantic (`Offers`) nous rend des offres directement exploitables. Nos contrôles (modèle, état, lien) écartent le reste.
 - **Le parallélisme.** Le 19/11 en ligne, cinq sessions ont tourné ensemble et ont rendu leurs prix en 82 à 89 s. Le test à 10 sessions simultanées figure plus bas.

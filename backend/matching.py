@@ -28,6 +28,8 @@ BRANDS = {
 VARIANTS = {
     "lite", "oled", "pro", "max", "plus", "mini", "ultra", "slim", "fe", "se", "xl", "air",
     "note", "digital", "digitale", "fold", "flip", "neo", "edge",
+    # « PS5 Portal » : lecteur à distance, pas la console (mesure du 19/11)
+    "portal",
     # Éditions limitées et collector : autre référence, vendue plus cher (test DualSense du 17/11)
     "limitee", "limited", "collector", "collectors",
 }

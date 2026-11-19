@@ -20,7 +20,7 @@ Team 13 · snapncash.vercel.app
 > Note orale : « Tout le monde a un vieux téléphone dans un tiroir. Personne ne sait combien il vaut, ni où le vendre. »
 
 ## 3. La solution
-Une photo. Des agents H Company visitent en direct six boutiques d'occasion qui n'ont pas d'API. En moins de deux minutes, l'app répond :
+Une photo. Des agents H Company visitent en direct cinq boutiques d'occasion qui n'ont pas d'API. En moins de deux minutes, l'app répond :
 - **où vendre** : soi-même (prix eBay) ou en magasin (prix des boutiques), avec le gain en euros ;
 - **à quel prix** : fourchette et prix conseillé ;
 - **l'annonce prête** : titre, description, caractéristiques, photos studio.
@@ -65,7 +65,7 @@ Interface Next.js (Vercel) ──▶ Serveur FastAPI (Space Hugging Face)
                                    ├─▶ eBay API Browse (bloc séparé)
                                    └─▶ Bria RMBG-2.0 (photos studio)
 ```
-- **Un agent pour six sites** : aucune ligne de code propre à une boutique. Certideal et Swappie se sont ajoutés par une ligne de configuration.
+- **Un agent pour cinq sites** : aucune ligne de code propre à une boutique. Certideal et Swappie se sont ajoutés par une ligne de configuration.
 - **Résultats envoyés site par site**, écrans des agents relayés en direct.
 - **Passage à l'échelle sans recoder** : 3 agents simultanés sur l'offre gratuite de H, 10 avec l'offre Builder (20 $ par mois), 100 avec Startup.
 - **Mesuré sur 10 objets** : [MESURE] sessions réussies, [MESURE] s de durée médiane, pic de [MESURE] agents simultanés.

@@ -63,7 +63,8 @@ objs = [{"objet": n, "categorie": "smartphone", "etat": "Bon état"} for n in ("
 threads = [threading.Thread(target=m.measure, args=(None, o, slots, conc)) for o in objs]
 [t.start() for t in threads]
 [t.join() for t in threads]
-check("2 smartphones en parallèle : pic de 10 sessions H", conc.peak == 10)
+expected = sum(len(m.sites_for(o["categorie"], o["objet"])) for o in objs)
+check(f"2 smartphones en parallèle : toutes leurs sessions ensemble ({expected})", conc.peak == expected)
 check("toutes les sessions terminées : compteur revenu à 0", conc.now == 0)
 
 conc = m.Concurrency()

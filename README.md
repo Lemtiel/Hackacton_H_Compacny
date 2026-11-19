@@ -25,7 +25,7 @@ Serveur : https://judebkn95-snapncash.hf.space/api/health répond `ok`.
 86 % des Français gardent des objets inutilisés, 320 € par foyer en moyenne, mais 17 % seulement les ont déjà revendus. Ils citent le manque de temps (29 %), des démarches jugées complexes (20 %) et la peur de se tromper de prix (16 %) (OpinionWay pour Leboncoin, septembre 2025). Pour le high-tech, 46 millions de téléphones dorment dans les tiroirs (Harris Interactive et Crédoc pour Ecologic, 2023).
 
 ## La solution
-L'utilisateur photographie son objet high-tech ou son jeu vidéo. Un modèle Hugging Face le reconnaît. **Des agents H Company visitent en direct six boutiques d'occasion françaises** qui n'ont pas d'API, et relèvent les prix. L'app répond en moins de deux minutes :
+L'utilisateur photographie son objet high-tech ou son jeu vidéo. Un modèle Hugging Face le reconnaît. **Des agents H Company visitent en direct cinq boutiques d'occasion françaises** qui n'ont pas d'API, et relèvent les prix. L'app répond en moins de deux minutes :
 - **où vendre** : vendre soi-même ou en magasin, avec le gain en euros ;
 - **à quel prix** : fourchette, prix conseillé, curseur « vente rapide, prix juste, ambitieux » ;
 - **l'annonce prête** aux formats Vinted, Leboncoin, eBay et texte libre, plus des **photos studio** (objet détouré sur fond clair, objet non modifié).
@@ -50,7 +50,7 @@ Téléphone ou ordinateur                Notre serveur                         S
 │ Next.js 15 (Vercel)  │ ────────▶ │ FastAPI (Space HF)        │──▶│ Hugging Face : gemma-4-31B-it     │
 │ Mon grenier dans le  │ ◀──────── │ /api/identify  /api/search│   │  (identification, annonce)        │
 │ navigateur           │  site par │ /api/ebay  /api/listing   │──▶│ H Company Agent API               │
-└──────────────────────┘   site    │ /api/studio  /api/shot    │   │  h/web-surfer-flash, 6 boutiques  │
+└──────────────────────┘   site    │ /api/studio  /api/shot    │   │  h/web-surfer-flash, 5 boutiques  │
                                    │ Tri par modèle, médianes, │──▶│ eBay API Browse (bloc séparé)     │
                                    │ contrôle des visages      │──▶│ Bria RMBG-2.0 via fal.ai (studio) │
                                    └──────────────────────────┘   └──────────────────────────────────┘
@@ -67,7 +67,7 @@ Téléphone ou ordinateur                Notre serveur                         S
 | Studio photo | `briaai/RMBG-2.0` via fal.ai ; secours `ZhengPeng7/BiRefNet_lite` en local | 1 à 2 s |
 | Prix entre particuliers | eBay API Browse, dans un bloc séparé | 1 à 2 s, 61 annonces pour un iPhone 13 |
 
-Boutiques consultées par les agents : Easy Cash, Gamecash, Troc.com, Cash Converters, Certideal, Swappie. Vinted et Leboncoin interdisent l'accès automatisé : un bouton ouvre leur recherche chez l'utilisateur.
+Boutiques consultées par les agents : Easy Cash, Gamecash, Cash Converters, Certideal, Swappie (iPhone et iPad seulement). Troc.com est en pause depuis le 19/11 : 0 prix sur 10 objets mesurés. Vinted et Leboncoin interdisent l'accès automatisé : un bouton ouvre leur recherche chez l'utilisateur.
 
 ## Règles que le produit respecte
 - **Aucun agent sur un site qui l'interdit**, aucun contournement d'anti-robot (Fnac, qui bloque l'agent, est sorti de la liste).

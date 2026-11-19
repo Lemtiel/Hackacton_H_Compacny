@@ -73,14 +73,6 @@ SITES = {
         "sells": ["console", "jeu_video"],  # pas de téléphones (test du 16/11)
         "start_urls": {"default": "https://www.gamecash.fr/"},
     },
-    "troc": {
-        "name": "Troc.com",
-        "search_allowed": True,
-        # robots.txt n'interdit que /ajax/ ; formulaire du site : /fr/resultats-recherche?search-text=…
-        "search_url": "https://www.troc.com/fr/resultats-recherche?search-text={q}",
-        "sells": ["smartphone", "console", "jeu_video", "tablette", "informatique"],
-        "start_urls": {"default": "https://www.troc.com/fr"},
-    },
     "cashconverters": {
         "name": "Cash Converters",
         "search_allowed": True,
@@ -132,7 +124,22 @@ SITES = {
         # CGU : aucune clause contre l'accès automatisé. Derrière Cloudflare : sort de la liste si l'agent est bloqué.
         "search_allowed": False,
         "sells": ["smartphone", "tablette"],
+        # Swappie ne vend que des iPhone et des iPad (constaté par l'agent le 19/11 sur un Galaxy S21).
+        "only_if_words": ["iphone", "ipad"],
         "start_urls": {"default": "https://swappie.com/fr/"},
+    },
+}
+
+# En pause depuis le 19/11 : 0 prix sur 10 objets (sa recherche répond « aucun produit » à chaque essai), alors que
+# l'offre H gratuite ne laisse que 3 agents à la fois. Remettre l'entrée dans SITES pour le réactiver.
+PAUSED_SITES = {
+    "troc": {
+        "name": "Troc.com",
+        "search_allowed": True,
+        # robots.txt n'interdit que /ajax/ ; formulaire du site : /fr/resultats-recherche?search-text=…
+        "search_url": "https://www.troc.com/fr/resultats-recherche?search-text={q}",
+        "sells": ["smartphone", "console", "jeu_video", "tablette", "informatique"],
+        "start_urls": {"default": "https://www.troc.com/fr"},
     },
 }
 
@@ -210,6 +217,8 @@ def start_url(site_key: str, category: str, product: str | None = None) -> str:
     return urls.get(category) or urls.get("default") or next(iter(urls.values()))
 
 
-def sites_for(category: str) -> list[str]:
-    """Sites qui vendent ce type d'objet. Les autres affichent « aucun résultat » sans lancer d'agent."""
-    return [k for k, v in SITES.items() if category in v["sells"]]
+def sites_for(category: str, product: str | None = None) -> list[str]:
+    """Sites qui vendent ce type d'objet (et cette marque, pour Swappie). Les autres ne lancent pas d'agent."""
+    words = set(_words(product)) if product else None
+    return [k for k, v in SITES.items() if category in v["sells"]
+            and (words is None or not v.get("only_if_words") or words & set(v["only_if_words"]))]

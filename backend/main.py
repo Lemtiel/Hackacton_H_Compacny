@@ -429,7 +429,7 @@ async def search(
     stop = threading.Event()  # levé quand l'utilisateur quitte la recherche
     queue: asyncio.Queue = asyncio.Queue()
     client = Client()
-    active = sites_for(category)
+    active = sites_for(category, product)
 
     def emit(ev: dict) -> None:
         loop.call_soon_threadsafe(queue.put_nowait, ev)

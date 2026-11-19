@@ -810,3 +810,13 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - La clé H du `.env` appartenait à un autre compte (29,4 M jetons utilisés sur 60 M). Jude a mis la sienne dans `.env` et dans les secrets du Space : 60 M jetons, 50 $ de crédits en réserve, offre Free (3 sessions simultanées). Vérifié par `quota.get_token_quota`, sans afficher la clé.
 - Panne de H vers 9h55 (« Nos services sont actuellement indisponibles ») : sessions jamais démarrées, mesure arrêtée. Rétabli vers 10h10 (Gamecash, Switch : 3 offres en 81 s).
 - Offre Builder (10 sessions, 20 $ par mois) discutée : contrainte de budget, l'équipe reste sur l'offre gratuite à 3 agents. Le Space reste à `HAI_MAX_PARALLEL=3` ; une estimation prend 2 à 4 min. Au pitch : « 10 agents en changeant d'offre, sans recoder ».
+
+### Jeudi 19/11, 10h45 : mesure #8 (10 objets, offre H gratuite à 3 agents) et corrections
+- Mesure sur la clé de Jude, 3 agents à la fois, 44 sessions, 7,8 M jetons (`mesures/mesure_*_2026-11-19_09h08.csv`).
+- Toutes les sessions ont abouti à une réponse (prix ou absence de stock vérifiée), aucune « indisponible ».
+- Prix eBay « vendre seul » : 10 objets sur 10. Prix boutiques : 10 sur 10 avec au moins 1 prix, 6 sur 10 avec au moins 3.
+- Sessions avec au moins 1 prix : 20 sur 44 (Easy Cash 7/10, Certideal 4/5, Gamecash 3/5, Cash Converters 4/10, Swappie 2/4, Troc.com 0/10). Critère strict des Specs (≥ 3 prix par boutique) : 8 sur 44.
+- Durée médiane d'une estimation : 196 s (objectif < 120 s, inatteignable à 3 agents pour 4 ou 5 boutiques).
+- Cause principale des échecs, lue dans les notes des agents : objet absent du stock (PS5, Xbox, jeux, iPad 9), pas un échec de navigation.
+- Bug trouvé : prix eBay conseillé de 18 € pour une PS5 (jeux PS5 pris pour des consoles). Corrigé : recherche eBay limitée à la catégorie de l'objet (une seule acceptée par l'API), « Portal » ajouté aux variantes. Vérifié en réel sur les 10 objets : PS5 580 €, Xbox Series S 314 €, Zelda 43 €.
+- Troc.com mis en pause (0 prix sur 10, sa recherche répond toujours « aucun produit ») ; Swappie limité aux iPhone et iPad. Textes de l'interface, README, Specs et règle 1 mis à jour.

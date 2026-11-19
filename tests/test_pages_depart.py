@@ -40,7 +40,12 @@ ends("easycash", "smartphone", "Google Pixel 7", "telephonie/smartphones/google"
 ends("easycash", "smartphone", "Fairphone 5", "bons-plans.easycash.fr/telephonie/smartphones")  # inconnu : catégorie
 ends("cashconverters", "smartphone", "Apple iPhone 13 128 Go", "/p/search?q=Apple+iPhone+13")
 ends("gamecash", "console", "Nintendo Switch", "recherche.html?h=1&searchTxt=Nintendo+Switch")
-ends("troc", "console", "Sony PlayStation 5", "resultats-recherche?search-text=Sony+PlayStation+5")
+from agents.sites import PAUSED_SITES, sites_for  # noqa: E402
+
+check("Troc.com en pause : aucun agent lancé", "troc" not in sites_for("console", "Sony PlayStation 5") and "troc" in PAUSED_SITES)
+check("Swappie lancé pour un iPhone", "swappie" in sites_for("smartphone", "Apple iPhone 13 128 Go"))
+check("Swappie pas lancé pour un Galaxy", "swappie" not in sites_for("smartphone", "Samsung Galaxy S21 128 Go"))
+check("sans nom d'objet : liste par catégorie inchangée", "swappie" in sites_for("smartphone"))
 ends("swappie", "smartphone", "Apple iPhone 13", "swappie.com/fr/")
 
 print(f"{total - failed}/{total} vérifications correctes")

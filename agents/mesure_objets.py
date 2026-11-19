@@ -131,7 +131,7 @@ def identify(paths: str, expected: str, category: str) -> tuple[str, str, float 
 def measure(client: Client, obj: dict, slots: threading.Semaphore,
             conc: Concurrency | None = None) -> tuple[dict, list[dict]]:
     product, category, condition = obj["objet"].strip(), obj["categorie"].strip(), (obj.get("etat") or "Bon état").strip()
-    sites = sites_for(category)
+    sites = sites_for(category, product)
     t0 = time.monotonic()
 
     def one(site: str) -> dict:
