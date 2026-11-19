@@ -16,14 +16,29 @@ import {
   updateItem,
 } from "@/lib/grenier";
 
+const PRO_CART_KEY = "snapncash.pro.cart.v1";
+
 export default function GrenierPage() {
   const [items, setItems] = useState<GrenierItem[] | null>(null);
   const [filter, setFilter] = useState<ItemStatus | "tous">("tous");
+  const [proCartCount, setProCartCount] = useState(0);
 
   useEffect(() => {
     const refresh = () => setItems(readGrenier());
     refresh();
     return onGrenierChange(refresh);
+  }, []);
+
+  useEffect(() => {
+    const refresh = () => {
+      try {
+        const saved = JSON.parse(localStorage.getItem(PRO_CART_KEY) || "[]");
+        setProCartCount(Array.isArray(saved) ? saved.length : 0);
+      } catch { setProCartCount(0); }
+    };
+    refresh();
+    window.addEventListener("storage", refresh);
+    return () => window.removeEventListener("storage", refresh);
   }, []);
 
   if (items === null) return <main className="page" />;
@@ -33,6 +48,15 @@ export default function GrenierPage() {
   return (
     <main className="page screen">
       <h1 className="display">Mon grenier</h1>
+
+      <Link href="/pro#pro-cart" className="grenier-pro-cart">
+        <span className="grenier-pro-cart-icon" aria-hidden><CartGlyph /></span>
+        <span>
+          <strong>Panier revendeur</strong>
+          <span className="small">Retrouvez les bonnes affaires que vous avez retenues.</span>
+        </span>
+        <span className="grenier-pro-cart-count num">{proCartCount}</span>
+      </Link>
 
       {items.length === 0 ? (
         <>
@@ -67,6 +91,10 @@ export default function GrenierPage() {
       )}
     </main>
   );
+}
+
+function CartGlyph() {
+  return <svg viewBox="0 0 24 24" fill="none"><path d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.6L20 8H6.1M9 20h.01M17 20h.01" /></svg>;
 }
 
 function ItemRow({ item }: { item: GrenierItem }) {

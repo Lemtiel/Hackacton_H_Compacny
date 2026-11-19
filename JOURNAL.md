@@ -624,6 +624,10 @@ avec la table en secours (cotation manuelle sur les modèles récents). Faisabil
 relancée (seul un texte de « Comment ça marche » change). Limites : Easy Cash seulement, 3 objets en tablette
 et en informatique.
 
+### Jeudi 19/11 : repères visuels et panier revendeur
+
+Sans modifier le calcul revendeur, les marges positives sont affichées en vert et les pertes en rouge. Chaque offre peut être retenue dans un panier conservé uniquement dans le navigateur. Un raccourci avec compteur est ajouté dans « Mon grenier ». Aucun bouton flottant de retour aux filtres n'est conservé.
+
 ### Mercredi 18/11, fin d'après-midi : aide à la publication sur eBay (Kevin)
 Chantier commencé par Jude, rien de poussé : repris par Kevin, branche `publication-ebay`.
 
@@ -857,3 +861,10 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - Messages de développeur (« HF_TOKEN manque dans .env », « HAI_API_KEY manque dans .env ») remplacés par des phrases pour l'utilisateur (identification, annonce, studio, agents).
 - Verdict fragile (moins de 3 prix boutique) : « Plutôt : vendez-le vous-même. », gain « à confirmer ».
 - Bloc eBay : « Prix affichés sur eBay (avant négociation) », pour le distinguer du prix conseillé « vendre seul ».
+
+### Jeudi 19/11, 16h30 : accès revendeur et suivi des agents rendus visibles
+- **Accueil :** le lien discret vers l'espace revendeur devient une carte d'accès compacte, sans modifier le parcours d'estimation principal.
+- **Espace revendeur uniquement :** ajout d'un tableau « Agents en direct » qui affiche, pour chaque site, l'étape courante, les dernières actions, le temps écoulé et le résultat de la visite. Les captures des pages sources ne sont pas affichées.
+- **Périmètre préservé :** hors espace revendeur, seul le raccourci déjà demandé vers le panier revendeur dans le Grenier et cette nouvelle carte d'accueil sont modifiés. Aucun bouton flottant de retour aux filtres.
+- **Vérifications :** TypeScript et contrôle du diff OK. Changements préparés sur une branche dédiée pour revue avant fusion dans `main`.
+- **Panier :** les objets retenus ouvrent désormais directement l’annonce source dans un nouvel onglet. Une offre sans URL ne peut pas être retenue, afin que le panier ne contienne jamais de simple texte sans article accessible.
