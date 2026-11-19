@@ -22,7 +22,7 @@ Le mode démo (écrans des agents) est actif par défaut. Il se coupe dans **Ré
 Serveur : https://judebkn95-snapncash.hf.space/api/health répond `ok`.
 
 ## Le problème
-86 % des Français gardent des objets inutilisés, 320 € par foyer en moyenne, mais 17 % seulement les ont déjà revendus. Ils citent le manque de temps (29 %), des démarches jugées complexes (20 %) et la peur de se tromper de prix (16 %) (OpinionWay pour Leboncoin, septembre 2025). Pour le high-tech, 46 millions de téléphones dorment dans les tiroirs (Harris Interactive et Crédoc pour Ecologic, 2023).
+86 % des Français gardent des objets inutilisés, 320 € par foyer en moyenne, mais 17 % seulement les ont déjà revendus. Ils citent le manque de temps (29 %), des démarches jugées complexes (20 %) et la peur de se tromper de prix (16 %) ([OpinionWay pour Leboncoin](https://www.cbnews.fr/etudes/320-euros-dorment-les-placards-francais), en ligne du 24 au 26 septembre 2025, 1 054 personnes ; les 320 € sont une valeur estimée par les répondants). Pour le high-tech, 46 millions de téléphones dorment dans les tiroirs, dont 59 % de smartphones ([Harris Interactive et Crédoc pour ecosystem et Ecologic](https://www.ecosystem.eco/document/155), juin 2023, 5 614 ménages).
 
 ## La solution
 L'utilisateur photographie son objet high-tech ou son jeu vidéo. Un modèle Hugging Face le reconnaît. **Des agents H Company visitent en direct jusqu'à cinq boutiques d'occasion françaises** qui n'ont pas d'API (3 ou 4 par objet, selon sa catégorie), et relèvent les prix. L'app répond en moins de deux minutes :
@@ -67,7 +67,7 @@ Téléphone ou ordinateur                Notre serveur                         S
 | Studio photo | `briaai/RMBG-2.0` via fal.ai ; secours `ZhengPeng7/BiRefNet_lite` en local | 1 à 2 s en local, 20 s en ligne (19/11) |
 | Prix entre particuliers | eBay API Browse (annonces en cours), dans un bloc séparé | 1 à 2 s, 61 annonces pour un iPhone 13 |
 
-Boutiques consultées par les agents : Easy Cash, Gamecash, Cash Converters, Certideal, Swappie (iPhone et iPad seulement). Troc.com est en pause depuis le 19/11 : 0 prix sur 10 objets mesurés. Vinted et Leboncoin interdisent l'accès automatisé : un bouton ouvre leur recherche chez l'utilisateur.
+Boutiques consultées par les agents : Easy Cash, Gamecash, Cash Converters, Certideal, Swappie (iPhone et iPad seulement). Troc.com est en pause depuis le 19/11 : 0 prix sur 10 objets mesurés. Vinted ([CGU, article 6](https://www.vinted.fr/terms-and-conditions) : bots et programmes de scraping interdits) et Leboncoin ([robots.txt](https://www.leboncoin.fr/robots.txt) : « It's forbidden to use search robots or other automatic methods ») interdisent l'accès automatisé : un bouton ouvre leur recherche chez l'utilisateur.
 
 ## Retours sur l'Agent API de H Company
 Ce que l'Agent API nous a permis de faire, ce qui nous a freinés (preuves et mesures à l'appui) et ce que nous demanderions à H : **[docs/retours-agent-api-h.md](docs/retours-agent-api-h.md)**.
@@ -121,14 +121,14 @@ Ces scripts tournent à chaque push (onglet Actions), sauf `test_ebay_categorie.
 ```
 Sortie : taux de réussite par boutique (au moins 3 prix), durée d'une estimation, écart entre le prix conseillé et le prix vendu, identification correcte, cas d'échec, face aux objectifs des Specs. Les sessions d'agent sont aussi dans [`mesures/agent_runs.csv`](mesures/agent_runs.csv), les décisions et cas d'échec dans [`JOURNAL.md`](JOURNAL.md).
 
-**Mesure du 19/11 (10 objets, 10 agents simultanés) :**
+**Mesure du 19/11 (10 objets, 10 agents simultanés)**, fichiers [`mesures/mesure_objets_2026-11-19_10h30.csv`](mesures/mesure_objets_2026-11-19_10h30.csv) et [`mesures/mesure_sites_2026-11-19_10h30.csv`](mesures/mesure_sites_2026-11-19_10h30.csv) **:**
 - **Mesuré :** 33 sessions d'agent sur 33 abouties (prix ou absence de stock vérifiée), 21 avec au moins un prix ; prix eBay pour 10 objets sur 10 ; prix magasin complet (au moins 3 prix) pour 6 objets sur 10 ; durée médiane d'une estimation 91 s (toutes sous 100 s) ; 506 000 jetons par estimation en moyenne.
 - **Pas encore mesuré :** l'identification par photo sur le jeu de 10 objets (la mesure est partie du nom de l'objet), l'écart entre le prix conseillé et le prix réellement vendu sur eBay, la part des prix vendus comprise dans la fourchette, et le temps gagné avec 3 testeurs. Les colonnes existent dans le fichier de mesure, elles sont vides : aucun chiffre n'est avancé pour ces critères.
 
 ## Brouillon eBay par un agent H (démo sur le Mac)
 Un agent H Company pilote **le Chrome de cet ordinateur**, où tu t'es connecté toi-même à eBay : ni mot de passe ni cookie ne quittent l'ordinateur. Il ouvre l'éditeur prérempli, dépose les photos (par un outil à nous, car ce mode n'a pas d'envoi de fichier), colle la description, règle le prix et **enregistre un brouillon**. Il ne publie jamais : tu cliques toi-même sur « Mettre en vente ». Réservé à la démo : il agit sur un seul compte eBay, la route est fermée sans clé de démo et absente du Space.
 
-**Pourquoi pas en ligne :** l'agent doit agir dans un navigateur où le vendeur est connecté à eBay, et nous refusons de faire passer ses identifiants par notre serveur. Depuis février 2026, l'accord d'utilisation d'eBay interdit aussi les agents IA sans son autorisation. Pour ouvrir cette fonction à tous, nous passerons par le programme partenaire d'eBay et son API de brouillons (Listing API).
+**Pourquoi pas en ligne :** l'agent doit agir dans un navigateur où le vendeur est connecté à eBay, et nous refusons de faire passer ses identifiants par notre serveur. Depuis le 20 février 2026, l'[accord d'utilisation d'eBay](https://www.ebay.com/help/policies/member-behaviour-policies/user-agreement?id=4259) interdit aussi, sans son autorisation préalable, les « LLM-driven bots » et les agents « buy-for-me » ([résumé du changement](https://www.valueaddedresource.net/ebay-bans-ai-agents-updates-arbitration-user-agreement-feb-2026/)). Pour ouvrir cette fonction à tous, nous passerons par le programme partenaire d'eBay et son [API de gestion des annonces](https://developer.ebay.com/api-docs/sell/inventory/overview.html).
 1. `.venv/bin/pip install -r requirements-demo.txt` (une fois).
 2. `scripts/ebay_chrome.sh` : ouvre un Chrome dédié ; **connecte-toi à eBay dans cette fenêtre** et laisse-la ouverte.
 3. Lancer le serveur avec `EBAY_DRAFT_LOCAL=1` et `DEMO_KEY=<ta clé>`, ouvrir l'interface une fois avec `?cle=<ta clé>`.
@@ -140,13 +140,14 @@ Le serveur va sur un Space Hugging Face, l'interface sur Vercel. L'image du serv
 
 **1. Serveur (Space Hugging Face)**
 1. Créer un jeton **avec droit d'écriture** sur huggingface.co/settings/tokens (celui du `.env` n'a que l'inférence).
-2. Créer le Space : New Space, SDK **Docker**, modèle « Blank », visibilité **Public** (l'interface Vercel doit pouvoir l'appeler). Depuis novembre 2026, un Space Docker sur « CPU basic » gratuit exige un compte PRO : nous utilisons « CPU upgrade » (0,03 $/h), payé par les crédits du hackathon, avec une mise en veille après 48 h d'inactivité.
+2. Créer le Space : New Space, SDK **Docker**, modèle « Blank », visibilité **Public** (l'interface Vercel doit pouvoir l'appeler). Le 19/11, la création d'un Space Docker sur « CPU basic » gratuit a renvoyé une erreur 402 (compte PRO exigé, les Spaces Docker figurent dans l'offre PRO sur la [page des tarifs](https://huggingface.co/pricing)) : nous utilisons « CPU upgrade » ([0,03 $/h](https://huggingface.co/pricing)), payé par les crédits du hackathon, avec une mise en veille après 48 h d'inactivité.
 3. Envoyer le code : `scripts/deploy_space.sh <compte>/<nom-du-space>` (Git demande l'identifiant, puis le jeton d'écriture comme mot de passe).
 4. Dans Settings du Space, **Secrets** : `HAI_API_KEY`, `HF_TOKEN` (le jeton d'inférence), `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET`, `DEMO_KEY`.
    **Variables** : `ALLOWED_ORIGINS` (adresse Vercel, voir 2), `DEMO_SHOTS=1`, `TRUSTED_PROXIES=1`, `SEARCH_PER_HOUR=200` (une salle partage une adresse IP).
 5. Ouvrir `https://<compte>-<nom-du-space>.hf.space/api/health` : tout doit être à `true`. Un Space inactif s'endort : l'ouvrir 5 minutes avant la démo.
 
 **2. Interface (Vercel)**
+Le plan gratuit Hobby est réservé à un usage personnel et non commercial ([règles de Vercel](https://vercel.com/docs/limits/fair-use-guidelines)) : un lancement commercial passe par Vercel Pro (20 $ par mois).
 Le projet Vercel n'est pas relié à GitHub : une fusion dans `main` ne change pas le site en ligne. Chaque mise en ligne se fait depuis `frontend/` avec `vercel deploy --prod`.
 1. `cd frontend && vercel login`, puis `vercel` (dossier racine : `frontend`).
 2. Variable d'environnement `NEXT_PUBLIC_API_URL` = adresse du Space (`https://<compte>-<nom-du-space>.hf.space`), puis `vercel --prod`.
@@ -184,13 +185,13 @@ Ouvrir l'interface une fois avec `?cle=<DEMO_KEY>` pour lever la limite par adre
 Ce que nous aurions aimé faire avec plus de temps, ou qui demande l'accord d'une plateforme.
 
 ### Un partenariat avec Vinted et Leboncoin
-Leurs CGU interdisent les robots : nous n'y envoyons aucun agent. Avec leur accord (une API, ou des agents identifiés et limités en rythme), le partenariat profite aux trois parties.
-- **Pour la plateforme :** de nouvelles annonces d'objets qui dormaient dans les tiroirs (83 % des Français n'ont jamais revendu), des annonces complètes (photos studio, caractéristiques, prix cohérent avec le marché), donc moins d'annonces bâclées, moins de litiges et plus de ventes sur lesquelles elle touche ses frais.
+Leurs règles interdisent les robots ([CGU de Vinted, article 6](https://www.vinted.fr/terms-and-conditions), [robots.txt de Leboncoin](https://www.leboncoin.fr/robots.txt)) : nous n'y envoyons aucun agent. Avec leur accord (une API, ou des agents identifiés et limités en rythme), le partenariat profite aux trois parties.
+- **Pour la plateforme :** de nouvelles annonces d'objets qui dormaient dans les tiroirs (83 % des Français n'ont jamais revendu leurs objets inutilisés, [OpinionWay pour Leboncoin](https://www.cbnews.fr/etudes/320-euros-dorment-les-placards-francais), 2025), des annonces complètes (photos studio, caractéristiques, prix cohérent avec le marché), donc moins d'annonces bâclées, moins de litiges et plus de ventes sur lesquelles elle touche ses frais.
 - **Pour le vendeur :** le prix entre particuliers mesuré sur la plateforme où il vend, et une publication en un clic au lieu de recopier l'annonce.
 - **Pour Snap N Cash :** des prix de vente réels pour mesurer la précision de nos estimations, et un revenu par annonce publiée, puis une licence (voir le [modèle économique](docs/business-model/business-model-snap-n-cash.md)).
 
 ### Le programme partenaire d'eBay
-Publier en un clic par l'API de brouillons d'eBay (Listing API), à la place de notre agent qui ne tourne que sur l'ordinateur du vendeur. L'accord d'utilisation d'eBay serait respecté et la fonction s'ouvrirait à tous les utilisateurs.
+Publier en un clic par l'[API de gestion des annonces d'eBay](https://developer.ebay.com/api-docs/sell/inventory/overview.html), à la place de notre agent qui ne tourne que sur l'ordinateur du vendeur. L'accord d'utilisation d'eBay serait respecté et la fonction s'ouvrirait à tous les utilisateurs.
 
 ### Une extension de navigateur
 Une extension installée par le vendeur préparerait le brouillon dans son propre navigateur, là où il est déjà connecté : ses identifiants ne passeraient jamais par notre serveur. Elle suppose l'accord de chaque plateforme, comme le partenariat.
@@ -199,13 +200,38 @@ Une extension installée par le vendeur préparerait le brouillon dans son propr
 Le curseur « vente rapide, prix juste, ambitieux » existe déjà sur l'écran de prix. L'étape suivante : demander dès le départ « vendre vite » ou « au meilleur prix », appliquer ce choix au prix de l'annonce et du brouillon eBay, et afficher un délai de vente estimé une fois les ventes réelles connues.
 
 ### Mesurer la précision des prix
-Comparer le prix conseillé au prix réellement obtenu, sur des ventes conclues (API Marketplace Insights d'eBay ou données d'une plateforme partenaire). Le critère des Specs (écart médian de 15 % au plus) n'est pas encore mesuré.
+Comparer le prix conseillé au prix réellement obtenu, sur des ventes conclues ([API Marketplace Insights d'eBay](https://developer.ebay.com/api-docs/buy/marketplace-insights/static/overview.html), à accès restreint, ou données d'une plateforme partenaire). Le critère des Specs (écart médian de 15 % au plus) n'est pas encore mesuré.
 
 ### Une marge revendeur plus réaliste
 L'espace revendeurs calcule la marge sur le prix médian des boutiques. Un revendeur revend plutôt entre particuliers : prendre le prix eBay comme référence de revente donnerait une marge plus prudente.
 
 ### Plus de boutiques, puis d'autres pays
 Une boutique s'ajoute par une ligne de configuration, sans code propre. Les mêmes agents peuvent couvrir d'autres catégories et d'autres pays.
+
+## Sources
+Chaque chiffre du README vient d'une source publique ou d'une mesure de l'équipe, versionnée dans ce dépôt.
+
+**Sources publiques** (vérifiées le 19/11/2026) :
+| Affirmation | Source |
+|---|---|
+| 86 % gardent des objets inutilisés, 320 € par foyer (estimation des répondants), 17 % ont déjà revendu, freins : temps 29 %, démarches 20 %, prix 16 % | [Sondage OpinionWay pour Leboncoin](https://www.cbnews.fr/etudes/320-euros-dorment-les-placards-francais), en ligne du 24 au 26 septembre 2025, 1 054 personnes de 18 ans et plus |
+| 46 millions de téléphones dans les tiroirs (59 % de smartphones, dont 3 sur 4 encore en état de marche) | [Infographie ecosystem](https://www.ecosystem.eco/document/155) : étude Harris Interactive et Crédoc pour ecosystem et Ecologic, juin 2023, 5 614 ménages |
+| Vinted interdit les bots et le scraping | [Conditions d'utilisation de Vinted](https://www.vinted.fr/terms-and-conditions), article 6 |
+| Leboncoin interdit les robots et méthodes automatiques | [robots.txt de Leboncoin](https://www.leboncoin.fr/robots.txt) |
+| eBay interdit les agents IA sans autorisation depuis le 20 février 2026 | [Accord d'utilisation d'eBay](https://www.ebay.com/help/policies/member-behaviour-policies/user-agreement?id=4259) ; [résumé du changement](https://www.valueaddedresource.net/ebay-bans-ai-agents-updates-arbitration-user-agreement-feb-2026/) |
+| Space « CPU upgrade » à 0,03 $/h, Spaces Docker dans l'offre PRO | [Tarifs Hugging Face](https://huggingface.co/pricing) |
+| Vercel Hobby réservé à un usage non commercial | [Règles d'usage de Vercel](https://vercel.com/docs/limits/fair-use-guidelines) |
+| Ventes conclues eBay et publication par API | [Marketplace Insights](https://developer.ebay.com/api-docs/buy/marketplace-insights/static/overview.html), [API de gestion des annonces](https://developer.ebay.com/api-docs/sell/inventory/overview.html) |
+
+**Mesures de l'équipe** (dans ce dépôt) :
+| Affirmation | Fichier |
+|---|---|
+| 33 sessions sur 33 abouties, 91 s en médiane, prix eBay 10 sur 10, prix magasin complet 6 sur 10, 506 000 jetons | [`mesures/mesure_objets_2026-11-19_10h30.csv`](mesures/mesure_objets_2026-11-19_10h30.csv), [`mesures/mesure_sites_2026-11-19_10h30.csv`](mesures/mesure_sites_2026-11-19_10h30.csv) |
+| Durées et jetons par session d'agent | [`mesures/agent_runs.csv`](mesures/agent_runs.csv) |
+| Coefficient de rachat (0,60 pour les smartphones) | [`docs/calibrage-rachat.md`](docs/calibrage-rachat.md) |
+| Coût par estimation (0,26 € à l'usage, 0,02 € au forfait) et projections | [`docs/business-model/`](docs/business-model/business-model-snap-n-cash.md) |
+| Fnac bloque l'agent, Troc.com sans prix, PS5 corrigée | [`JOURNAL.md`](JOURNAL.md) |
+| Tests en ligne du 19/11 au soir (recherche, photo, annonce, studio) | Section « État au 19/11 » ci-dessus |
 
 ## Équipe
 | | Rôle |
