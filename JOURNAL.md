@@ -624,6 +624,10 @@ avec la table en secours (cotation manuelle sur les modèles récents). Faisabil
 relancée (seul un texte de « Comment ça marche » change). Limites : Easy Cash seulement, 3 objets en tablette
 et en informatique.
 
+### Jeudi 19/11 : repères visuels et panier revendeur
+
+Sans modifier le calcul revendeur, les marges positives sont affichées en vert et les pertes en rouge. Chaque offre peut être retenue dans un panier conservé uniquement dans le navigateur. Un raccourci avec compteur est ajouté dans « Mon grenier ». Aucun bouton flottant de retour aux filtres n'est conservé.
+
 ### Mercredi 18/11, fin d'après-midi : aide à la publication sur eBay (Kevin)
 Chantier commencé par Jude, rien de poussé : repris par Kevin, branche `publication-ebay`.
 
@@ -732,3 +736,10 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - **Reporté dans le code de Kevin :** « Informatique » accepte plusieurs bonnes catégories (`ACCEPTED_IDS` : portables, Macs portables, Macs de bureau, PC de bureau). Sans ça, un iMac sortait en « Ordinateurs portables » (une seule référence forcée en tête). Ses 12 cas réels + mes 3 (iMac, Galaxy Tab S8, Xbox Series S) : 15/15 bonnes catégories en tête.
 - **Conservé de mon côté (ne chevauchait pas) :** reconditionné exclu du bloc eBay ; rebuts et plancher de prix des consoles (PS5) ; offres gardées après délai ; bouton de partage ; lien d'ouverture de l'éditeur eBay ; réduction des photos avant envoi ; nom sans marque répétée. Le plancher de prix s'appuie sur `is_accessory` de Kevin.
 - **Tests après fusion :** tri 92/92, eBay 19/19, catégorie 49/49 (15 cas réels), garde-fous 23/23, TypeScript et import du serveur OK.
+
+### Jeudi 19/11 : accès revendeur et suivi des agents rendus visibles
+- **Accueil :** le lien discret vers l'espace revendeur devient une carte d'accès compacte, sans modifier le parcours d'estimation principal.
+- **Espace revendeur uniquement :** ajout d'un tableau « Agents en direct » qui affiche, pour chaque site, l'étape courante, les dernières actions, le temps écoulé et le résultat de la visite. Les captures des pages sources ne sont pas affichées.
+- **Périmètre préservé :** hors espace revendeur, seul le raccourci déjà demandé vers le panier revendeur dans le Grenier et cette nouvelle carte d'accueil sont modifiés. Aucun bouton flottant de retour aux filtres.
+- **Vérifications :** TypeScript et contrôle du diff OK. Changements préparés sur une branche dédiée pour revue avant fusion dans `main`.
+- **Panier :** les objets retenus ouvrent désormais directement l’annonce source dans un nouvel onglet. Une offre sans URL ne peut pas être retenue, afin que le panier ne contienne jamais de simple texte sans article accessible.
