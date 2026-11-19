@@ -94,6 +94,7 @@ def fake_run(client_, *, photos, title, description, price, category_id, conditi
 
 ebay_draft.chrome_ready = lambda: True
 ebay_draft.run_draft = fake_run
+main.Client = lambda *a, **k: None  # la CI n'a pas de clé H : le client n'est pas utilisé par l'agent simulé
 r = post()
 events = [json.loads(l[5:]) for l in r.text.splitlines() if l.startswith("data:")]
 types = [e["type"] for e in events]

@@ -775,3 +775,8 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - Essai 2 par l'interface (clic sur le bouton, navigateur de test) : 2 photos studio créées, brouillon enregistré en 174 s. Vérifié sur la page : 2 photos studio (objet détouré sur fond clair) à la place de l'ancienne, titre, prix 141 €, caractéristiques justes, non publié.
 - Description : la frappe touche par touche doublait les sauts de ligne. Remplacée par une insertion d'un bloc ; vérifié après enregistrement et réouverture (texte gardé, caractères spéciaux compris).
 - Non refait : un essai complet de l'agent après ce dernier changement de description.
+
+### Jeudi 19/11, 7h45 : point de reprise (changement de conversation)
+- Poussé sur `interface` : 10 commits jusqu'à `17980e2` (brouillon eBay par agent H avec photos studio). La CI a échoué sur `tests/test_brouillon_ebay.py` : la route crée le client H avant l'agent simulé et la CI n'a pas de clé H. Corrigé dans le test (client simulé), vérifié sans clé : 25/25. Commit local, **pas encore poussé**.
+- Déploiement en cours : Mac connecté ni à Hugging Face ni à Vercel. `HF_TOKEN` du `.env` = droits « inference » seulement (vérifié via whoami-v2) : il ne peut pas créer de Space. Jude crée un jeton Write et l'ajoute dans `.env` sous `HF_WRITE_TOKEN`. La connexion par code (`hf auth login`) a expiré deux fois.
+- Suite prévue : `hf auth login --token` depuis `HF_WRITE_TOKEN` (sans l'afficher), créer le Space Docker public `Judebkn95/snapncash`, `scripts/deploy_space.sh Judebkn95/snapncash`, Jude saisit les secrets du Space, `vercel login` puis déploiement de `frontend/` avec `NEXT_PUBLIC_API_URL`, vérification `/api/health` et une vraie estimation. Le brouillon eBay reste désactivé en ligne.
