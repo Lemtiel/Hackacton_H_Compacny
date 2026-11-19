@@ -15,6 +15,17 @@ const DEAL_GAP = 0.15; // « Bonne affaire » à partir de 15 % sous la médiane
 const CATEGORIES = Object.keys(CATEGORY_LABELS) as Category[];
 
 type Deal = Offer & { site: string; margin: number; gap: number; outlier: boolean };
+type CartItem = {
+  id: string;
+  product: string;
+  title: string;
+  site: string;
+  price: number;
+  margin: number;
+  url?: string | null;
+};
+
+const CART_KEY = "snapncash.pro.cart.v1";
 
 // Même règle que backend/pricing.py : on garde les prix entre la moitié et le double de la médiane.
 function median(xs: number[]) {
@@ -34,10 +45,24 @@ export default function ProPage() {
   const [refused, setRefused] = useState<string | null>(null);
   const [demo, setDemo] = useState(false);
   const [resaleFees, setResaleFees] = useState(DEFAULT_RESALE_FEES);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartLoaded, setCartLoaded] = useState(false);
   const stopRef = useRef<(() => void) | null>(null);
+  const filtersRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => setDemo(isDemo()), []);
   useEffect(() => () => stopRef.current?.(), []);
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(CART_KEY) || "[]");
+      if (Array.isArray(saved)) setCart(saved);
+    } catch { /* panier corrompu : on repart vide */ }
+    setCartLoaded(true);
+  }, []);
+  useEffect(() => {
+    if (!cartLoaded) return;
+    try { localStorage.setItem(CART_KEY, JSON.stringify(cart)); } catch { /* stockage privé ou plein */ }
+  }, [cart, cartLoaded]);
 
   function launch() {
     const p = product.trim();
@@ -70,7 +95,7 @@ export default function ProPage() {
           setDone(true);
         }
       },
-      () => { setFailed(true); setDone(true); },
+      (message) => { setRefused(message ?? null); setFailed(true); setDone(true); },
       demo,
       "",
       { condition },
@@ -93,16 +118,63 @@ export default function ProPage() {
         .sort((a, b) => b.margin - a.margin)
     : [];
 
+  function cartId(deal: Deal) {
+    return `${deal.site}|${deal.url ?? deal.title}|${deal.price_eur}`;
+  }
+
+  function toggleCart(deal: Deal) {
+    const id = cartId(deal);
+    setCart((current) => current.some((item) => item.id === id)
+      ? current.filter((item) => item.id !== id)
+      : [...current, {
+          id,
+          product: query?.product ?? product.trim(),
+          title: deal.title,
+          site: deal.site,
+          price: deal.price_eur,
+          margin: deal.margin,
+          url: deal.url,
+        }]);
+  }
+
   return (
-    <main className="page">
+    <main className="page pro-page">
       <section className="screen">
-        <header className="pro-header">
-          <p className="muted">Espace revendeurs</p>
-          <h1 className="display search-title">Trouvez les objets à racheter.</h1>
-          <p className="lede">Nos agents relèvent les prix dans les boutiques d&apos;occasion. On classe les annonces selon la marge possible à la revente.</p>
+        <header className="pro-header pro-hero">
+          <span className="pro-kicker">Espace revendeurs</span>
+          <h1 className="display search-title">Trouvez les objets à <span>racheter.</span></h1>
+          <p className="lede">Plusieurs agents parcourent les boutiques en même temps. Les offres arrivent ici, puis sont classées selon leur marge potentielle.</p>
         </header>
 
-        <form className="stack" onSubmit={(e) => { e.preventDefault(); launch(); }}>
+        <aside className="pro-cart" aria-label="Panier du revendeur">
+          <details open={cart.length > 0}>
+            <summary>
+              <span className="pro-cart-title"><CartIcon /> Objets retenus</span>
+              <span className="pro-cart-count num">{cart.length}</span>
+            </summary>
+            {cart.length === 0 ? (
+              <p className="small">Ajoutez une offre depuis les résultats pour la retrouver ici.</p>
+            ) : (
+              <div className="pro-cart-items">
+                {cart.map((item) => (
+                  <article key={item.id} className="pro-cart-item">
+                    <span>
+                      <strong>{item.product}</strong>
+                      <span className="small">{item.site} · achat {euros(item.price)} · marge {item.margin >= 0 ? "+" : ""}{euros(item.margin)}</span>
+                    </span>
+                    <button type="button" className="pro-cart-remove" onClick={() => setCart((current) => current.filter((entry) => entry.id !== item.id))} aria-label={`Retirer ${item.title} du panier`}>×</button>
+                  </article>
+                ))}
+              </div>
+            )}
+          </details>
+        </aside>
+
+        <form ref={filtersRef} id="pro-filters" className="stack pro-filters" onSubmit={(e) => { e.preventDefault(); launch(); }}>
+          <div className="pro-section-head">
+            <span className="pro-step">1</span>
+            <div><strong>Quel objet cherchez-vous ?</strong><span className="small">Affinez le modèle et son état.</span></div>
+          </div>
           <label htmlFor="pro-product" className="sr-only">Objet recherché</label>
           <input
             id="pro-product"
@@ -126,12 +198,41 @@ export default function ProPage() {
             </div>
           </div>
           <button className="btn btn-primary" type="submit" disabled={product.trim().length < 2 || (!!query && !done)}>
-            Chercher les bonnes affaires
+            <SearchIcon /> {query && !done ? "Les agents cherchent…" : "Chercher les bonnes affaires"}
           </button>
         </form>
 
         {failed && <p className="notice error" style={{ marginTop: "1rem" }}>{refused ?? "Le serveur ne répond pas. Relancez la recherche."}</p>}
-        {query && <SearchProgress rows={rows} done={done} demo={demo} />}
+        {query && (
+          <section className="pro-live" aria-labelledby="pro-live-title">
+            <div className="pro-section-head">
+              <span className="pro-step">2</span>
+              <div><strong id="pro-live-title">Recherche multi-sites</strong><span className="small">Les agents travaillent ensemble, les résultats s&apos;ajoutent au fil de l&apos;eau.</span></div>
+            </div>
+            <SearchProgress rows={rows} done={done} demo={demo} />
+          </section>
+        )}
+
+        {!ref && all.length > 0 && !failed && (
+          <section className="panel pro-results" aria-live="polite">
+            <div className="pro-market-summary">
+              <div>
+                <p className="small">Résultats en direct</p>
+                <h2>Premières offres relevées</h2>
+              </div>
+              <span className="status-pill">{raw.length}/3 prix minimum</span>
+            </div>
+            <p className="small">La marge apparaîtra dès que trois prix comparables permettront de calculer une référence fiable.</p>
+            <div className="pro-offers">
+              {all.map((offer, index) => (
+                <article key={`${offer.site}-${offer.url ?? offer.title}-${index}`} className="offer pro-offer">
+                  <span>{offer.url ? <a href={offer.url} target="_blank" rel="noopener noreferrer">{offer.title}</a> : offer.title}<span className="small">, {offer.site}</span></span>
+                  <strong className="num">{euros(offer.price_eur)}</strong>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
         {ref && (
           <section className="panel pro-results" aria-labelledby="market-title">
@@ -165,19 +266,20 @@ export default function ProPage() {
               <p className="small">Commission et envoi estimés. Les marges se recalculent immédiatement.</p>
             </div>
 
-            <div className="pro-offers">
+            <div className="pro-offers" aria-live="polite">
               {deals.map((d, i) => (
                 <article key={`${d.site}-${d.url ?? d.title}-${i}`} className="offer pro-offer">
-                  <span>
+                  <span className="pro-offer-copy">
                     {d.gap >= DEAL_GAP && !d.outlier && <span className="status-pill" data-status="vendu" style={{ marginRight: "0.4rem" }}>Bonne affaire</span>}
                     {d.outlier && <span className="status-pill" style={{ marginRight: "0.4rem" }}>À vérifier</span>}
                     {d.url ? <a href={d.url} target="_blank" rel="noopener noreferrer">{d.title}</a> : d.title}
                     <span className="small">, {d.site}</span>
                   </span>
-                  <span className="num" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                    {euros(d.price_eur)}
-                    <br />
-                    <span className="small">{d.margin >= 0 ? `+${euros(d.margin)}` : euros(d.margin)}</span>
+                  <span className="pro-offer-actions">
+                    <span className="num pro-offer-price">{euros(d.price_eur)}<small>{d.margin >= 0 ? `+${euros(d.margin)}` : euros(d.margin)} de marge</small></span>
+                    <button type="button" className="pro-cart-toggle" aria-pressed={cart.some((item) => item.id === cartId(d))} onClick={() => toggleCart(d)}>
+                      {cart.some((item) => item.id === cartId(d)) ? "Retenu ✓" : "Retenir"}
+                    </button>
                   </span>
                 </article>
               ))}
@@ -199,7 +301,25 @@ export default function ProPage() {
             <span>{raw.length} prix trouvé{raw.length === 1 ? "" : "s"} : il en faut au moins 3 comparables. Essayez un nom plus précis.</span>
           </div>
         )}
+
+        {query && (
+          <button type="button" className="pro-back-filters" onClick={() => filtersRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+            <FilterIcon /> Filtres
+          </button>
+        )}
       </section>
     </main>
   );
+}
+
+function CartIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden><path d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.6L20 8H6.1M9 20h.01M17 20h.01" /></svg>;
+}
+
+function SearchIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden><circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.5 15.5 5 5" /></svg>;
+}
+
+function FilterIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden><path d="M4 6h16M7 12h10M10 18h4" /></svg>;
 }

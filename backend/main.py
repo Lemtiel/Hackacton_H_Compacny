@@ -155,6 +155,7 @@ def config():
         "max_seconds": MAX_SECONDS,
         "vision_model": (os.getenv("HF_VISION_MODEL") or photo.DEFAULT_VISION_MODEL),
         "identify_ready": bool(os.getenv("HF_TOKEN")),
+        "search_ready": bool(os.getenv("HAI_API_KEY")),
         "ebay_ready": ebay.configured(),
         "conditions": listing.CONDITIONS,
         "demo_shots": DEMO_SHOTS,

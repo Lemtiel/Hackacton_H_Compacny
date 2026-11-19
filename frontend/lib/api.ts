@@ -144,7 +144,7 @@ export function searchPrices(
   product: string,
   category: string,
   onEvent: (e: SearchEvent) => void,
-  onError: () => void,
+  onError: (message?: string) => void,
   demo = false,
   hint = "",
   context: PriceSearchContext = {},
@@ -159,17 +159,43 @@ export function searchPrices(
   const key = demoKey();
   if (key) params.set("key", key);
   const url = `${API_URL}/api/search?${params.toString()}`;
-  const source = new EventSource(url);
-  source.onmessage = (msg) => {
-    const ev = JSON.parse(msg.data) as SearchEvent;
-    onEvent(ev);
-    if (ev.type === "done") source.close();
+  const controller = new AbortController();
+  let source: EventSource | null = null;
+  let stopped = false;
+
+  // EventSource masque le corps des erreurs HTTP (clé absente, mauvaise configuration, etc.).
+  // Cette vérification légère permet d'afficher une cause utile avant de lancer les agents.
+  fetch(`${API_URL}/api/config`, { signal: controller.signal })
+    .then(async (res) => {
+      if (!res.ok) throw new Error(`Le serveur répond avec l'erreur ${res.status}.`);
+      const config = await res.json() as { search_ready?: boolean };
+      if (config.search_ready === false) {
+        onError("Le serveur est démarré, mais la clé HAI_API_KEY manque dans le fichier .env à la racine. Redémarrez le serveur après l'avoir ajoutée.");
+        return;
+      }
+      if (stopped) return;
+
+      source = new EventSource(url);
+      source.onmessage = (msg) => {
+        const ev = JSON.parse(msg.data) as SearchEvent;
+        onEvent(ev);
+        if (ev.type === "done") source?.close();
+      };
+      source.onerror = () => {
+        source?.close();
+        if (!stopped) onError(`La connexion au flux de recherche a été coupée (${API_URL}). Vérifiez le terminal du serveur, puis relancez.`);
+      };
+    })
+    .catch((error: unknown) => {
+      if (stopped || (error instanceof DOMException && error.name === "AbortError")) return;
+      onError(`Impossible de joindre le serveur sur ${API_URL}. Vérifiez qu'il écoute bien sur le port 8000 et que NEXT_PUBLIC_API_URL pointe vers cette adresse.`);
+    });
+
+  return () => {
+    stopped = true;
+    controller.abort();
+    source?.close();
   };
-  source.onerror = () => {
-    source.close();
-    onError();
-  };
-  return () => source.close();
 }
 
 // Recherche ouverte dans le navigateur de l'utilisateur : aucun agent ne lit ces sites.

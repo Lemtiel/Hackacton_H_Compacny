@@ -326,9 +326,134 @@ details.site-detail summary::-webkit-details-marker { display: none; }
 .pro-offer { align-items: flex-start; border-top: 1px solid var(--line); padding: 0.85rem 0; }
 .pro-empty { margin-top: 1rem; display: grid; gap: 0.35rem; }
 
+/* Parcours revendeur : même langage « pop et cash » que l'accueil, résultats en continu et panier local. */
+.pro-page { max-width: 42rem; }
+.pro-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 1.35rem;
+  margin-bottom: 1rem;
+  border: 2px solid var(--ink);
+  border-radius: 22px;
+  background: var(--card);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+.pro-hero::after {
+  content: "€";
+  position: absolute;
+  right: -0.25rem;
+  bottom: -1.75rem;
+  color: var(--cash);
+  opacity: 0.12;
+  font-size: 8rem;
+  font-weight: 900;
+  line-height: 1;
+  transform: rotate(12deg);
+}
+.pro-hero > * { position: relative; z-index: 1; }
+.pro-hero .search-title { margin: 0.55rem 0; }
+.pro-hero .search-title span { color: var(--cash); }
+.pro-hero .lede { margin: 0; max-width: 34rem; }
+.pro-kicker {
+  display: inline-flex;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: var(--grad-soft);
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.pro-filters, .pro-live, .pro-cart {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--card);
+  box-shadow: var(--shadow-card);
+  scroll-margin-top: 5rem;
+}
+.pro-section-head { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem; }
+.pro-section-head > div { display: grid; }
+.pro-step {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--grad);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(30, 111, 217, 0.24);
+}
+.pro-filters .btn svg, .pro-cart svg, .pro-back-filters svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.pro-cart { padding: 0.85rem 1rem; }
+.pro-cart summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; list-style: none; }
+.pro-cart summary::-webkit-details-marker { display: none; }
+.pro-cart-title { display: inline-flex; align-items: center; gap: 0.55rem; font-weight: 750; }
+.pro-cart-title svg { color: var(--cash); }
+.pro-cart-count { min-width: 1.7rem; height: 1.7rem; display: grid; place-items: center; border-radius: 999px; background: var(--ink); color: #fff; font-size: 0.8rem; font-weight: 800; }
+.pro-cart-items { margin-top: 0.6rem; border-top: 1px solid var(--line); }
+.pro-cart-item { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.65rem 0; border-bottom: 1px solid var(--line); }
+.pro-cart-item > span { display: grid; min-width: 0; }
+.pro-cart-remove { flex: 0 0 auto; width: 1.8rem; height: 1.8rem; border: 0; border-radius: 50%; background: var(--surface); color: var(--ink); cursor: pointer; font: inherit; font-size: 1.2rem; line-height: 1; }
+.pro-live { padding-bottom: 1.1rem; }
+.pro-live .agent-box { margin-top: 0; }
+.pro-results { background: var(--card); }
+.pro-offer { gap: 1rem; }
+.pro-offer-copy { min-width: 0; }
+.pro-offer-actions { flex: 0 0 auto; display: grid; justify-items: end; gap: 0.4rem; }
+.pro-offer-price { display: grid; text-align: right; font-weight: 800; color: var(--ink); white-space: nowrap; }
+.pro-offer-price small { color: var(--cash); font-size: 0.75rem; font-weight: 750; }
+.pro-cart-toggle {
+  border: 1px solid var(--action);
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  background: transparent;
+  color: var(--action);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+.pro-cart-toggle[aria-pressed="true"] { border-color: var(--cash); background: var(--cash); color: #fff; }
+.pro-back-filters {
+  position: fixed;
+  right: max(1rem, calc((100vw - 42rem) / 2));
+  bottom: calc(6.2rem + env(safe-area-inset-bottom));
+  z-index: 19;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  padding: 0.65rem 0.85rem;
+  background: var(--ink);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(5, 41, 93, 0.28);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+.pro-back-filters:focus-visible, .pro-cart-toggle:focus-visible, .pro-cart-remove:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
+
 @media (max-width: 420px) {
   .pro-market-summary { display: grid; }
   .pro-market-summary .status-pill { justify-self: start; }
+  .pro-hero { padding: 1.1rem; box-shadow: 4px 4px 0 var(--ink); }
+  .pro-offer { display: grid; }
+  .pro-offer-actions { grid-template-columns: 1fr auto; align-items: end; justify-items: stretch; }
+  .pro-offer-price { text-align: left; }
+  .pro-cart-toggle { align-self: center; }
 }
 
 /* Entrée d'écran : courte, sans rebond */

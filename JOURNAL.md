@@ -832,3 +832,10 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - H Company (Amel Negra, Slack) a relevé la limite de notre organisation à 10 sessions. Vérifié : 10 sessions courtes lancées ensemble, toutes en « running » en 8 s, annulées aussitôt.
 - Space : `HAI_MAX_PARALLEL=10` (vérifié par `/api/health`, `max_agents:10`). README et deck mis à jour.
 - La mesure #8 du matin a tourné à 3 agents (durée médiane 196 s) : la durée à 10 agents n'est pas encore mesurée.
+
+### Jeudi 19/11 : parcours revendeur continu et diagnostic du serveur
+
+- La page `/pro` suit le design « pop et cash » de l'app et présente la recherche en deux étapes : filtres, puis agents multi-sites en parallèle avec résultats sur la même page.
+- Un bouton flottant ramène aux filtres dès qu'ils sortent de l'écran. Les offres peuvent être retenues dans un petit panier, gardé uniquement dans le navigateur (`localStorage`).
+- Le démarrage de FastAPI ne garantit pas que la recherche H soit configurée. `/api/config` expose désormais seulement un booléen `search_ready` ; l'interface distingue clé `HAI_API_KEY` absente, serveur injoignable et flux coupé, sans exposer de secret.
+- Les règles de médiane, de retrait des valeurs aberrantes et le seuil « bonne affaire » de 15 % restent inchangés.

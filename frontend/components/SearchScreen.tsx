@@ -123,7 +123,7 @@ export default function SearchScreen({ input, onRestart }: { input: SearchInput;
           setDone(true);
         }
       },
-      () => { setFailed(true); setDone(true); },
+      (message) => { setRefused(message ?? null); setFailed(true); setDone(true); },
       isDemo(),
       input.hint ?? "",
       { condition, box: withBox, accessories, details },
