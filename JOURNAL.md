@@ -862,9 +862,26 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - Verdict fragile (moins de 3 prix boutique) : « Plutôt : vendez-le vous-même. », gain « à confirmer ».
 - Bloc eBay : « Prix affichés sur eBay (avant négociation) », pour le distinguer du prix conseillé « vendre seul ».
 
+### Jeudi 19/11, 14h45 : 3e revue hostile, 3 corrections
+- `POST /api/demo/token` limité à 20 essais par heure et par IP (chaque essai compte) : la clé de démo ne se devine plus par essais successifs. Reste à faire par Jude : remplacer `DEMO_KEY` par une valeur longue et aléatoire (Space et `.env`).
+- Place réservée à la démo : la clé de démo peut lancer une estimation même quand les 2 places publiques sont prises (`_take_search_place`). Deux visiteurs ne peuvent plus bloquer la démo live.
+- Message d'échec de la rédaction : la phrase « Voici un brouillon simple à compléter » n'apparaît plus deux fois.
+- Garde-fous 42/42 (4 nouveaux), autres tests inchangés et au vert.
+
+### Jeudi 19/11, 15h15 : pastille de la clé de démo (4e revue, point 2)
+- Réglages, section Démonstration : « Clé de démo » affiche Active, Absente ou Inactive, avec la raison (refusée après un changement de clé, trop d'essais depuis ce réseau, serveur injoignable). Réutilise le jeton déjà obtenu : pas d'essai consommé en plus.
+- Non corrigé (choix de Jude) : le point 1 de la 4e revue (les bons essais comptent dans la limite de 20 par heure, jeton perdu au rechargement).
+
 ### Jeudi 19/11, 16h30 : accès revendeur et suivi des agents rendus visibles
 - **Accueil :** le lien discret vers l'espace revendeur devient une carte d'accès compacte, sans modifier le parcours d'estimation principal.
-- **Espace revendeur uniquement :** ajout d'un tableau « Agents en direct » qui affiche, pour chaque site, l'étape courante, les dernières actions, le temps écoulé et le résultat de la visite. Les captures des pages sources ne sont pas affichées.
+- **Espace revendeur uniquement :** ajout d'un tableau « Agents en direct » qui affiche, pour chaque site, l'étape courante, les dernières actions, le temps écoulé et le résultat de la visite. En mode démo (actif par défaut), les captures des agents restent visibles au-dessus, comme sur l'estimation (règle 9).
 - **Périmètre préservé :** hors espace revendeur, seul le raccourci déjà demandé vers le panier revendeur dans le Grenier et cette nouvelle carte d'accueil sont modifiés. Aucun bouton flottant de retour aux filtres.
 - **Vérifications :** TypeScript et contrôle du diff OK. Changements préparés sur une branche dédiée pour revue avant fusion dans `main`.
 - **Panier :** les objets retenus ouvrent désormais directement l’annonce source dans un nouvel onglet. Une offre sans URL ne peut pas être retenue, afin que le panier ne contienne jamais de simple texte sans article accessible.
+
+### Jeudi 19/11, 17h30 : 5e revue hostile (espace revendeur), 6 mineurs corrigés
+- Compteur du panier sur fond bleu fixe `#1e6fd9` (4,85:1 dans les deux thèmes) ; montant « de perte » en `--loss` (`#c62828` en clair, `#ff6b6b` en sombre, 6,1:1).
+- « Agents en direct » : plus d'`aria-live` (déjà porté par la barre de progression) ; les libellés « Navigue, étape N » n'entrent plus dans la liste des dernières actions.
+- Mon grenier : le raccourci « Panier revendeur » n'apparaît que si le panier contient au moins un objet.
+- Ligne du 16h30 corrigée : les captures restent visibles en mode démo sur `/pro`.
+- Question ouverte, non tranchée : la marge revendeur se calcule sur le prix médian des boutiques, probablement optimiste pour un revendeur particulier. À trancher par Jude.

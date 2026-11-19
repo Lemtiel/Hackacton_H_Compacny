@@ -195,18 +195,39 @@ export function searchPrices(
 // Jeton temporaire de démo, gardé en mémoire jusqu'à 5 min avant son expiration. Vide sans clé ou en cas d'échec :
 // la recherche part alors sans clé (limite par IP normale).
 let cachedToken: { value: string; until: number } | null = null;
+// État de la clé de démo, pour la pastille de Réglages : on sait enfin si la démo est protégée.
+export type DemoKeyStatus = "absente" | "active" | "refusee" | "trop_essais" | "injoignable";
+let lastStatus: DemoKeyStatus = "absente";
 async function demoToken(): Promise<string> {
-  if (!demoKey()) return "";
-  if (cachedToken && cachedToken.until > Date.now()) return cachedToken.value;
-  try {
-    const res = await fetch(`${API_URL}/api/demo/token`, { method: "POST", headers: demoHeaders() });
-    if (!res.ok) return "";
-    const data = (await res.json()) as { token: string; ttl_s: number };
-    cachedToken = { value: data.token, until: Date.now() + (data.ttl_s - 300) * 1000 };
-    return data.token;
-  } catch {
+  if (!demoKey()) {
+    lastStatus = "absente";
     return "";
   }
+  if (cachedToken && cachedToken.until > Date.now()) {
+    lastStatus = "active";
+    return cachedToken.value;
+  }
+  try {
+    const res = await fetch(`${API_URL}/api/demo/token`, { method: "POST", headers: demoHeaders() });
+    if (!res.ok) {
+      lastStatus = res.status === 429 ? "trop_essais" : "refusee";
+      return "";
+    }
+    const data = (await res.json()) as { token: string; ttl_s: number };
+    cachedToken = { value: data.token, until: Date.now() + (data.ttl_s - 300) * 1000 };
+    lastStatus = "active";
+    return data.token;
+  } catch {
+    lastStatus = "injoignable";
+    return "";
+  }
+}
+
+// Vérifie la clé de démo enregistrée dans ce navigateur. Réutilise le jeton déjà obtenu s'il est encore valable :
+// pas d'essai consommé en plus.
+export async function demoKeyStatus(): Promise<DemoKeyStatus> {
+  await demoToken();
+  return lastStatus;
 }
 
 // Recherche ouverte dans le navigateur de l'utilisateur : aucun agent ne lit ces sites.

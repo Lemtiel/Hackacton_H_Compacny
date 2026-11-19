@@ -134,7 +134,7 @@ def _ask(client, model: str, req: ListingRequest) -> dict:
 def generate(req: ListingRequest) -> dict:
     token = os.getenv("HF_TOKEN")
     if not token:
-        raise ListingError("La rédaction automatique est momentanément indisponible. Voici un brouillon simple à compléter.")
+        raise ListingError("La rédaction automatique est momentanément indisponible.")
     from openai import OpenAI
 
     # Le routeur répartit les appels entre plusieurs fournisseurs, de vitesse très inégale

@@ -117,9 +117,13 @@ check(f"limite par IP ({main.SEARCH_PER_HOUR} par heure) : refus", ev[0]["type"]
 os.environ["DEMO_KEY"] = "cle-demo-test"
 check("clé de démo correcte acceptée", main._demo_key_ok("cle-demo-test"))
 check("clé de démo fausse ou vide refusée", not main._demo_key_ok("autre") and not main._demo_key_ok(""))
-main._running = main.MAX_SEARCHES  # la clé lève la limite par IP, pas le plafond global : rien ne démarre
+main._running = main.MAX_SEARCHES + 1  # la clé a une place de plus ; au-delà, refus : rien ne démarre
 ev = asyncio.run(first_events(search(FakeRequest(xff=ip), key="cle-demo-test")))
 check("avec la clé, la limite par IP ne bloque plus (seul le plafond global répond)", "occupés" in ev[0]["message"])
+main._running = main.MAX_SEARCHES
+check("plafond atteint : un visiteur est refusé", main._take_search_place(False) is False)
+check("plafond atteint : la démo a encore une place réservée", main._take_search_place(True) is True)
+check("place réservée prise : une 2e recherche de démo est refusée", main._take_search_place(True) is False)
 main._running = 0
 del os.environ["DEMO_KEY"]
 
@@ -179,6 +183,16 @@ except _HE as e:
 check("jeton de démo : refusé (403) avec une mauvaise clé", _refused)
 main._demo_tokens[_tok] = 0  # expiré
 check("jeton de démo expiré : refusé", not main._demo_key_ok(_tok))
+main._hits.pop(("demo_token", "198.51.100.99"), None)
+_codes = []
+for _ in range(main.DEMO_TOKEN_PER_HOUR + 1):
+    try:
+        main.demo_token(FakeRequest(xff="198.51.100.99", demo_key="essai"))
+        _codes.append(200)
+    except _HE as e:
+        _codes.append(e.status_code)
+check(f"jeton de démo : {main.DEMO_TOKEN_PER_HOUR} essais par heure, puis 429 (clé impossible à deviner par essais)",
+      _codes[:-1] == [403] * main.DEMO_TOKEN_PER_HOUR and _codes[-1] == 429)
 del os.environ["DEMO_KEY"]
 
 # 3. Coefficient de rachat mesuré : 0,59 par défaut, puis par catégorie (docs/calibrage-rachat.md).

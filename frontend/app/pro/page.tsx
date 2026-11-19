@@ -85,7 +85,9 @@ export default function ProPage() {
           const label = ev.label ? ev.label.charAt(0).toUpperCase() + ev.label.slice(1) : "Navigation en cours";
           setRows((r) => r.map((s) => {
             if (s.key !== ev.site) return s;
-            const steps = s.steps[s.steps.length - 1] === label ? s.steps : [...s.steps, label].slice(-4);
+            // « Navigue, étape 9 » n'apprend rien : seules les actions décrites entrent dans la liste.
+            const generic = /^navigue, étape \d+$/i.test(label);
+            const steps = generic || s.steps[s.steps.length - 1] === label ? s.steps : [...s.steps, label].slice(-4);
             return { ...s, state: "en_cours", label, steps, elapsed: ev.elapsed_s ?? s.elapsed };
           }));
         } else if (ev.type === "site_shot") {
@@ -301,7 +303,7 @@ function ProAgentLive({ rows, done }: { rows: Row[]; done: boolean }) {
   const active = rows.filter((row) => row.state !== "hors_categorie");
   if (active.length === 0) return null;
   return (
-    <section className="pro-agent-live" aria-labelledby="pro-agents-title" aria-live="polite">
+    <section className="pro-agent-live" aria-labelledby="pro-agents-title">
       <div className="pro-agent-live-head">
         <span>
           <strong id="pro-agents-title">Agents en direct</strong>
