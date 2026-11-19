@@ -2,14 +2,15 @@
 // de l'app (JOURNAL.md). Textes de prototype, à faire relire par un juriste avant tout lancement.
 import type { ReactNode } from "react";
 
-// À compléter par l'équipe : l'adresse de contact publique (jamais celle du PDF du brief).
-export const CONTACT_EMAIL = "";
+// Adresse fictive de prototype : le domaine .example est réservé (RFC 2606), aucun tiers ne reçoit ces messages.
+// À remplacer par une vraie adresse avant tout lancement.
+export const CONTACT_EMAIL = "team13@snapncash.example";
 export const LAST_UPDATE = "18 novembre 2026";
 
 export const SITES = "Easy Cash, Gamecash, Cash Converters, Certideal et Swappie";
 
 function Contact() {
-  return CONTACT_EMAIL ? <strong className="selectable">{CONTACT_EMAIL}</strong> : <strong>adresse de l&apos;équipe, communiquée sur demande auprès d&apos;Eugenia School</strong>;
+  return CONTACT_EMAIL ? <><strong className="selectable">{CONTACT_EMAIL}</strong> (adresse fictive : prototype de hackathon)</> : <strong>adresse de l&apos;équipe, communiquée sur demande auprès d&apos;Eugenia School</strong>;
 }
 
 export type LegalPage = { slug: string; title: string; summary: string; body: ReactNode };
