@@ -1,6 +1,6 @@
 # Pitch deck : contenu des slides
 
-*Brouillon du 19/11 pour vendredi 15h. 10 slides dans l'ordre imposé par le brief : problème, solution, démo, business model, go-to-market, architecture technique, limites et roadmap, coût de run. Pitch de 6 min, puis 4 min de questions. Les chiffres marqués [MESURE] viennent de la mesure sur 10 objets (#8), en cours.*
+*Brouillon du 19/11 pour vendredi 15h. 10 slides dans l'ordre imposé par le brief : problème, solution, démo, business model, go-to-market, architecture technique, limites et roadmap, coût de run. Pitch de 6 min, puis 4 min de questions. Chiffres mesurés le 19/11 sur 10 objets, 44 sessions d'agent (#8, `mesures/`).*
 
 ---
 
@@ -68,7 +68,7 @@ Interface Next.js (Vercel) ──▶ Serveur FastAPI (Space Hugging Face)
 - **Un agent pour cinq sites** : aucune ligne de code propre à une boutique. Certideal et Swappie se sont ajoutés par une ligne de configuration.
 - **Résultats envoyés site par site**, écrans des agents relayés en direct.
 - **Passage à l'échelle sans recoder** : 3 agents simultanés sur l'offre gratuite de H, 10 avec l'offre Builder (20 $ par mois), 100 avec Startup.
-- **Mesuré sur 10 objets** : [MESURE] sessions réussies, [MESURE] s de durée médiane, pic de [MESURE] agents simultanés.
+- **Mesuré sur 10 objets, 44 sessions** : 100 % des sessions aboutissent à une réponse vérifiée (prix ou « pas en stock ») ; prix de vente eBay pour 10 objets sur 10 ; durée médiane 196 s avec 3 agents.
 
 ## 8. Ce qu'on a refusé de faire
 - Aucun agent sur Vinted, Leboncoin, Back Market et les autres sites dont les CGU l'interdisent.
@@ -77,7 +77,8 @@ Interface Next.js (Vercel) ──▶ Serveur FastAPI (Space Hugging Face)
 - **Brouillon eBay par agent** : il fonctionne, mais seulement sur l'ordinateur du vendeur. Nous refusons de faire passer ses identifiants par notre serveur, et eBay interdit les agents IA sans son autorisation depuis février 2026.
 
 ## 9. Limites et roadmap
-**Limites mesurées :** [MESURE] cas d'échec (boutique sans résultat, modèle mal reconnu). Le tri par modèle dépend de la façon d'écrire le nom (« iPad 9 » contre « iPad 9e génération »).
+**Limites mesurées :** prix magasin complet (au moins 3 prix) pour 6 objets sur 10. Cause principale, lue dans les notes des agents : l'objet n'est pas en stock (PS5, Xbox, jeux récents, iPad 9). Durée : 196 s avec 3 agents, au-dessus de notre objectif de 2 min.
+**Corrigé pendant la mesure :** prix eBay d'une PS5 faussé par des jeux (18 € → 580 €), Troc.com mis en pause (0 prix sur 10).
 **Roadmap :**
 1. Publication en un clic via le programme partenaire d'eBay (Listing API).
 2. Partenariat Vinted et Leboncoin.
@@ -91,7 +92,7 @@ Interface Next.js (Vercel) ──▶ Serveur FastAPI (Space Hugging Face)
 | **Par estimation** | **0,25 €** | **0,02 €** |
 
 Hébergement : Space Hugging Face à 0,03 $/h, Vercel gratuit. Aucun abonnement ne perd d'argent tant qu'une estimation coûte moins de 0,58 €.
-[MESURE] Jetons réels par estimation sur 10 objets.
+Mesuré le 19/11 : 784 000 jetons par estimation en moyenne (10 objets).
 
 ---
 *Prix indicatifs, comparaison non exhaustive. Estimation et annonce générées par IA.*
