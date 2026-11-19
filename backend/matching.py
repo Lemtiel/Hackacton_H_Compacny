@@ -28,6 +28,8 @@ BRANDS = {
 VARIANTS = {
     "lite", "oled", "pro", "max", "plus", "mini", "ultra", "slim", "fe", "se", "xl", "air",
     "note", "digital", "digitale", "fold", "flip", "neo", "edge",
+    # « PS5 Portal » : lecteur à distance, pas la console (mesure du 19/11)
+    "portal",
     # Éditions limitées et collector : autre référence, vendue plus cher (test DualSense du 17/11)
     "limitee", "limited", "collector", "collectors",
 }
@@ -81,6 +83,10 @@ def tokens(text: str) -> list[str]:
     text = "".join(c for c in text if not unicodedata.combining(c))
     text = re.sub(r"(\d)\s*(gb|go)\b", r"\1 go", text)
     text = re.sub(r"(\d)\s*(tb|to)\b", r"\1 to", text)
+    # « iPad (9e génération) », « 9ème gen », « 9th generation » : la génération devient le numéro seul (mesure du 19/11).
+    text = re.sub(r"\b(\d{1,2})\s*(e|eme|th|nd|rd|st)\s*(generation|gen)\b", r"\1", text)
+    # « The Legend of Zelda : … » et « Zelda … » désignent le même jeu (mesure du 19/11).
+    text = re.sub(r"\bthe\s+legend\s+of\s+zelda\b", "zelda", text)
     return re.findall(r"[a-z0-9]+", text)
 
 
@@ -128,7 +134,9 @@ def reject_reason(product: str, category: str, title: str) -> str | None:
 
 
 def _numbers_stick(need: list[str], have: list[str]) -> bool:
-    """Un petit numéro du modèle (« 5 » de « PlayStation 5 ») doit suivre son mot dans le titre, sauf équivalence (« PS5 »)."""
+    """Un petit numéro du modèle (« 5 » de « PlayStation 5 ») doit suivre son mot dans le titre, sauf équivalence (« PS5 »).
+    Une année glissée entre les deux (« iPad 2021 9e gen ») ne compte pas."""
+    have = [t for t in have if not (len(t) == 4 and t.isdigit() and t.startswith(("19", "20")))] or have
     for i, n in enumerate(need):
         if i == 0 or not n.isdigit() or int(n) > 20 or need[i - 1].isdigit() or need[i - 1] in UNITS:
             continue

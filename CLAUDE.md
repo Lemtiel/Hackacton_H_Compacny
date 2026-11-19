@@ -12,7 +12,7 @@
 - Signaler clairement ce qui a été testé et ce qui ne l'a pas été.
 
 ## Règles non négociables
-1. **Sources de prix :** seulement eBay (API Browse) et les agents H sur Easy Cash, Gamecash, Troc.com, Cash Converters, Certideal et Swappie. Aucun agent ni scraping sur Vinted, Leboncoin, Cdiscount, TikTok Shop, Back Market, Label Emmaüs, Largo, Recommerce, Smaaart, Refurbed (CGU qui l'interdisent).
+1. **Sources de prix :** seulement eBay (API Browse) et les agents H sur Easy Cash, Gamecash, Cash Converters, Certideal et Swappie (Troc.com autorisé mais en pause depuis le 19/11 : 0 prix sur 10 objets). Aucun agent ni scraping sur Vinted, Leboncoin, Cdiscount, TikTok Shop, Back Market, Label Emmaüs, Largo, Recommerce, Smaaart, Refurbed (CGU qui l'interdisent).
 2. **Aucun contournement d'anti-robot.** Un site qui bloque l'agent sort de la liste. Les CGU de H Company (§5.2, §5.3) l'exigent aussi.
 3. **Easy Cash :** navigation par les pages de catégorie, jamais par le moteur de recherche (bloqué par le robots.txt).
 4. **eBay :** résultats dans un bloc séparé, jamais mélangés aux autres sites. Les données eBay ne passent pas dans un modèle de texte génératif.
@@ -20,7 +20,7 @@
 6. **Photos :** refuser toute photo où un visage est détecté.
 7. **Secrets :** clés API dans `.env` uniquement. Ne jamais les committer : le dépôt est public.
 8. **Affichage :** les prix sont indicatifs, la mention « généré par IA » est visible, et la page « Comment ça marche » liste les sites consultés. Ne jamais écrire « tous les sites ».
-9. **Pas de capture des pages sources** montrée à l'utilisateur : le prix et le lien suffisent.
+9. **Captures des agents** : montrées en direct pendant la recherche (mode démo, actif par défaut depuis le 19/11, interrupteur dans Réglages). Aucune capture conservée, ni sur le serveur ni dans le navigateur. Les résultats affichent seulement le prix et le lien.
 
 ## Architecture
 - Interface : Next.js générée avec v0, hébergée sur Vercel.

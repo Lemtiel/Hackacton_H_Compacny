@@ -4,7 +4,7 @@ export type Prefs = { theme: Theme; motion: boolean; demo: boolean };
 
 const KEY = "snapncash.prefs";
 const EVENT = "snapncash:prefs";
-export const DEFAULT_PREFS: Prefs = { theme: "system", motion: true, demo: false };
+export const DEFAULT_PREFS: Prefs = { theme: "system", motion: true, demo: true }; // mode démo actif par défaut (décision du 19/11)
 
 export function readPrefs(): Prefs {
   try {

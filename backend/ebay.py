@@ -157,6 +157,14 @@ def ebay_block(prices: list[float]) -> Optional[dict]:
     }
 
 
+def search_category(product: str, category: str) -> str:
+    """Catégorie eBay où chercher (une seule acceptée par l'API). Sans elle, « Sony PlayStation 5 » ramenait surtout
+    des jeux PS5 vendus 16 à 20 € : prix conseillé de 18 € pour une console (mesure du 19/11)."""
+    if category == "informatique" and "macbook" in matching.tokens(product):
+        return "111422"  # Ordinateurs Apple portables
+    return REFERENCE_CATEGORIES.get(category, REFERENCE_CATEGORIES["smartphone"])["id"]
+
+
 async def search(product: str, category: str, client: Optional[httpx.AsyncClient] = None) -> dict:
     """Rend {state, block, items, n_found, n_rejected, duration_s}. state : ok | aucun_resultat."""
     if not configured():
@@ -172,6 +180,7 @@ async def search(product: str, category: str, client: Optional[httpx.AsyncClient
             params={
                 "q": product,
                 "limit": "100",
+                "category_ids": search_category(product, category),
                 "filter": f"buyingOptions:{{FIXED_PRICE}},priceCurrency:EUR,itemLocationCountry:FR,"
                           f"conditionIds:{{{USED_CONDITION_IDS}}}",
             },

@@ -1,0 +1,11 @@
+objet,categorie,etat,identification,identification_correcte,identification_s,duree_totale_s,sites,sites_reussis,n_prix,prix_vendu_ref,ebay_etat,ebay_n,boutique_mediane,rachat_estime,vendre_seul_bas,vendre_seul_haut,prix_conseille,source_prix
+Apple iPhone 13 128 Go,smartphone,Bon état,,,,96.4,4,3,11,,ok,63,257.99,154.79,223,281,271,ebay
+Apple iPhone 12 64 Go,smartphone,Bon état,,,,88.2,4,2,10,,ok,39,187.0,112.2,161,249,198,ebay
+Samsung Galaxy S21 128 Go,smartphone,Bon état,,,,99.7,3,1,6,,ok,10,202.49,121.49,113,150,122,ebay
+Apple iPad 9 64 Go,tablette,Bon état,,,,94.2,4,0,2,,ok,16,204.5,102.25,185,255,209,ebay
+Apple MacBook Air M1 256 Go,informatique,Bon état,,,,88.1,3,1,3,,ok,28,499.99,334.99,419,580,455,ebay
+Nintendo Switch,console,Bon état,,,,90.7,3,2,7,,ok,50,179.99,79.2,113,157,132,ebay
+Sony PlayStation 5,console,Bon état,,,,81.8,3,0,1,,ok,15,549.99,406.99,447,690,580,ebay
+Microsoft Xbox Series S,console,Bon état,,,,97.2,3,1,4,,ok,4,429.99,318.19,260,358,314,ebay
+Zelda Tears of the Kingdom,jeu_video,Bon état,,,,88.8,3,0,2,,ok,10,36.11,15.53,41,50,43,ebay
+EA Sports FC 25 PS5,jeu_video,Bon état,,,,90.4,3,0,1,,ok,19,10.95,4.71,11,13,13,ebay

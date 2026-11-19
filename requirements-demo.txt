@@ -1,0 +1,4 @@
+# Dépendances en plus pour le brouillon eBay par un agent H dans le Chrome local (démo sur le Mac, jamais sur le Space).
+# Installer : .venv/bin/pip install -r requirements-demo.txt
+hai-agents[cli,browser]==1.5.1
+playwright

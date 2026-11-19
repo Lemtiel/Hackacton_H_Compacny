@@ -123,6 +123,64 @@ check("avec la clé, la limite par IP ne bloque plus (seul le plafond global ré
 main._running = 0
 del os.environ["DEMO_KEY"]
 
+# Routes facturées ou à quota (identification, annonce, eBay) : plafond par IP, levé par la clé de démo (revue du 19/11).
+from fastapi import HTTPException as _HE  # noqa: E402
+
+
+def _limited(kind, per_hour, headers=None):
+    req = FakeRequest(xff="198.51.100.77")
+    if headers:
+        req.headers = {**req.headers, **headers}
+    try:
+        main._limit(req, kind, per_hour)
+        return None
+    except _HE as e:
+        return e.status_code
+
+
+main._hits.pop(("ebay", "198.51.100.77"), None)
+check("eBay : appels sous le plafond acceptés", all(_limited("ebay", 3) is None for _ in range(3)))
+check("eBay : au-delà du plafond, refus 429", _limited("ebay", 3) == 429)
+os.environ["DEMO_KEY"] = "cle-demo-test"
+check("eBay : la clé de démo (en-tête X-Demo-Key) lève le plafond", _limited("ebay", 3, {"x-demo-key": "cle-demo-test"}) is None)
+del os.environ["DEMO_KEY"]
+
+
+def _route_status(coro):
+    try:
+        asyncio.run(coro)
+        return 200
+    except _HE as e:
+        return e.status_code
+
+
+_ip = "198.51.100.88"
+for _kind, _n in (("identify", main.IDENTIFY_PER_HOUR), ("listing", main.LISTING_PER_HOUR), ("ebay", main.EBAY_PER_HOUR)):
+    main._hits[(_kind, _ip)].extend([__import__("time").time()] * _n)
+_req = FakeRequest(xff=_ip)
+check("identification : plafond atteint, la route répond 429 avant de lire les photos",
+      _route_status(main.identify(_req, files=[object()], file=None)) == 429)
+check("annonce : plafond atteint, 429 avant toute rédaction",
+      _route_status(main.make_listing(main.listing.ListingRequest(product="Nintendo Switch", category="console"), _req)) == 429)
+check("prix eBay : plafond atteint, 429 avant l'appel à eBay",
+      _route_status(main.ebay_prices(_req, product="Nintendo Switch", category="console")) == 429)
+check("catégorie eBay : plafond atteint, 429", _route_status(main.ebay_category(_req, product="Nintendo Switch", category="console")) == 429)
+check("plafonds alignés sur une salle (au moins 400 par heure)", min(main.IDENTIFY_PER_HOUR, main.LISTING_PER_HOUR) >= 400 and main.EBAY_PER_HOUR >= 800)
+
+# Jeton temporaire de démo : la vraie clé ne passe plus dans l'adresse de /api/search.
+os.environ["DEMO_KEY"] = "cle-demo-test"
+_tok = main.demo_token(FakeRequest(demo_key="cle-demo-test"))["token"]
+check("jeton de démo : délivré contre la clé en en-tête, et accepté", _tok != "cle-demo-test" and main._demo_key_ok(_tok))
+try:
+    main.demo_token(FakeRequest(demo_key="autre"))
+    _refused = False
+except _HE as e:
+    _refused = e.status_code == 403
+check("jeton de démo : refusé (403) avec une mauvaise clé", _refused)
+main._demo_tokens[_tok] = 0  # expiré
+check("jeton de démo expiré : refusé", not main._demo_key_ok(_tok))
+del os.environ["DEMO_KEY"]
+
 # 3. Coefficient de rachat mesuré : 0,59 par défaut, puis par catégorie (docs/calibrage-rachat.md).
 b = pricing.shop_block([150, 166, 180])
 check("rachat = médiane × 0,59 (166 € → 97,94 €)", pricing.BUYBACK_COEF == 0.59 and b["buyback_estimate"] == 97.94)
@@ -159,6 +217,17 @@ check("coupée, mais offres d'un autre modèle : elles restent écartées (« au
 gc = [Offer(title="Console Nintendo Switch", price_eur=p_, condition="Occasion reconditionnée", url=f"https://gamecash.example/s{p_}") for p_ in (166, 174, 179, 194)]
 p = main._site_payload("gamecash", result("completed", False, gc), "Nintendo Switch", "console", "Bon état")
 check("Gamecash (« Occasion reconditionnée », sans grade) : 4 prix gardés, plus 0", p["state"] == "ok" and len(p["offers"]) == 4)
+
+# Réponse d'agent dont les offres arrivent en texte JSON (Easy Cash, iPad 9, 19/11) : elles doivent être lues.
+from agents.price_agent import Offers as _Offers, coerce_answer  # noqa: E402
+
+_raw = {"offers": ['[{"title": "Tablette APPLE iPad 9 (2021) 64 Go", "price_eur": 189.99, "condition": "Bon état", '
+                   '"url": "https://bons-plans.easycash.fr/tablette/a-1"}, {"title": "iPad 9 64 Go", "price_eur": 199, '
+                   '"condition": "Bon état", "url": "https://bons-plans.easycash.fr/tablette/a-2"}]'], "note": None}
+check("offres en texte JSON dans la liste : 2 offres lues", len(_Offers.model_validate(coerce_answer(_raw)).offers) == 2)
+check("réponse entière en texte JSON : lue", len(_Offers.model_validate(coerce_answer('{"offers": [{"title": "a", "price_eur": 2}]}')).offers) == 1)
+check("réponse normale : inchangée", len(_Offers.model_validate(coerce_answer({"offers": [{"title": "a", "price_eur": 1}]})).offers) == 1)
+check("texte libre : rendu tel quel (devient la note)", coerce_answer("pas de JSON") == "pas de JSON")
 
 print(f"{total - failed}/{total} vérifications correctes")
 sys.exit(1 if failed else 0)
