@@ -49,14 +49,14 @@ export default function GrenierPage() {
     <main className="page screen">
       <h1 className="display">Mon grenier</h1>
 
-      <Link href="/pro#pro-cart" className="grenier-pro-cart">
+      {proCartCount > 0 && <Link href="/pro#pro-cart" className="grenier-pro-cart">
         <span className="grenier-pro-cart-icon" aria-hidden><CartGlyph /></span>
         <span>
           <strong>Panier revendeur</strong>
           <span className="small">Retrouvez les bonnes affaires que vous avez retenues.</span>
         </span>
         <span className="grenier-pro-cart-count num">{proCartCount}</span>
-      </Link>
+      </Link>}
 
       {items.length === 0 ? (
         <>

@@ -874,7 +874,14 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 
 ### Jeudi 19/11, 16h30 : accès revendeur et suivi des agents rendus visibles
 - **Accueil :** le lien discret vers l'espace revendeur devient une carte d'accès compacte, sans modifier le parcours d'estimation principal.
-- **Espace revendeur uniquement :** ajout d'un tableau « Agents en direct » qui affiche, pour chaque site, l'étape courante, les dernières actions, le temps écoulé et le résultat de la visite. Les captures des pages sources ne sont pas affichées.
+- **Espace revendeur uniquement :** ajout d'un tableau « Agents en direct » qui affiche, pour chaque site, l'étape courante, les dernières actions, le temps écoulé et le résultat de la visite. En mode démo (actif par défaut), les captures des agents restent visibles au-dessus, comme sur l'estimation (règle 9).
 - **Périmètre préservé :** hors espace revendeur, seul le raccourci déjà demandé vers le panier revendeur dans le Grenier et cette nouvelle carte d'accueil sont modifiés. Aucun bouton flottant de retour aux filtres.
 - **Vérifications :** TypeScript et contrôle du diff OK. Changements préparés sur une branche dédiée pour revue avant fusion dans `main`.
 - **Panier :** les objets retenus ouvrent désormais directement l’annonce source dans un nouvel onglet. Une offre sans URL ne peut pas être retenue, afin que le panier ne contienne jamais de simple texte sans article accessible.
+
+### Jeudi 19/11, 17h30 : 5e revue hostile (espace revendeur), 6 mineurs corrigés
+- Compteur du panier sur fond bleu fixe `#1e6fd9` (4,85:1 dans les deux thèmes) ; montant « de perte » en `--loss` (`#c62828` en clair, `#ff6b6b` en sombre, 6,1:1).
+- « Agents en direct » : plus d'`aria-live` (déjà porté par la barre de progression) ; les libellés « Navigue, étape N » n'entrent plus dans la liste des dernières actions.
+- Mon grenier : le raccourci « Panier revendeur » n'apparaît que si le panier contient au moins un objet.
+- Ligne du 16h30 corrigée : les captures restent visibles en mode démo sur `/pro`.
+- Question ouverte, non tranchée : la marge revendeur se calcule sur le prix médian des boutiques, probablement optimiste pour un revendeur particulier. À voir avec Tristan.
