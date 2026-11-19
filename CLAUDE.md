@@ -20,7 +20,7 @@
 6. **Photos :** refuser toute photo où un visage est détecté.
 7. **Secrets :** clés API dans `.env` uniquement. Ne jamais les committer : le dépôt est public.
 8. **Affichage :** les prix sont indicatifs, la mention « généré par IA » est visible, et la page « Comment ça marche » liste les sites consultés. Ne jamais écrire « tous les sites ».
-9. **Pas de capture des pages sources** montrée à l'utilisateur : le prix et le lien suffisent.
+9. **Captures des agents** : montrées en direct pendant la recherche (mode démo, actif par défaut depuis le 19/11, interrupteur dans Réglages). Aucune capture conservée, ni sur le serveur ni dans le navigateur. Les résultats affichent seulement le prix et le lien.
 
 ## Architecture
 - Interface : Next.js générée avec v0, hébergée sur Vercel.

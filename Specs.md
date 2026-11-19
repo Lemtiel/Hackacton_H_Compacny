@@ -62,7 +62,7 @@ H Company sert à une seule tâche : naviguer sur les sites sans API. Hugging Fa
 - Aucun agent sur un site dont les CGU ou le robots.txt interdisent l'accès automatisé. Les CGU de H Company (§5.3) l'exigent aussi.
 - Aucun contournement d'anti-robot : un site qui bloque l'agent sort de la liste.
 - Aucune donnée conservée côté serveur : ni photo, ni annonce relevée, ni pseudonyme de vendeur.
-- Aucune capture des pages des sites sources affichée à l'utilisateur, pour respecter leur interdiction de reproduction : le prix et le lien suffisent.
+- Captures des agents montrées en direct pendant la recherche (mode démo, actif par défaut depuis le 19/11, désactivable dans Réglages). Aucune capture conservée. Les résultats affichent seulement le prix et le lien. Risque accepté par Jude : les boutiques interdisent la reproduction de leurs pages (voir JOURNAL.md, 19/11).
 
 ## Alternatives écartées
 - **Lire Leboncoin et Vinted avec un agent :** leurs CGU l'interdisent, ainsi que celles de H Company (§5.3). Leboncoin a gagné ses procès contre Entreparticuliers et Jinka.

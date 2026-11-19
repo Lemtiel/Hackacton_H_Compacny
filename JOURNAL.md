@@ -794,3 +794,8 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - Jude a demandé que le bouton marche pour tout visiteur de snapncash.vercel.app. Trois voies examinées : agent H dans le cloud connecté au compte du visiteur (refusé : identifiants confiés à un tiers, anti-robot, règles 2 et 5), Listing API d'eBay `createItemDraft` (réservée aux partenaires invités, contrat requis), API Inventory (légale, sans agent, 1 à 2 jours, contraire aux Specs et à l'exemption eBay du 18/11).
 - Décision de Jude : le brouillon par agent reste en local, sur son compte eBay, pour la démo. Il reste désactivé en ligne (`EBAY_DRAFT_LOCAL` absent du Space). Au pitch, l'équipe présente le déploiement comme une étape qui demande l'autorisation d'eBay (programme partenaire, Listing API).
 - Risque accepté par Jude : suspension possible de son compte eBay si eBay détecte l'agent. L'agent s'arrête sur une connexion, une vérification ou un captcha, sans contournement.
+
+### Jeudi 19/11, 9h : mode démo actif par défaut sur le site (décision de Jude)
+- Demande de Jude : sur snapncash.vercel.app, chaque visiteur voit les agents H naviguer. L'interrupteur « Mode démo » de Réglages coupe ou rallume l'affichage.
+- Contradiction relevée avec la règle 9 et Specs.md : les boutiques interdisent la reproduction de leurs pages. Option « captures réservées au lien du jury » proposée, Jude a choisi « pour tout le monde ». Risque accepté par Jude, règle 9 et Specs.md réécrites.
+- Code : `frontend/lib/prefs.ts` (démo à `true` par défaut), `frontend/lib/api.ts` (démo active sauf si le visiteur l'a coupée). Côté Space : variable `DEMO_SHOTS=1`. Les captures restent relayées sans enregistrement, jeton valable 10 min.

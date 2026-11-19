@@ -110,13 +110,14 @@ export type PriceSearchContext = {
   details?: string;
 };
 
-// Mode démo (pitch, vidéo) : ?demo=1 dans l'adresse de la page affiche les captures des agents.
+// Mode démo : captures des agents pendant la recherche. Actif par défaut (décision du 19/11) ; l'interrupteur de
+// Réglages le coupe ou le rallume ; ?demo=1 dans l'adresse le force.
 export function isDemo(): boolean {
   try {
     if (new URLSearchParams(window.location.search).get("demo") === "1") return true;
-    return JSON.parse(localStorage.getItem("snapncash.prefs") || "{}").demo === true; // interrupteur dans Réglages
+    return JSON.parse(localStorage.getItem("snapncash.prefs") || "{}").demo !== false; // interrupteur dans Réglages
   } catch {
-    return false;
+    return true;
   }
 }
 
