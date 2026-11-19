@@ -14,7 +14,7 @@
 1. Ouvrez **https://snapncash.vercel.app**, sur ordinateur ou sur téléphone.
 2. Touchez **Estimer**, puis prenez en photo un objet high-tech ou un jeu vidéo (téléphone, console, tablette, ordinateur portable, jeu). Sans objet sous la main, tapez son nom, par exemple « Apple iPhone 13 128 Go ».
 3. Regardez les agents H Company travailler : leurs écrans s'affichent en direct sous la barre de progression, une session par boutique. Une estimation prend environ 1 à 2 min : toutes les boutiques sont visitées en même temps.
-4. Lisez le verdict : vendre soi-même (prix tirés d'eBay) ou revendre en magasin (prix relevés par les agents), avec le gain en euros.
+4. Lisez le verdict : vendre soi-même (prix des annonces eBay en cours) ou revendre en magasin (rachat estimé à partir des prix relevés par les agents en boutique), avec le gain en euros.
 5. Ouvrez l'annonce : titre, description, caractéristiques et photos studio, prêts à publier sur eBay, Vinted ou Leboncoin.
 
 Le mode démo (écrans des agents) est actif par défaut. Il se coupe dans **Réglages**. Une adresse IP a droit à un nombre limité de recherches par heure : en cas de refus, réessayez un peu plus tard.
@@ -25,7 +25,7 @@ Serveur : https://judebkn95-snapncash.hf.space/api/health répond `ok`.
 86 % des Français gardent des objets inutilisés, 320 € par foyer en moyenne, mais 17 % seulement les ont déjà revendus. Ils citent le manque de temps (29 %), des démarches jugées complexes (20 %) et la peur de se tromper de prix (16 %) (OpinionWay pour Leboncoin, septembre 2025). Pour le high-tech, 46 millions de téléphones dorment dans les tiroirs (Harris Interactive et Crédoc pour Ecologic, 2023).
 
 ## La solution
-L'utilisateur photographie son objet high-tech ou son jeu vidéo. Un modèle Hugging Face le reconnaît. **Des agents H Company visitent en direct cinq boutiques d'occasion françaises** qui n'ont pas d'API, et relèvent les prix. L'app répond en moins de deux minutes :
+L'utilisateur photographie son objet high-tech ou son jeu vidéo. Un modèle Hugging Face le reconnaît. **Des agents H Company visitent en direct jusqu'à cinq boutiques d'occasion françaises** qui n'ont pas d'API (3 ou 4 par objet, selon sa catégorie), et relèvent les prix. L'app répond en moins de deux minutes :
 - **où vendre** : vendre soi-même ou en magasin, avec le gain en euros ;
 - **à quel prix** : fourchette, prix conseillé, curseur « vente rapide, prix juste, ambitieux » ;
 - **l'annonce prête** aux formats Vinted, Leboncoin, eBay et texte libre, plus des **photos studio** (objet détouré sur fond clair, objet non modifié).
