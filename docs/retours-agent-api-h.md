@@ -23,7 +23,9 @@ Nos agents relèvent des prix d'occasion sur six boutiques françaises sans API 
 | Durée très variable selon le site : 24 à 124 s pour la même consigne | `mesures/agent_runs.csv` | Réponse forcée à 70 s, annulation à 90 s |
 | Consommation de jetons élevée sur les sites à feuilleter : 313 000 jetons et 19 étapes sur Easy Cash sans moteur de recherche | 16/11 | Navigation par catégorie imposée par robots.txt, nous l'acceptons |
 | Coût par session difficile à prévoir : le prix du jeton au-delà du forfait n'est pas publié clairement | 16/11 | Pire cas estimé à 0,25 € par estimation (6 boutiques) |
-| Limite de sessions simultanées floue : 3 annoncée, 4 puis 10 passées sans file d'attente | 17/11 et 19/11 | Plafond réglable `HAI_MAX_PARALLEL` (10 par défaut) |
+| Limite de sessions simultanées invisible : au-delà de 3 (offre gratuite), les sessions attendent dans la file de H sans le signaler, puis sont coupées sans avoir consommé un jeton | mesure du 19/11 : 10 sessions demandées, plusieurs « indisponibles » à 0 jeton après 92 s | Plafond réglé à 3 sur notre serveur (`HAI_MAX_PARALLEL`), file d'attente de notre côté |
+| La réponse structurée arrive parfois en texte JSON glissé dans la liste (`{"offers": ["[{…}]"]}`) au lieu d'objets | Easy Cash, iPad 9, 19/11 : offres valides perdues | Lecture tolérante (`coerce_answer`) |
+| Quota visible seulement par le SDK (`quota.get_token_quota`), pas la limite de sessions ni l'offre en cours | 19/11 | Contrôle manuel avant la démo |
 
 ## Ce que nous demanderions à H
 1. **La vidéo en direct** (ou une adresse de capture publique et temporaire) pour `web-surfer-flash`, afin d'éviter un relais par notre serveur.
@@ -31,7 +33,9 @@ Nos agents relèvent des prix d'occasion sur six boutiques françaises sans API 
 3. **Un outil d'envoi de fichier** en mode `user_device`, comme pour le navigateur cloud.
 4. **Une erreur explicite** quand le pont local perd son onglet.
 5. **Une grille de prix publique** au jeton ou à la session, et la limite de sessions simultanées écrite par offre.
-6. **La durée de conservation des captures** chez H affichée dans la console. Le SDK propose `delete_screenshot_after_min`, mais la valeur par défaut n'est pas documentée.
+6. **Un statut « en file d'attente »** distinct, et la limite de sessions de l'offre en cours exposée par l'API.
+7. **Le respect strict du schéma de réponse** : jamais d'objets sérialisés en texte dans un champ de liste.
+8. **La durée de conservation des captures** chez H affichée dans la console. Le SDK propose `delete_screenshot_after_min`, mais la valeur par défaut n'est pas documentée.
 
 ## Les chiffres (mesure sur 10 objets, #8)
 *À compléter avec la mesure du 19/11 : taux de réussite par boutique, durée médiane d'une estimation, jetons par session, pic de sessions simultanées, cas d'échec.*
