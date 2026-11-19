@@ -92,6 +92,7 @@ def _client_ip(request: Request) -> str:
 
 
 DEMO_TOKEN_TTL_S = 3600
+DEMO_TOKEN_PER_HOUR = 20  # essais de clé par IP et par heure (le jeton obtenu reste valable 1 h)
 _demo_tokens: dict[str, float] = {}  # jeton temporaire -> expiration, en mémoire
 _demo_tokens_lock = threading.Lock()
 
@@ -142,6 +143,17 @@ def _limit(request: Request, kind: str, per_hour: int) -> None:
         raise HTTPException(429, "Vous avez fait beaucoup de demandes en peu de temps. Réessayez dans un moment.")
 
 
+def _take_search_place(is_demo: bool) -> bool:
+    """Prend une place de recherche. La clé de démo a une place de plus que le plafond : deux visiteurs qui testent le
+    site ne peuvent pas bloquer la démo live. Ses sessions attendent alors un agent libre dans la file du serveur."""
+    global _running
+    with _running_lock:
+        if _running >= MAX_SEARCHES + (1 if is_demo else 0):
+            return False
+        _running += 1
+        return True
+
+
 def _register_shot(url: str) -> str:
     now = time.time()
     token = secrets.token_urlsafe(16)
@@ -166,6 +178,9 @@ app.add_middleware(
 @app.post("/api/demo/token")
 def demo_token(request: Request):
     """Échange la clé de démo (en-tête X-Demo-Key, jamais dans l'adresse) contre un jeton valable 1 h."""
+    # Chaque essai compte (bon ou mauvais) : sans plafond, la clé se devinerait par essais successifs (revue du 19/11).
+    if not _allow("demo_token", _client_ip(request), DEMO_TOKEN_PER_HOUR):
+        raise HTTPException(429, "Trop d'essais. Réessayez dans un moment.")
     expected = os.getenv("DEMO_KEY") or ""
     key = request.headers.get("x-demo-key", "")
     if not (expected and key and secrets.compare_digest(key, expected)):
@@ -478,7 +493,8 @@ async def search(
             yield _sse({"type": "done"})
         return StreamingResponse(one(), media_type="text/event-stream", headers=SSE_HEADERS)
 
-    if not _demo_key_ok(key) and not _allow("search", _client_ip(request), SEARCH_PER_HOUR):
+    is_demo = _demo_key_ok(key)
+    if not is_demo and not _allow("search", _client_ip(request), SEARCH_PER_HOUR):
         return refuse("Vous avez lancé beaucoup d'estimations en peu de temps. Réessayez dans un moment.")
 
     loop = asyncio.get_running_loop()
@@ -519,11 +535,7 @@ async def search(
         # La place est prise ici, dans le flux, et rendue dans son « finally » : si le navigateur part avant le
         # premier octet, le flux ne démarre jamais et aucune place n'est prise (pas de compteur bloqué).
         global _running
-        with _running_lock:
-            full = _running >= MAX_SEARCHES
-            if not full:
-                _running += 1
-        if full:
+        if not _take_search_place(is_demo):
             yield _sse({"type": "error", "message": "Nos agents sont tous occupés. Réessayez dans une minute."})
             yield _sse({"type": "done"})
             return

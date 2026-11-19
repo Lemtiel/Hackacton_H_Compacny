@@ -857,3 +857,9 @@ Limite : mélanger des états voisins peut décaler un peu la médiane (un « tr
 - Messages de développeur (« HF_TOKEN manque dans .env », « HAI_API_KEY manque dans .env ») remplacés par des phrases pour l'utilisateur (identification, annonce, studio, agents).
 - Verdict fragile (moins de 3 prix boutique) : « Plutôt : vendez-le vous-même. », gain « à confirmer ».
 - Bloc eBay : « Prix affichés sur eBay (avant négociation) », pour le distinguer du prix conseillé « vendre seul ».
+
+### Jeudi 19/11, 14h45 : 3e revue hostile, 3 corrections
+- `POST /api/demo/token` limité à 20 essais par heure et par IP (chaque essai compte) : la clé de démo ne se devine plus par essais successifs. Reste à faire par Jude : remplacer `DEMO_KEY` par une valeur longue et aléatoire (Space et `.env`).
+- Place réservée à la démo : la clé de démo peut lancer une estimation même quand les 2 places publiques sont prises (`_take_search_place`). Deux visiteurs ne peuvent plus bloquer la démo live.
+- Message d'échec de la rédaction : la phrase « Voici un brouillon simple à compléter » n'apparaît plus deux fois.
+- Garde-fous 42/42 (4 nouveaux), autres tests inchangés et au vert.
